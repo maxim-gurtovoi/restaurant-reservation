@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 
 type SelectedTableInfo = {
@@ -9,24 +8,35 @@ type SelectedTableInfo = {
 } | null;
 
 type ReservationPanelProps = {
+  date: string;
+  time: string;
+  guests: number;
   selectedTable: SelectedTableInfo;
+  isCheckingAvailability?: boolean;
+  availabilityCheckedAt?: Date | null;
+  onDateChange: (date: string) => void;
+  onTimeChange: (time: string) => void;
+  onGuestsChange: (guests: number) => void;
 };
 
-export function ReservationPanel({ selectedTable }: ReservationPanelProps) {
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
-  const [guests, setGuests] = useState(2);
-
-  const exceedsCapacity =
-    selectedTable != null && guests > selectedTable.capacity;
+export function ReservationPanel({
+  date,
+  time,
+  guests,
+  selectedTable,
+  isCheckingAvailability = false,
+  availabilityCheckedAt = null,
+  onDateChange,
+  onTimeChange,
+  onGuestsChange,
+}: ReservationPanelProps) {
+  const exceedsCapacity = selectedTable != null && guests > selectedTable.capacity;
 
   const canProceed = !!selectedTable && !exceedsCapacity && date && time;
 
   return (
     <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-      <h2 className="text-sm font-semibold text-slate-100">
-        Plan your reservation
-      </h2>
+      <h2 className="text-sm font-semibold text-slate-100">Plan your reservation</h2>
 
       <div className="space-y-3 text-sm">
         <div className="space-y-1">
@@ -38,7 +48,7 @@ export function ReservationPanel({ selectedTable }: ReservationPanelProps) {
             type="date"
             className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => onDateChange(e.target.value)}
           />
         </div>
 
@@ -51,7 +61,7 @@ export function ReservationPanel({ selectedTable }: ReservationPanelProps) {
             type="time"
             className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100"
             value={time}
-            onChange={(e) => setTime(e.target.value)}
+            onChange={(e) => onTimeChange(e.target.value)}
           />
         </div>
 
@@ -65,9 +75,27 @@ export function ReservationPanel({ selectedTable }: ReservationPanelProps) {
             min={1}
             className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-100"
             value={guests}
-            onChange={(e) => setGuests(Number(e.target.value) || 1)}
+            onChange={(e) => onGuestsChange(Number(e.target.value) || 1)}
           />
         </div>
+
+        {isCheckingAvailability && (
+          <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+            Checking availability...
+          </div>
+        )}
+
+        {!isCheckingAvailability && availabilityCheckedAt && (
+          <div className="rounded-md border border-emerald-800/40 bg-emerald-500/5 p-3 text-xs text-emerald-300">
+            ✓ Availability updated
+          </div>
+        )}
+
+        {!date || !time ? (
+          <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+            Select date and time to check availability
+          </div>
+        ) : null}
 
         <div className="mt-3 space-y-1 rounded-md border border-slate-800 bg-slate-950/60 p-3 text-xs">
           <p className="font-medium text-slate-200">Selected table</p>
@@ -75,34 +103,24 @@ export function ReservationPanel({ selectedTable }: ReservationPanelProps) {
             <>
               <p className="text-slate-300">
                 {selectedTable.label}{' '}
-                <span className="text-slate-500">
-                  · up to {selectedTable.capacity} guests
-                </span>
+                <span className="text-slate-500">· up to {selectedTable.capacity} guests</span>
               </p>
               {exceedsCapacity ? (
                 <p className="text-[11px] text-amber-400">
-                  Guest count exceeds table capacity. Consider reducing guests
-                  or choosing a larger table.
+                  Guest count exceeds table capacity. Consider reducing guests or choosing a larger
+                  table.
                 </p>
               ) : null}
             </>
           ) : (
-            <p className="text-slate-500">
-              Tap a table on the floor plan to select it.
-            </p>
+            <p className="text-slate-500">Tap a table on the floor plan to select it.</p>
           )}
         </div>
       </div>
 
-      <Button
-        type="button"
-        className="w-full"
-        disabled={!canProceed}
-        variant="primary"
-      >
+      <Button type="button" className="w-full" disabled={!canProceed} variant="primary">
         Continue to booking
       </Button>
     </div>
   );
 }
-

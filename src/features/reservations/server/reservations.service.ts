@@ -1,6 +1,7 @@
 import 'server-only';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
+import { checkTableAvailability } from './check-table-availability';
 
 export async function listUserReservations(input: {
   userId: string;
@@ -19,9 +20,24 @@ export async function createReservation(input: any): Promise<ApiResult<{ id: str
 export async function getAvailability(input: {
   restaurantId: string;
   date: string;
-}): Promise<ApiResult<{ slots: string[] }>> {
-  void input;
-  void prisma; // TODO: compute availability per table/time
-  return { status: 200, body: { slots: [] } };
+  time: string;
+}): Promise<
+  ApiResult<{
+    unavailableTableIds: string[];
+    requestedStartAt: string;
+    requestedEndAt: string;
+  }>
+> {
+  try {
+    const result = await checkTableAvailability(
+      input as Parameters<typeof checkTableAvailability>[0],
+    );
+    return { status: 200, body: result };
+  } catch (error) {
+    console.error('Error checking availability:', error);
+    return {
+      status: 500,
+      body: { error: 'Failed to check availability' } as any,
+    };
+  }
 }
-

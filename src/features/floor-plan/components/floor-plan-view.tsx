@@ -21,6 +21,7 @@ type FloorPlanViewProps = {
     isActive: boolean;
   }[];
   selectedTableId?: string | null;
+  unavailableTableIds?: string[];
   onSelectTable?: (tableId: string) => void;
 };
 
@@ -29,6 +30,7 @@ export function FloorPlanView({
   floorPlans,
   tables,
   selectedTableId,
+  unavailableTableIds = [],
   onSelectTable,
 }: FloorPlanViewProps) {
   if (!floorPlans.length || !tables.length) {
@@ -71,8 +73,7 @@ export function FloorPlanView({
       <div className="flex justify-center">
         <div
           className="relative rounded-xl border border-slate-800 bg-slate-900/60 p-3"
-          style={{ width: targetWidth, height: targetHeight }}
-        >
+          style={{ width: targetWidth, height: targetHeight }}>
           <div
             className="relative bg-slate-950/60"
             style={{
@@ -80,8 +81,7 @@ export function FloorPlanView({
               height: floorPlan.height,
               transform: `scale(${scale})`,
               transformOrigin: 'top left',
-            }}
-          >
+            }}>
             {planTables.map((table) => {
               const baseClasses =
                 'absolute flex flex-col items-center justify-center text-[10px] font-medium transition-colors';
@@ -97,12 +97,24 @@ export function FloorPlanView({
               }
 
               const isSelected = selectedTableId === table.id;
+              const isUnavailable = unavailableTableIds.includes(table.id);
 
-              const stateClasses = table.isActive
-                ? isSelected
-                  ? 'border border-emerald-400 bg-emerald-500/30 text-emerald-50 shadow-lg shadow-emerald-500/30'
-                  : 'border border-emerald-500/70 bg-emerald-500/10 text-emerald-100 hover:border-emerald-300 hover:bg-emerald-500/20 cursor-pointer'
-                : 'border border-slate-700 bg-slate-900/40 text-slate-500 opacity-60';
+              let stateClasses = '';
+              if (!table.isActive) {
+                // Inactive table
+                stateClasses = 'border border-slate-700 bg-slate-900/40 text-slate-500 opacity-60';
+              } else if (isUnavailable) {
+                // Active but unavailable
+                stateClasses = 'border border-red-500/60 bg-red-500/10 text-red-300 opacity-70';
+              } else if (isSelected) {
+                // Active, available, and selected
+                stateClasses =
+                  'border border-emerald-400 bg-emerald-500/30 text-emerald-50 shadow-lg shadow-emerald-500/30';
+              } else {
+                // Active and available
+                stateClasses =
+                  'border border-emerald-500/70 bg-emerald-500/10 text-emerald-100 hover:border-emerald-300 hover:bg-emerald-500/20 cursor-pointer';
+              }
 
               return (
                 <div
@@ -117,10 +129,9 @@ export function FloorPlanView({
                     transformOrigin: 'center',
                   }}
                   onClick={() => {
-                    if (!table.isActive || !onSelectTable) return;
+                    if (!table.isActive || isUnavailable || !onSelectTable) return;
                     onSelectTable(table.id);
-                  }}
-                >
+                  }}>
                   <span>{table.label}</span>
                   <span className="text-[9px] font-normal text-slate-300/80">
                     {table.capacity} seats
@@ -134,4 +145,3 @@ export function FloorPlanView({
     </div>
   );
 }
-
