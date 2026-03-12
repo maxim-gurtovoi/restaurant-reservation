@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  MANAGER
+  ADMIN
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELLED
+  CHECKED_IN
+  COMPLETED
+  NO_SHOW
+}
+
+enum TableShape {
+  RECTANGLE
+  ROUND
+  SQUARE
+}
+
+enum CheckInMethod {
+  QR
+  MANUAL
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String
+  email        String   @unique
+  passwordHash String
+  phone        String?
+  role         UserRole @default(USER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  reservations      Reservation[]
+  managedRestaurants RestaurantManager[]
+  checkInLogs       CheckInLog[]
+
+  @@index([role])
+}
+
+model Restaurant {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String   @unique
+  description String?
+  address     String
+  phone       String?
+  email       String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  floorPlans  FloorPlan[]
+  tables      RestaurantTable[]
+  reservations Reservation[]
+  workingHours WorkingHours[]
+  managers    RestaurantManager[]
+
+  @@index([isActive])
+}
+
+model RestaurantManager {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @db.Uuid
+  restaurantId String     @db.Uuid
+  createdAt    DateTime   @default(now())
+
+  user       User       @relation(fields: [userId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([userId, restaurantId])
+  @@index([restaurantId])
+}
+
+model FloorPlan {
+  id                String           @id @default(uuid()) @db.Uuid
+  restaurantId      String           @db.Uuid
+  name              String
+  width             Int
+  height            Int
+  backgroundImageUrl String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
+  tables     RestaurantTable[]
+
+  @@index([restaurantId])
+}
+
+model RestaurantTable {
+  id           String   @id @default(uuid()) @db.Uuid
+  restaurantId String   @db.Uuid
+  floorPlanId  String   @db.Uuid
+  label        String
+  capacity     Int
+  shape        TableShape
+  x            Int
+  y            Int
+  width        Int
+  height       Int
+  rotation     Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  restaurant  Restaurant  @relation(fields: [restaurantId], references: [id])
+  floorPlan   FloorPlan   @relation(fields: [floorPlanId], references: [id])
+  reservations Reservation[]
+
+  @@unique([floorPlanId, label])
+  @@index([restaurantId])
+  @@index([restaurantId, isActive])
+}
+
+model WorkingHours {
+  id           String  @id @default(uuid()) @db.Uuid
+  restaurantId String  @db.Uuid
+  dayOfWeek    Int     // 0-6 (Sunday-Saturday) or 1-7, application decides
+  openTime     String  // e.g. "10:00"
+  closeTime    String  // e.g. "22:00"
+  isClosed     Boolean @default(false)
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+
+  @@unique([restaurantId, dayOfWeek])
+  @@index([restaurantId])
+}
+
+model Reservation {
+  id           String            @id @default(uuid()) @db.Uuid
+  userId       String            @db.Uuid
+  restaurantId String            @db.Uuid
+  tableId      String            @db.Uuid
+  guestCount   Int
+  startAt      DateTime
+  endAt        DateTime
+  status       ReservationStatus @default(CONFIRMED)
+  qrToken      String            @unique
+  contactName  String
+  contactPhone String?
+  contactEmail String?
+  notes        String?
+  checkedInAt  DateTime?
+  cancelledAt  DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id])
+  restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
+  table      RestaurantTable @relation(fields: [tableId], references: [id])
+  checkInLogs CheckInLog[]
+
+  @@index([userId, startAt])
+  @@index([restaurantId, startAt])
+  @@index([restaurantId, tableId, startAt])
+  @@index([status])
+}
+
+model CheckInLog {
+  id                String         @id @default(uuid()) @db.Uuid
+  reservationId     String         @db.Uuid
+  checkedInByUserId String         @db.Uuid
+  checkedInAt       DateTime       @default(now())
+  method            CheckInMethod
+  notes             String?
+
+  reservation Reservation @relation(fields: [reservationId], references: [id])
+  checkedInBy User        @relation(fields: [checkedInByUserId], references: [id])
+
+  @@index([reservationId])
+  @@index([checkedInByUserId])
+}
+
