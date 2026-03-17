@@ -12,6 +12,7 @@ export type ReservationDetails = {
   contactName: string;
   contactPhone: string | null;
   contactEmail: string | null;
+  cancelledAt: Date | null;
   createdAt: Date;
   restaurant: {
     id: string;
@@ -56,6 +57,7 @@ export async function getReservationDetailsById(input: {
     contactName: reservation.contactName,
     contactPhone: reservation.contactPhone,
     contactEmail: reservation.contactEmail,
+    cancelledAt: reservation.cancelledAt,
     createdAt: reservation.createdAt,
     restaurant: reservation.restaurant,
     table: reservation.table,

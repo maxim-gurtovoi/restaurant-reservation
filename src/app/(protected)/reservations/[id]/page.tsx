@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { QrCode } from '@/components/qr/qr-code';
 import { getCurrentUser } from '@/server/auth';
 import { getReservationDetailsById } from '@/features/reservations/server/get-reservation-details';
+import { CancelReservationButton } from '@/features/reservations/components/cancel-reservation-button';
 
 type ReservationDetailsPageProps = {
   params: { id: string };
@@ -45,6 +46,7 @@ export default async function ReservationDetailsPage({
   });
 
   const checkInPayload = `qr:${reservation.qrToken}`;
+  const isCancellable = reservation.status === 'CONFIRMED';
 
   return (
     <div className="space-y-6">
@@ -63,7 +65,12 @@ export default async function ReservationDetailsPage({
 
           <div>
             <p className="text-xs text-slate-400">Status</p>
-            <p className="text-sm font-semibold text-emerald-400">
+            <p
+              className={[
+                'text-sm font-semibold',
+                reservation.status === 'CANCELLED' ? 'text-red-300' : 'text-emerald-400',
+              ].join(' ')}
+            >
               {reservation.status}
             </p>
           </div>
@@ -103,6 +110,14 @@ export default async function ReservationDetailsPage({
               {new Date(reservation.createdAt).toLocaleString('en-US')}
             </p>
           </div>
+          {reservation.cancelledAt ? (
+            <div>
+              <p className="text-xs text-slate-400">Cancelled</p>
+              <p className="text-sm text-slate-100">
+                {new Date(reservation.cancelledAt).toLocaleString('en-US')}
+              </p>
+            </div>
+          ) : null}
           </div>
 
           <div className="space-y-2">
@@ -111,6 +126,11 @@ export default async function ReservationDetailsPage({
             <p className="text-[11px] text-slate-500">
               Show this QR code at the restaurant entrance for check-in.
             </p>
+            {isCancellable ? (
+              <div className="pt-2">
+                <CancelReservationButton reservationId={reservation.id} />
+              </div>
+            ) : null}
           </div>
         </div>
 
