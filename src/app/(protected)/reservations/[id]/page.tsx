@@ -5,6 +5,7 @@ import { QrCode } from '@/components/qr/qr-code';
 import { getCurrentUser } from '@/server/auth';
 import { getReservationDetailsById } from '@/features/reservations/server/get-reservation-details';
 import { CancelReservationButton } from '@/features/reservations/components/cancel-reservation-button';
+import { CopyButton } from '@/components/ui/copy-button';
 
 type ReservationDetailsPageProps = {
   params: { id: string };
@@ -45,7 +46,15 @@ export default async function ReservationDetailsPage({
     minute: '2-digit',
   });
 
-  const checkInPayload = `qr:${reservation.qrToken}`;
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.length > 0
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : 'http://localhost:3000';
+  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
+  const checkInUrl = `${normalizedBaseUrl}/manager/check-in/${encodeURIComponent(
+    reservation.qrToken,
+  )}`;
+
   const isCancellable = reservation.status === 'CONFIRMED';
 
   return (
@@ -122,10 +131,18 @@ export default async function ReservationDetailsPage({
 
           <div className="space-y-2">
             <p className="text-xs text-slate-400">Check-in QR</p>
-            <QrCode value={checkInPayload} />
-            <p className="text-[11px] text-slate-500">
-              Show this QR code at the restaurant entrance for check-in.
-            </p>
+            <QrCode value={checkInUrl} />
+            <div className="space-y-1">
+              <p className="text-[11px] text-slate-500">
+                Scan this QR code to open the manager check-in page.
+              </p>
+              <div className="flex items-center justify-between gap-2 rounded-md bg-slate-950/60 p-2">
+                <p className="truncate font-mono text-[10px] text-slate-300">
+                  {checkInUrl}
+                </p>
+                <CopyButton value={checkInUrl} label="Copy URL" small />
+              </div>
+            </div>
             {isCancellable ? (
               <div className="pt-2">
                 <CancelReservationButton reservationId={reservation.id} />
@@ -140,8 +157,11 @@ export default async function ReservationDetailsPage({
             <p className="font-mono text-xs text-slate-300">{reservation.qrToken}</p>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            This token is encoded in the QR above (payload: <span className="font-mono">qr:&lt;token&gt;</span>).
+            This token is linked to the reservation and used for check-in.
           </p>
+          <div className="mt-2">
+            <CopyButton value={reservation.qrToken} label="Copy token" small />
+          </div>
         </div>
 
         <div className="border-t border-slate-700 pt-4">
