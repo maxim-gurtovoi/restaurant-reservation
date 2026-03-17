@@ -10,12 +10,20 @@
 !.yarn/releases
 !.yarn/versions
 
+# Environment variables
+
+
+.env
+.env.*
+!.env.example
+
 # testing
 /coverage
 
 # next.js
 /.next/
 /out/
+/dist/
 
 # production
 /build
@@ -43,6 +51,56 @@ next-env.d.ts
 # prisma
 prisma/*.db
 prisma/*.db-journal
+
+# Temporary / cache files*
+
+.tmp
+*.temp
+.cache/
+*.tsbuildinfo
+
+# OS files
+
+.DS_Store
+Thumbs.db
+
+# IDE / editors
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Prisma / database
+
+*.db
+*.sqlite
+*.sqlite3
+
+# Large files / archives
+
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+
+# Test / coverage
+
+coverage/
+
+# Vercel / deployment
+
+.vercel/
+
+
+# Misc
+
+*.pem
+*.key
+*.crt
+
 
 # logs
 logs
