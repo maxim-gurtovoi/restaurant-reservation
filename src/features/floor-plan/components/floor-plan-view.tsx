@@ -1,6 +1,7 @@
 'use client';
+import type { TableShape } from '@prisma/client';
+
 type FloorPlanViewProps = {
-  restaurantId?: string;
   floorPlans: {
     id: string;
     name: string;
@@ -12,7 +13,7 @@ type FloorPlanViewProps = {
     floorPlanId: string;
     label: string;
     capacity: number;
-    shape: string;
+    shape: TableShape;
     x: number;
     y: number;
     width: number;
@@ -26,7 +27,6 @@ type FloorPlanViewProps = {
 };
 
 export function FloorPlanView({
-  restaurantId,
   floorPlans,
   tables,
   selectedTableId,
@@ -63,7 +63,6 @@ export function FloorPlanView({
       <div className="flex items-baseline justify-between gap-2">
         <p className="text-xs text-slate-400">
           Floor plan: <span className="font-medium text-slate-200">{floorPlan.name}</span>
-          {restaurantId ? ` · Restaurant ${restaurantId.slice(0, 8)}…` : null}
         </p>
         <p className="text-[10px] text-slate-500">
           Size: {floorPlan.width}×{floorPlan.height}

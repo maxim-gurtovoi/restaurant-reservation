@@ -1,7 +1,6 @@
 import 'server-only';
 import { prisma } from '@/lib/prisma';
-
-const RESERVATION_DURATION_MINUTES = 90;
+import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
 
 export async function checkTableAvailability(input: {
   restaurantId: string;
@@ -14,21 +13,7 @@ export async function checkTableAvailability(input: {
 }> {
   const { restaurantId, date, time } = input;
 
-  // Parse date and time into ISO strings
-  const [year, month, day] = date.split('-');
-  const [hours, minutes] = time.split(':');
-
-  const startAt = new Date(
-    parseInt(year),
-    parseInt(month) - 1,
-    parseInt(day),
-    parseInt(hours),
-    parseInt(minutes),
-    0,
-    0,
-  );
-
-  const endAt = new Date(startAt.getTime() + RESERVATION_DURATION_MINUTES * 60 * 1000);
+  const { startAt, endAt } = computeReservationWindow({ date, time });
 
   // Query reservations that block availability
   // These are overlapping reservations with statuses: CONFIRMED or CHECKED_IN

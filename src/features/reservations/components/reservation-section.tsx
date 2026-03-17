@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import type { TableShape } from '@prisma/client';
 import { FloorPlanView } from '@/features/floor-plan/components/floor-plan-view';
 import { ReservationPanel } from '@/features/reservations/components/reservation-panel';
 
@@ -17,7 +19,7 @@ type ReservationSectionProps = {
     floorPlanId: string;
     label: string;
     capacity: number;
-    shape: string;
+    shape: TableShape;
     x: number;
     y: number;
     width: number;
@@ -28,6 +30,7 @@ type ReservationSectionProps = {
 };
 
 export function ReservationSection({ restaurantId, floorPlans, tables }: ReservationSectionProps) {
+  const router = useRouter();
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -35,54 +38,88 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
   const [unavailableTableIds, setUnavailableTableIds] = useState<string[]>([]);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [availabilityCheckedAt, setAvailabilityCheckedAt] = useState<Date | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  const checkAvailability = useCallback(
-    async (newDate: string, newTime: string) => {
-      if (!newDate || !newTime) {
-        setUnavailableTableIds([]);
-        setAvailabilityCheckedAt(null);
-        return;
+  const checkAvailability = useCallback(async () => {
+    if (!date || !time) {
+      setUnavailableTableIds([]);
+      setAvailabilityCheckedAt(null);
+      return;
+    }
+
+    setIsCheckingAvailability(true);
+    try {
+      const params = new URLSearchParams({
+        restaurantId,
+        date,
+        time,
+      });
+
+      const response = await fetch(`/api/reservations/availability?${params}`);
+      if (!response.ok) throw new Error(`Availability check failed: ${response.status}`);
+
+      const result = await response.json();
+      setUnavailableTableIds(result.unavailableTableIds || []);
+
+      // Clear selection if currently selected table became unavailable
+      if (selectedTableId && result.unavailableTableIds.includes(selectedTableId)) {
+        setSelectedTableId(null);
       }
 
-      setIsCheckingAvailability(true);
-      try {
-        const params = new URLSearchParams({
-          restaurantId,
-          date: newDate,
-          time: newTime,
-        });
+      setAvailabilityCheckedAt(new Date());
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      setUnavailableTableIds([]);
+    } finally {
+      setIsCheckingAvailability(false);
+    }
+  }, [restaurantId, date, time, selectedTableId]);
 
-        const response = await fetch(`/api/reservations/availability?${params}`);
-        const result = await response.json();
-
-        if (response.ok && result.unavailableTableIds) {
-          setUnavailableTableIds(result.unavailableTableIds || []);
-
-          // Clear selection if currently selected table became unavailable
-          if (selectedTableId && result.unavailableTableIds.includes(selectedTableId)) {
-            setSelectedTableId(null);
-          }
-
-          setAvailabilityCheckedAt(new Date());
-        }
-      } catch (error) {
-        console.error('Error checking availability:', error);
-        setUnavailableTableIds([]);
-      } finally {
-        setIsCheckingAvailability(false);
-      }
-    },
-    [restaurantId, selectedTableId],
-  );
+  useEffect(() => {
+    checkAvailability();
+  }, [date, time, checkAvailability]);
 
   const handleDateChange = (newDate: string) => {
     setDate(newDate);
-    checkAvailability(newDate, time);
   };
 
   const handleTimeChange = (newTime: string) => {
     setTime(newTime);
-    checkAvailability(date, newTime);
+  };
+
+  const handleSubmitReservation = async (data: {
+    restaurantId: string;
+    tableId: string;
+    date: string;
+    time: string;
+    guestCount: number;
+  }) => {
+    setIsSubmitting(true);
+    setSubmissionError(null);
+
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create reservation');
+      }
+
+      const result = await response.json();
+      // Navigate to confirmation page
+      router.push(`/reservations/${result.id}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create reservation';
+      setSubmissionError(message);
+      console.error('Error submitting reservation:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedTable = tables.find((table) => table.id === selectedTableId) ?? null;
@@ -90,7 +127,6 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
   return (
     <div className="mt-4 grid gap-6 lg:grid-cols-[2fr,1.2fr]">
       <FloorPlanView
-        restaurantId={restaurantId}
         floorPlans={floorPlans}
         tables={tables}
         selectedTableId={selectedTableId}
@@ -102,13 +138,17 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
         time={time}
         guests={guests}
         selectedTable={
-          selectedTable ? { label: selectedTable.label, capacity: selectedTable.capacity } : null
+          selectedTable ? { id: selectedTable.id, label: selectedTable.label, capacity: selectedTable.capacity } : null
         }
+        restaurantId={restaurantId}
         isCheckingAvailability={isCheckingAvailability}
         availabilityCheckedAt={availabilityCheckedAt}
+        isSubmitting={isSubmitting}
+        submissionError={submissionError}
         onDateChange={handleDateChange}
         onTimeChange={handleTimeChange}
         onGuestsChange={setGuests}
+        onSubmit={handleSubmitReservation}
       />
     </div>
   );

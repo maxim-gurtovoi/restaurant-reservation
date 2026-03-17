@@ -1,4 +1,5 @@
 import 'server-only';
+import type { TableShape } from '@prisma/client';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 
@@ -31,7 +32,7 @@ export type RestaurantDetails = {
     floorPlanId: string;
     label: string;
     capacity: number;
-    shape: string;
+    shape: TableShape;
     x: number;
     y: number;
     width: number;
@@ -142,4 +143,3 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
     })),
   };
 }
-
