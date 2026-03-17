@@ -1,19 +1,12 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { getCurrentUser } from '@/server/auth';
-import { performCheckIn } from '@/features/manager/server/manager.service';
+import { NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-  const manager = await getCurrentUser();
-  // TODO: enforce manager role (not just auth)
-  if (!manager) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+// Legacy route: prefer /api/manager/check-in/[token]
 
-  // TODO: validate with Zod schema
-  const payload = await req.json().catch(() => null);
-  if (!payload) {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
-
-  const result = await performCheckIn({ managerId: manager.id, ...payload });
-  return NextResponse.json(result.body, { status: result.status });
+export async function POST() {
+  return NextResponse.json(
+    { error: 'Use /api/manager/check-in/[token] for QR check-in.' },
+    { status: 400 },
+  );
 }
 
+// Legacy check-in route kept for backward compatibility; use /api/manager/check-in/[token] instead.
