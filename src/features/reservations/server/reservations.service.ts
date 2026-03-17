@@ -4,12 +4,66 @@ import { prisma } from '@/lib/prisma';
 import { checkTableAvailability } from './check-table-availability';
 import { createReservation as createReservationInDb } from './create-reservation';
 
+export type UserReservationListItem = {
+  id: string;
+  status: string;
+  guestCount: number;
+  startAt: string;
+  endAt: string;
+  createdAt: string;
+  restaurant: {
+    name: string;
+    slug: string;
+  };
+  table: {
+    label: string;
+  };
+};
+
 export async function listUserReservations(input: {
   userId: string;
-}): Promise<ApiResult<Array<{ id: string }>>> {
-  void input;
-  void prisma; // TODO: query reservations for user
-  return { status: 200, body: [] };
+}): Promise<ApiResult<UserReservationListItem[]>> {
+  const reservations = await prisma.reservation.findMany({
+    where: {
+      userId: input.userId,
+    },
+    orderBy: [
+      { startAt: 'desc' },
+      { createdAt: 'desc' },
+    ],
+    select: {
+      id: true,
+      status: true,
+      guestCount: true,
+      startAt: true,
+      endAt: true,
+      createdAt: true,
+      restaurant: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
+      table: {
+        select: {
+          label: true,
+        },
+      },
+    },
+  });
+
+  const dto: UserReservationListItem[] = reservations.map((r) => ({
+    id: r.id,
+    status: r.status,
+    guestCount: r.guestCount,
+    startAt: r.startAt.toISOString(),
+    endAt: r.endAt.toISOString(),
+    createdAt: r.createdAt.toISOString(),
+    restaurant: r.restaurant,
+    table: r.table,
+  }));
+
+  return { status: 200, body: dto };
 }
 
 export async function createReservation(input: {
