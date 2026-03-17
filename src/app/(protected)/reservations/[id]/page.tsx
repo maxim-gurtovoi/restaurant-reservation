@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
-import { prisma } from '@/lib/prisma';
+import { QrCode } from '@/components/qr/qr-code';
+import { getCurrentUser } from '@/server/auth';
+import { getReservationDetailsById } from '@/features/reservations/server/get-reservation-details';
 
 type ReservationDetailsPageProps = {
   params: { id: string };
@@ -10,24 +12,12 @@ type ReservationDetailsPageProps = {
 export default async function ReservationDetailsPage({
   params,
 }: ReservationDetailsPageProps) {
-  const reservation = await prisma.reservation.findFirst({
-    where: {
-      id: params.id,
-    },
-    include: {
-      restaurant: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      table: {
-        select: {
-          label: true,
-          capacity: true,
-        },
-      },
-    },
+  const user = await getCurrentUser();
+  if (!user) notFound();
+
+  const reservation = await getReservationDetailsById({
+    reservationId: params.id,
+    userId: user.id,
   });
 
   if (!reservation) {
@@ -54,6 +44,8 @@ export default async function ReservationDetailsPage({
     minute: '2-digit',
   });
 
+  const checkInPayload = `qr:${reservation.qrToken}`;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -62,7 +54,8 @@ export default async function ReservationDetailsPage({
       />
 
       <Card className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
+          <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <p className="text-xs text-slate-400">Reservation ID</p>
             <p className="font-mono text-sm font-semibold text-slate-100">{reservation.id}</p>
@@ -110,6 +103,15 @@ export default async function ReservationDetailsPage({
               {new Date(reservation.createdAt).toLocaleString('en-US')}
             </p>
           </div>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs text-slate-400">Check-in QR</p>
+            <QrCode value={checkInPayload} />
+            <p className="text-[11px] text-slate-500">
+              Show this QR code at the restaurant entrance for check-in.
+            </p>
+          </div>
         </div>
 
         <div className="border-t border-slate-700 pt-4">
@@ -118,40 +120,32 @@ export default async function ReservationDetailsPage({
             <p className="font-mono text-xs text-slate-300">{reservation.qrToken}</p>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            QR code rendering will be added soon. Use this token for check-in.
+            This token is encoded in the QR above (payload: <span className="font-mono">qr:&lt;token&gt;</span>).
           </p>
         </div>
 
-        {reservation.contactName && (
-          <div className="border-t border-slate-700 pt-4">
-            <p className="text-xs text-slate-400 mb-2">Contact Information</p>
-            <div className="space-y-1">
-              {reservation.contactName && (
-                <p className="text-sm text-slate-100">
-                  <span className="text-slate-400">Name: </span>
-                  {reservation.contactName}
-                </p>
-              )}
-              {reservation.contactPhone && (
-                <p className="text-sm text-slate-100">
-                  <span className="text-slate-400">Phone: </span>
-                  {reservation.contactPhone}
-                </p>
-              )}
-              {reservation.contactEmail && (
-                <p className="text-sm text-slate-100">
-                  <span className="text-slate-400">Email: </span>
-                  {reservation.contactEmail}
-                </p>
-              )}
-            </div>
+        <div className="border-t border-slate-700 pt-4">
+          <p className="text-xs text-slate-400 mb-2">Contact Information</p>
+          <div className="space-y-1">
+            <p className="text-sm text-slate-100">
+              <span className="text-slate-400">Name: </span>
+              {reservation.contactName || '—'}
+            </p>
+            <p className="text-sm text-slate-100">
+              <span className="text-slate-400">Phone: </span>
+              {reservation.contactPhone || '—'}
+            </p>
+            <p className="text-sm text-slate-100">
+              <span className="text-slate-400">Email: </span>
+              {reservation.contactEmail || '—'}
+            </p>
           </div>
-        )}
+        </div>
       </Card>
 
       <Card className="bg-blue-950/20 border-blue-800/40">
         <p className="text-sm text-blue-300">
-          Please save this reservation ID. You will need it for check-in at the restaurant.
+          Tip: keep this screen available. For check-in, the QR code is the fastest option.
         </p>
       </Card>
     </div>
