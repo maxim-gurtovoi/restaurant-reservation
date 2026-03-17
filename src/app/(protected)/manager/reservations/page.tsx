@@ -14,7 +14,7 @@ export default async function ManagerReservationsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Reservations"
-        subtitle="See and manage reservations for your restaurant."
+        subtitle="View reservations for your restaurants and manage check-ins."
       />
       {'error' in result.body ? (
         <p className="text-sm text-red-300">{result.body.error}</p>

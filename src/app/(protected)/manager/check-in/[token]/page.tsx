@@ -35,11 +35,28 @@ export default async function ManagerCheckInPage({ params }: Props) {
 
   const canConfirm = reservation.status === 'CONFIRMED';
 
+  const statusLabel = (() => {
+    switch (reservation.status) {
+      case 'CONFIRMED':
+        return 'Confirmed';
+      case 'CHECKED_IN':
+        return 'Checked in';
+      case 'CANCELLED':
+        return 'Cancelled';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'NO_SHOW':
+        return 'No show';
+      default:
+        return reservation.status;
+    }
+  })();
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Check-in"
-        subtitle="Verify reservation details and confirm check-in."
+        title="Guest check-in"
+        subtitle="Scan a QR code and confirm the guest&apos;s arrival."
       />
 
       <Card className="space-y-4">
@@ -50,7 +67,7 @@ export default async function ManagerCheckInPage({ params }: Props) {
           </div>
           <div>
             <p className="text-xs text-slate-400">Status</p>
-            <p className="text-sm font-semibold text-slate-100">{reservation.status}</p>
+            <p className="text-sm font-semibold text-slate-100">{statusLabel}</p>
           </div>
           <div>
             <p className="text-xs text-slate-400">Reservation</p>
@@ -80,7 +97,8 @@ export default async function ManagerCheckInPage({ params }: Props) {
           <CheckInConfirmButton token={token} />
         ) : (
           <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
-            This reservation cannot be checked in from status <span className="font-mono">{reservation.status}</span>.
+            This reservation cannot be checked in from status{' '}
+            <span className="font-mono">{statusLabel}</span>.
           </div>
         )}
       </Card>

@@ -31,6 +31,23 @@ function statusClass(status: string) {
   return 'text-slate-200 border-slate-700/60';
 }
 
+function formatStatus(status: string): string {
+  switch (status) {
+    case 'CONFIRMED':
+      return 'Confirmed';
+    case 'CHECKED_IN':
+      return 'Checked in';
+    case 'CANCELLED':
+      return 'Cancelled';
+    case 'COMPLETED':
+      return 'Completed';
+    case 'NO_SHOW':
+      return 'No show';
+    default:
+      return status;
+  }
+}
+
 export function ManagerReservationsList({
   reservations,
 }: {
@@ -77,7 +94,7 @@ export function ManagerReservationsList({
                   r.status,
                 )}`}
               >
-                {r.status}
+                {formatStatus(r.status)}
               </span>
               <div className="flex gap-2 text-[11px] text-emerald-300">
                 <Link href={`/reservations/${r.id}`} className="hover:underline">

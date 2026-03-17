@@ -2,8 +2,8 @@ export function ManagerDashboard() {
   // TODO: replace with real stats aggregated from reservations
   return (
     <div className="grid gap-4 sm:grid-cols-3">
-      <Stat label="Today’s reservations" value="12" />
-      <Stat label="Checked-in" value="7" />
+      <Stat label="Today&apos;s reservations" value="12" />
+      <Stat label="Guests checked in" value="7" />
       <Stat label="Available tables" value="18" />
     </div>
   );

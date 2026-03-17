@@ -2,6 +2,23 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import type { UserReservationListItem } from '@/features/reservations/server/reservations.service';
 
+function formatStatus(status: string): string {
+  switch (status) {
+    case 'CONFIRMED':
+      return 'Confirmed';
+    case 'CHECKED_IN':
+      return 'Checked in';
+    case 'CANCELLED':
+      return 'Cancelled';
+    case 'COMPLETED':
+      return 'Completed';
+    case 'NO_SHOW':
+      return 'No show';
+    default:
+      return status;
+  }
+}
+
 export function MyReservationsList({
   reservations,
 }: {
@@ -10,9 +27,9 @@ export function MyReservationsList({
   if (!reservations.length) {
     return (
       <Card className="border-dashed bg-slate-950/40">
-        <p className="text-sm text-slate-300">No reservations yet.</p>
+        <p className="text-sm text-slate-300">You don&apos;t have any reservations yet.</p>
         <p className="mt-1 text-xs text-slate-500">
-          Book a table from a restaurant page to see it here.
+          Book a table on a restaurant page to see it here.
         </p>
       </Card>
     );
@@ -55,7 +72,7 @@ export function MyReservationsList({
                   </p>
                 </div>
                 <span className="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-1 text-[11px] text-slate-200">
-                  {r.status}
+                  {formatStatus(r.status)}
                 </span>
               </div>
             </Card>
@@ -65,4 +82,5 @@ export function MyReservationsList({
     </div>
   );
 }
+
 

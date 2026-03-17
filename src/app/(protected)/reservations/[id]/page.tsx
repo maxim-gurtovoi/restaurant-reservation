@@ -57,6 +57,23 @@ export default async function ReservationDetailsPage({
 
   const isCancellable = reservation.status === 'CONFIRMED';
 
+  const statusLabel = (() => {
+    switch (reservation.status) {
+      case 'CONFIRMED':
+        return 'Confirmed';
+      case 'CHECKED_IN':
+        return 'Checked in';
+      case 'CANCELLED':
+        return 'Cancelled';
+      case 'COMPLETED':
+        return 'Completed';
+      case 'NO_SHOW':
+        return 'No show';
+      default:
+        return reservation.status;
+    }
+  })();
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -80,7 +97,7 @@ export default async function ReservationDetailsPage({
                 reservation.status === 'CANCELLED' ? 'text-red-300' : 'text-emerald-400',
               ].join(' ')}
             >
-              {reservation.status}
+              {statusLabel}
             </p>
           </div>
 
