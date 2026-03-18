@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
+import { LogoutButton } from '@/components/auth/logout-button';
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -10,17 +11,20 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link href={ROUTES.home} className="font-semibold">
             Multi-Restaurant Reservations
           </Link>
-          <nav className="flex gap-4 text-sm text-slate-300">
-            <Link href={ROUTES.restaurants} className="hover:text-white">
-              Restaurants
-            </Link>
-            <Link href={ROUTES.myReservations} className="hover:text-white">
-              My reservations
-            </Link>
-            <Link href={ROUTES.managerDashboard} className="hover:text-white">
-              Manager
-            </Link>
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="flex gap-4 text-sm text-slate-300">
+              <Link href={ROUTES.restaurants} className="hover:text-white">
+                Restaurants
+              </Link>
+              <Link href={ROUTES.myReservations} className="hover:text-white">
+                My reservations
+              </Link>
+              <Link href={ROUTES.managerDashboard} className="hover:text-white">
+                Manager
+              </Link>
+            </nav>
+            <LogoutButton />
+          </div>
         </div>
       </header>
       <main className="flex-1 bg-slate-950">

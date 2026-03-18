@@ -3,15 +3,36 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 export function RegisterForm() {
+  const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
+    setError(null);
     try {
-      // TODO: call POST /api/auth/register with form data
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const name = String(formData.get('name') ?? '');
+      const email = String(formData.get('email') ?? '');
+      const password = String(formData.get('password') ?? '');
+
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(typeof json?.error === 'string' ? json.error : 'Failed to create account');
+      }
+
+      router.replace('/auth/login');
     } finally {
       setSubmitting(false);
     }
@@ -19,6 +40,18 @@ export function RegisterForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
+      <div className="space-y-1">
+        <label className="block text-sm text-slate-300" htmlFor="name">
+          Name
+        </label>
+        <input
+          id="name"
+          name="name"
+          type="text"
+          required
+          className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+        />
+      </div>
       <div className="space-y-1">
         <label className="block text-sm text-slate-300" htmlFor="email">
           Email
@@ -46,6 +79,7 @@ export function RegisterForm() {
       <Button className="w-full" type="submit" disabled={submitting}>
         {submitting ? 'Creating…' : 'Create account'}
       </Button>
+      {error ? <p className="text-xs text-red-300">{error}</p> : null}
     </form>
   );
 }
