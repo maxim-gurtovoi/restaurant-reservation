@@ -11,7 +11,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'Multi-Restaurant Reservations',
+  title: 'TableFlow',
   description: 'Table reservations with QR-based check-in.',
 };
 

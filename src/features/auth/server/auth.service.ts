@@ -50,7 +50,7 @@ export async function loginUser(input: unknown): Promise<ApiResult<{ token: stri
   return { status: 200, body: { token } };
 }
 
-export async function registerUser(input: unknown): Promise<ApiResult<{ id: string }>> {
+export async function registerUser(input: unknown): Promise<ApiResult<{ token: string }>> {
   const parsed = registerSchema.safeParse(input);
   if (!parsed.success) {
     return { status: 400, body: { error: 'Invalid registration payload' } };
@@ -76,9 +76,16 @@ export async function registerUser(input: unknown): Promise<ApiResult<{ id: stri
       phone: phone ?? null,
       role: 'USER',
     },
-    select: { id: true },
+    select: { id: true, email: true, role: true },
   });
 
-  return { status: 201, body: { id: created.id } };
+  const payload: JwtPayloadUser = {
+    id: created.id,
+    email: created.email,
+    role: created.role,
+  };
+  const token = signUserJwt(payload);
+
+  return { status: 201, body: { token } };
 }
 

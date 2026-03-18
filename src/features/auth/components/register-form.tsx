@@ -32,7 +32,11 @@ export function RegisterForm() {
         throw new Error(typeof json?.error === 'string' ? json.error : 'Failed to create account');
       }
 
-      router.replace('/auth/login');
+      router.replace('/restaurants');
+      router.refresh();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Failed to create account';
+      setError(message);
     } finally {
       setSubmitting(false);
     }

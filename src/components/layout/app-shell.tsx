@@ -22,7 +22,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
               className="h-6 w-6"
               aria-hidden="true"
             />
-            <span>Reservations</span>
+            <span>TableFlow</span>
           </Link>
           <div className="flex items-center gap-4">
             <nav className="flex gap-5 text-sm text-muted">
@@ -52,9 +52,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
             {user ? (
               <UserAvatarMenu user={user} />
             ) : (
-              <Button asChild variant="outline">
-                <Link href={ROUTES.login}>Sign in</Link>
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button asChild variant="outline">
+                  <Link href={ROUTES.login}>Sign in</Link>
+                </Button>
+                <Button asChild variant="primary">
+                  <Link href={ROUTES.register}>Create account</Link>
+                </Button>
+              </div>
             )}
           </div>
         </div>
@@ -64,7 +69,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
       </main>
       <footer className="border-t border-border bg-background">
         <div className="container mx-auto px-4 py-3 text-xs text-muted">
-          &copy; {new Date().getFullYear()} Diploma project
+          &copy; {new Date().getFullYear()} TableFlow
         </div>
       </footer>
     </div>
