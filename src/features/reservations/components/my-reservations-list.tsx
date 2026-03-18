@@ -1,23 +1,7 @@
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import type { UserReservationListItem } from '@/features/reservations/server/reservations.service';
-
-function formatStatus(status: string): string {
-  switch (status) {
-    case 'CONFIRMED':
-      return 'Confirmed';
-    case 'CHECKED_IN':
-      return 'Checked in';
-    case 'CANCELLED':
-      return 'Cancelled';
-    case 'COMPLETED':
-      return 'Completed';
-    case 'NO_SHOW':
-      return 'No show';
-    default:
-      return status;
-  }
-}
+import { formatReservationStatus } from '@/lib/reservation-status';
 
 export function MyReservationsList({
   reservations,
@@ -72,7 +56,7 @@ export function MyReservationsList({
                   </p>
                 </div>
                 <span className="rounded-full border border-slate-700 bg-slate-950/60 px-2 py-1 text-[11px] text-slate-200">
-                  {formatStatus(r.status)}
+                  {formatReservationStatus(r.status)}
                 </span>
               </div>
             </Card>

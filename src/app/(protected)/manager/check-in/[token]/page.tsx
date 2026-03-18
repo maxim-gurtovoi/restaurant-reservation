@@ -4,6 +4,7 @@ import { PageHeader } from '@/components/ui/page-header';
 import { getCurrentUser } from '@/server/auth';
 import { getReservationByQrTokenForManager } from '@/features/manager/server/check-in.service';
 import { CheckInConfirmButton } from '@/features/manager/components/check-in-confirm-button';
+import { formatReservationStatus } from '@/lib/reservation-status';
 
 type Props = {
   params: { token: string };
@@ -34,23 +35,7 @@ export default async function ManagerCheckInPage({ params }: Props) {
   const endTimeStr = end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
   const canConfirm = reservation.status === 'CONFIRMED';
-
-  const statusLabel = (() => {
-    switch (reservation.status) {
-      case 'CONFIRMED':
-        return 'Confirmed';
-      case 'CHECKED_IN':
-        return 'Checked in';
-      case 'CANCELLED':
-        return 'Cancelled';
-      case 'COMPLETED':
-        return 'Completed';
-      case 'NO_SHOW':
-        return 'No show';
-      default:
-        return reservation.status;
-    }
-  })();
+  const statusLabel = formatReservationStatus(reservation.status);
 
   return (
     <div className="space-y-6">

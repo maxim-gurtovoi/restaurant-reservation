@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import type { ManagerReservationListItem } from '@/features/manager/server/manager.service';
+import { formatReservationStatus } from '@/lib/reservation-status';
 
 function formatDateRange(startIso: string, endIso: string) {
   const start = new Date(startIso);
@@ -29,23 +30,6 @@ function statusClass(status: string) {
   if (status === 'CHECKED_IN') return 'text-blue-300 border-blue-700/60';
   if (status === 'CONFIRMED') return 'text-emerald-300 border-emerald-700/60';
   return 'text-slate-200 border-slate-700/60';
-}
-
-function formatStatus(status: string): string {
-  switch (status) {
-    case 'CONFIRMED':
-      return 'Confirmed';
-    case 'CHECKED_IN':
-      return 'Checked in';
-    case 'CANCELLED':
-      return 'Cancelled';
-    case 'COMPLETED':
-      return 'Completed';
-    case 'NO_SHOW':
-      return 'No show';
-    default:
-      return status;
-  }
 }
 
 export function ManagerReservationsList({
@@ -94,7 +78,7 @@ export function ManagerReservationsList({
                   r.status,
                 )}`}
               >
-                {formatStatus(r.status)}
+                {formatReservationStatus(r.status)}
               </span>
               <div className="flex gap-2 text-[11px] text-emerald-300">
                 <Link href={`/reservations/${r.id}`} className="hover:underline">

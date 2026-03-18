@@ -6,6 +6,7 @@ import { getCurrentUser } from '@/server/auth';
 import { getReservationDetailsById } from '@/features/reservations/server/get-reservation-details';
 import { CancelReservationButton } from '@/features/reservations/components/cancel-reservation-button';
 import { CopyButton } from '@/components/ui/copy-button';
+import { formatReservationStatus } from '@/lib/reservation-status';
 
 type ReservationDetailsPageProps = {
   params: { id: string };
@@ -56,23 +57,7 @@ export default async function ReservationDetailsPage({
   )}`;
 
   const isCancellable = reservation.status === 'CONFIRMED';
-
-  const statusLabel = (() => {
-    switch (reservation.status) {
-      case 'CONFIRMED':
-        return 'Confirmed';
-      case 'CHECKED_IN':
-        return 'Checked in';
-      case 'CANCELLED':
-        return 'Cancelled';
-      case 'COMPLETED':
-        return 'Completed';
-      case 'NO_SHOW':
-        return 'No show';
-      default:
-        return reservation.status;
-    }
-  })();
+  const statusLabel = formatReservationStatus(reservation.status);
 
   return (
     <div className="space-y-6">
