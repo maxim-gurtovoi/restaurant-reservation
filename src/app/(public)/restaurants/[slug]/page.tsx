@@ -22,19 +22,40 @@ export default async function RestaurantDetailsPage({
         title={restaurant.name}
         subtitle={restaurant.city}
       />
-      {restaurant.description ? (
-        <p className="max-w-2xl text-sm text-slate-300">{restaurant.description}</p>
-      ) : null}
-      <div className="text-xs text-slate-400 space-y-1">
-        {restaurant.address ? <p>{restaurant.address}</p> : null}
-        {restaurant.phone ? <p>Phone: {restaurant.phone}</p> : null}
-        {restaurant.email ? <p>Email: {restaurant.email}</p> : null}
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,2.1fr),minmax(0,1fr)]">
+        <section aria-label="Reservation flow" className="space-y-4">
+          <ReservationSection
+            restaurantId={restaurant.id}
+            floorPlans={restaurant.floorPlans}
+            tables={restaurant.tables}
+          />
+        </section>
+
+        <aside
+          aria-label="About this restaurant"
+          className="space-y-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm">
+          {restaurant.description ? (
+            <div>
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+                About
+              </h2>
+              <p className="text-sm leading-relaxed text-slate-200">{restaurant.description}</p>
+            </div>
+          ) : null}
+
+          <div>
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Details
+            </h3>
+            <div className="space-y-1 text-sm text-slate-300">
+              {restaurant.address ? <p>{restaurant.address}</p> : null}
+              {restaurant.phone ? <p>Phone: {restaurant.phone}</p> : null}
+              {restaurant.email ? <p>Email: {restaurant.email}</p> : null}
+            </div>
+          </div>
+        </aside>
       </div>
-      <ReservationSection
-        restaurantId={restaurant.id}
-        floorPlans={restaurant.floorPlans}
-        tables={restaurant.tables}
-      />
     </div>
   );
 }

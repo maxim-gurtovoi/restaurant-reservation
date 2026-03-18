@@ -125,31 +125,49 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
   const selectedTable = tables.find((table) => table.id === selectedTableId) ?? null;
 
   return (
-    <div className="mt-4 grid gap-6 lg:grid-cols-[2fr,1.2fr]">
-      <FloorPlanView
-        floorPlans={floorPlans}
-        tables={tables}
-        selectedTableId={selectedTableId}
-        unavailableTableIds={unavailableTableIds}
-        onSelectTable={setSelectedTableId}
-      />
-      <ReservationPanel
-        date={date}
-        time={time}
-        guests={guests}
-        selectedTable={
-          selectedTable ? { id: selectedTable.id, label: selectedTable.label, capacity: selectedTable.capacity } : null
-        }
-        restaurantId={restaurantId}
-        isCheckingAvailability={isCheckingAvailability}
-        availabilityCheckedAt={availabilityCheckedAt}
-        isSubmitting={isSubmitting}
-        submissionError={submissionError}
-        onDateChange={handleDateChange}
-        onTimeChange={handleTimeChange}
-        onGuestsChange={setGuests}
-        onSubmit={handleSubmitReservation}
-      />
-    </div>
+    <section className="mt-2 space-y-4">
+      <header className="space-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+          Booking
+        </p>
+        <h2 className="text-lg font-semibold text-slate-50">
+          Choose a table and time
+        </h2>
+        <p className="text-sm text-slate-400">
+          Start by selecting a date and time, then pick a table on the floor plan to continue to
+          booking.
+        </p>
+      </header>
+
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr),minmax(0,1.1fr)] lg:items-start">
+        <div className="space-y-4">
+          <FloorPlanView
+            floorPlans={floorPlans}
+            tables={tables}
+            selectedTableId={selectedTableId}
+            unavailableTableIds={unavailableTableIds}
+            onSelectTable={setSelectedTableId}
+          />
+        </div>
+
+        <ReservationPanel
+          date={date}
+          time={time}
+          guests={guests}
+          selectedTable={
+            selectedTable ? { id: selectedTable.id, label: selectedTable.label, capacity: selectedTable.capacity } : null
+          }
+          restaurantId={restaurantId}
+          isCheckingAvailability={isCheckingAvailability}
+          availabilityCheckedAt={availabilityCheckedAt}
+          isSubmitting={isSubmitting}
+          submissionError={submissionError}
+          onDateChange={handleDateChange}
+          onTimeChange={handleTimeChange}
+          onGuestsChange={setGuests}
+          onSubmit={handleSubmitReservation}
+        />
+      </div>
+    </section>
   );
 }

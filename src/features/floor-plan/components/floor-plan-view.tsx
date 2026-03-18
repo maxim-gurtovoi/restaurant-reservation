@@ -35,7 +35,7 @@ export function FloorPlanView({
 }: FloorPlanViewProps) {
   if (!floorPlans.length || !tables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+      <div className="space-y-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
         <p>No floor plan is configured for this restaurant yet.</p>
       </div>
     );
@@ -46,7 +46,7 @@ export function FloorPlanView({
 
   if (!planTables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+      <div className="space-y-2 rounded-xl border border-dashed border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
         <p>This floor plan does not have any tables yet.</p>
       </div>
     );
@@ -59,22 +59,27 @@ export function FloorPlanView({
   const scale = Math.min(scaleX, scaleY);
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 rounded-xl border border-slate-800/60 bg-slate-950/60 p-4 shadow-sm">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs text-gray-500">
-          Floor plan: <span className="font-medium text-gray-800">{floorPlan.name}</span>
-        </p>
-        <p className="text-[10px] text-gray-400">
-          Size: {floorPlan.width}×{floorPlan.height}
+        <div className="space-y-0.5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Step 2 · Select a table
+          </p>
+          <p className="text-sm font-medium text-slate-100">
+            Floor plan: <span className="font-semibold">{floorPlan.name}</span>
+          </p>
+        </div>
+        <p className="text-[11px] text-slate-500">
+          Size {floorPlan.width}×{floorPlan.height}
         </p>
       </div>
 
-      <div className="flex justify-center">
+      <div className="flex">
         <div
-          className="relative rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+          className="relative mx-auto rounded-xl border border-slate-800 bg-slate-900/80 p-3 shadow-sm"
           style={{ width: targetWidth, height: targetHeight }}>
           <div
-            className="relative bg-gray-100"
+            className="relative bg-slate-900"
             style={{
               width: floorPlan.width,
               height: floorPlan.height,
@@ -128,7 +133,7 @@ export function FloorPlanView({
                     onSelectTable(table.id);
                   }}>
                   <span>{table.label}</span>
-                  <span className="text-[9px] font-normal text-gray-500">
+                  <span className="text-[9px] font-normal text-slate-400">
                     {table.capacity} seats
                   </span>
                 </div>
