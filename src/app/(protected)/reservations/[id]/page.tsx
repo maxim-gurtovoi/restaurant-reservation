@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import { unstable_noStore } from 'next/cache';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
 import { QrCode } from '@/components/qr/qr-code';
@@ -8,8 +9,11 @@ import { CancelReservationButton } from '@/features/reservations/components/canc
 import { CopyButton } from '@/components/ui/copy-button';
 import { formatReservationStatus } from '@/lib/reservation-status';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 type ReservationDetailsPageProps = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export default async function ReservationDetailsPage({
@@ -18,8 +22,11 @@ export default async function ReservationDetailsPage({
   const user = await getCurrentUser();
   if (!user) notFound();
 
+  const { id } = await params;
+  // Disable caching so each new reservation id shows fresh data.
+  unstable_noStore();
   const reservation = await getReservationDetailsById({
-    reservationId: params.id,
+    reservationId: id,
     userId: user.id,
   });
 
@@ -40,11 +47,13 @@ export default async function ReservationDetailsPage({
   const startTimeStr = startTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   });
 
   const endTimeStr = endTime.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   });
 
   const baseUrl =
@@ -118,14 +127,14 @@ export default async function ReservationDetailsPage({
           <div>
             <p className="text-xs text-gray-500">Created</p>
             <p className="text-sm text-gray-900">
-              {new Date(reservation.createdAt).toLocaleString('en-US')}
+              {new Date(reservation.createdAt).toLocaleString('en-US', { hour12: false })}
             </p>
           </div>
           {reservation.cancelledAt ? (
             <div>
               <p className="text-xs text-gray-500">Cancelled</p>
               <p className="text-sm text-gray-900">
-                {new Date(reservation.cancelledAt).toLocaleString('en-US')}
+                {new Date(reservation.cancelledAt).toLocaleString('en-US', { hour12: false })}
               </p>
             </div>
           ) : null}

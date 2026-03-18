@@ -61,13 +61,13 @@ export function ReservationPanel({
   };
 
   return (
-    <div className="space-y-5 rounded-xl border border-gray-200 bg-background p-5 shadow-sm">
+    <div className="space-y-5 rounded-xl border border-border bg-booking p-5 shadow-sm">
       <header className="space-y-1">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
           Step 1 · Choose date &amp; time
         </p>
-        <h2 className="text-base font-semibold text-gray-900">Plan your visit</h2>
-        <p className="text-sm text-gray-600">
+        <h2 className="text-base font-semibold text-foreground">Plan your visit</h2>
+        <p className="text-sm text-muted">
           Start by selecting when you&apos;d like to arrive and how many guests are coming.
         </p>
       </header>
@@ -75,8 +75,8 @@ export function ReservationPanel({
       <div className="space-y-4 text-sm">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-gray-700" htmlFor="res-date">
-              Date <span className="ml-2 text-[11px] font-normal text-gray-500">(calendar)</span>
+            <label className="block text-xs font-medium text-foreground" htmlFor="res-date">
+              Date <span className="ml-2 text-[11px] font-normal text-muted">(calendar)</span>
             </label>
             <div className="relative">
               <svg
@@ -104,7 +104,7 @@ export function ReservationPanel({
                 id="res-date"
                 type="date"
                 title="Select a date"
-                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="h-11 w-full cursor-pointer rounded-lg border border-border bg-background pl-10 pr-3 text-sm text-foreground transition-colors hover:bg-background hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 value={date}
                 onChange={(e) => onDateChange(e.target.value)}
                 disabled={isSubmitting}
@@ -113,8 +113,8 @@ export function ReservationPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-gray-700" htmlFor="res-time">
-              Time <span className="ml-2 text-[11px] font-normal text-gray-500">(picker)</span>
+            <label className="block text-xs font-medium text-foreground" htmlFor="res-time">
+              Time <span className="ml-2 text-[11px] font-normal text-muted">(picker)</span>
             </label>
             <div className="relative">
               <svg
@@ -142,7 +142,7 @@ export function ReservationPanel({
                 id="res-time"
                 type="time"
                 title="Select a time"
-                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                className="h-11 w-full cursor-pointer rounded-lg border border-border bg-background pl-10 pr-3 text-sm text-foreground transition-colors hover:bg-background hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 value={time}
                 onChange={(e) => onTimeChange(e.target.value)}
                 disabled={isSubmitting}
@@ -152,14 +152,14 @@ export function ReservationPanel({
         </div>
 
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-gray-700" htmlFor="res-guests">
+          <label className="block text-xs font-medium text-foreground" htmlFor="res-guests">
             Guests
           </label>
           <input
             id="res-guests"
             type="number"
             min={1}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
+            className="h-11 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground transition-colors hover:bg-background hover:border-border focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
             value={guests}
             onChange={(e) => onGuestsChange(Number(e.target.value) || 1)}
             disabled={isSubmitting}
@@ -168,69 +168,69 @@ export function ReservationPanel({
 
         <div className="space-y-2">
           {isCheckingAvailability && (
-            <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
-              <span className="mt-0.5 text-xs text-gray-400">●</span>
+            <div className="flex items-start gap-2 rounded-lg bg-background px-3 py-2.5 text-sm text-muted">
+              <span className="mt-0.5 text-xs text-muted">●</span>
               <p>Checking availability…</p>
             </div>
           )}
 
           {!isCheckingAvailability && availabilityCheckedAt && !submissionError && (
-            <div className="flex items-start gap-2 rounded-lg bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
+            <div className="flex items-start gap-2 rounded-lg bg-primary/12 px-3 py-2.5 text-sm text-primary-hover">
               <span className="mt-0.5 text-base">✓</span>
               <p>Availability updated for your selected date and time.</p>
             </div>
           )}
 
           {submissionError && (
-            <div className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <div className="flex items-start gap-2 rounded-lg bg-error/10 px-3 py-2.5 text-sm text-error">
               <span className="mt-0.5 text-base">!</span>
               <p>{submissionError}</p>
             </div>
           )}
 
           {!date || !time ? (
-            <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
-              <span className="mt-0.5 text-xs text-gray-400">i</span>
+            <div className="flex items-start gap-2 rounded-lg bg-background px-3 py-2.5 text-sm text-muted">
+              <span className="mt-0.5 text-xs text-muted">i</span>
               <p>Select date and time to check table availability.</p>
             </div>
           ) : null}
         </div>
 
-        <section className="mt-2 space-y-1.5 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-xs">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+        <section className="mt-2 space-y-1.5 rounded-lg border border-border bg-background px-3 py-3 text-xs">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
             Selected table
           </p>
           {selectedTable ? (
             <>
-              <p className="text-sm text-gray-800">
+              <p className="text-sm text-foreground">
                 <span className="inline-flex items-center gap-2 font-semibold">
                   <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary-hover">
                     ✓
                   </span>
                   {selectedTable.label}
                 </span>{' '}
-                <span className="text-gray-500">· up to {selectedTable.capacity} guests</span>
+                <span className="text-muted">· up to {selectedTable.capacity} guests</span>
               </p>
               {exceedsCapacity ? (
-                <p className="text-[11px] text-amber-700">
+                <p className="text-[11px] text-error">
                   This party size may exceed table capacity. Adjust guests or choose another table.
                 </p>
               ) : (
-                <p className="text-[11px] text-gray-500">
+                <p className="text-[11px] text-muted">
                   Selected for your chosen time. You can still adjust guests before confirming.
                 </p>
               )}
             </>
           ) : (
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-muted">
               Tap a table on the floor plan to select it. Only available tables can be chosen.
             </p>
           )}
         </section>
       </div>
 
-      <div className="space-y-2 pt-2 border-t border-gray-100">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+      <div className="space-y-2 pt-2 border-t border-border">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
           Step 3 · Continue to booking
         </p>
         <Button
@@ -242,7 +242,7 @@ export function ReservationPanel({
         >
           {isSubmitting ? 'Booking...' : 'Continue to booking'}
         </Button>
-        <div className="space-y-1 text-center text-[11px] text-gray-500">
+        <div className="space-y-1 text-center text-[11px] text-muted">
           <p>You&apos;ll review all reservation details on the next step before confirming.</p>
           <p>Instant confirmation, with your QR code and full details, will be shown after booking.</p>
           <p>You can later view and cancel your reservation from the “My reservations” page.</p>

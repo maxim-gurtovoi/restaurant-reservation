@@ -113,6 +113,8 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
       const result = await response.json();
       // Navigate to confirmation page
       router.push(`/reservations/${result.id}`);
+      // Ensure server components for the new route re-fetch data
+      router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create reservation';
       setSubmissionError(message);
@@ -127,13 +129,13 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
   return (
     <section className="mt-4 space-y-4">
       <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">
           Booking
         </p>
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-foreground">
           Reserve a table in just a few steps
         </h2>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-muted">
           First pick date, time and party size, then choose any available table on the floor plan.
         </p>
       </header>

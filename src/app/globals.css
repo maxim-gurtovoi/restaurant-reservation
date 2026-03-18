@@ -7,6 +7,13 @@
   --border: #e5e7eb;
   --primary: #107c41;
   --primary-hover: #0d6b36;
+
+  /* Keep subtle surfaces for hierarchy (warm/cream, not harsh white) */
+  --surface: var(--background);
+  --booking-surface: var(--background);
+
+  /* Error color for alerts and unavailable states */
+  --error: #ef4444;
 }
 
 @theme inline {
@@ -14,8 +21,14 @@
   --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
+
+  --color-surface: var(--surface);
+  --color-booking: var(--booking-surface);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+
+  --color-error: var(--error);
+
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
 }

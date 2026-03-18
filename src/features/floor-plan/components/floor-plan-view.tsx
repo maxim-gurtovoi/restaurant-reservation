@@ -35,7 +35,7 @@ export function FloorPlanView({
 }: FloorPlanViewProps) {
   if (!floorPlans.length || !tables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+      <div className="space-y-2 rounded-xl border border-dashed border-border bg-surface p-4 text-sm text-muted">
         <p>No floor plan is configured for this restaurant yet.</p>
       </div>
     );
@@ -46,7 +46,7 @@ export function FloorPlanView({
 
   if (!planTables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
+      <div className="space-y-2 rounded-xl border border-dashed border-border bg-surface p-4 text-sm text-muted">
         <p>This floor plan does not have any tables yet.</p>
       </div>
     );
@@ -59,13 +59,13 @@ export function FloorPlanView({
   const scale = Math.min(scaleX, scaleY);
 
   return (
-    <div className="space-y-3 rounded-xl border border-gray-200 bg-background p-4 shadow-sm">
+    <div className="space-y-3 rounded-xl border border-border bg-surface p-4 shadow-sm">
       <div className="flex items-baseline justify-between gap-2">
         <div className="space-y-0.5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
             Step 2 · Select a table
           </p>
-          <p className="text-sm font-medium text-gray-900">
+          <p className="text-sm font-medium text-foreground">
             Floor plan: <span className="font-semibold">{floorPlan.name}</span>
           </p>
         </div>
@@ -73,7 +73,7 @@ export function FloorPlanView({
 
       <div className="flex">
         <div
-          className="relative mx-auto rounded-xl border border-gray-200 bg-background p-3 shadow-sm"
+          className="relative mx-auto rounded-xl border border-border bg-surface p-3 shadow-sm"
           style={{ width: targetWidth, height: targetHeight }}>
           <div
             className="relative bg-transparent"
@@ -103,16 +103,16 @@ export function FloorPlanView({
               let stateClasses = '';
               if (!table.isActive) {
                 stateClasses =
-                  'border border-gray-300 bg-gray-200 text-gray-500 opacity-60 cursor-not-allowed';
+                  'border border-border bg-background text-muted opacity-60 cursor-not-allowed';
               } else if (isUnavailable) {
                 stateClasses =
-                  'border border-red-300 bg-red-50 text-red-600 opacity-80 cursor-not-allowed';
+                  'border border-error bg-error/10 text-error opacity-80 cursor-not-allowed';
               } else if (isSelected) {
                 stateClasses =
                   'border-2 border-primary bg-primary/18 text-primary-hover shadow-md cursor-pointer scale-[1.05] font-semibold';
               } else {
                 stateClasses =
-                  'border border-primary/50 bg-primary/5 text-gray-800 hover:border-primary hover:bg-primary/10 hover:scale-[1.03] cursor-pointer';
+                  'border border-primary/50 bg-primary/5 text-foreground/90 hover:border-primary hover:bg-primary/10 hover:scale-[1.03] cursor-pointer';
               }
 
               return (
@@ -132,7 +132,7 @@ export function FloorPlanView({
                     onSelectTable(table.id);
                   }}>
                   <span>{table.label}</span>
-                  <span className="text-[9px] font-normal text-gray-500">
+                  <span className="text-[9px] font-normal text-muted">
                     {table.capacity} seats
                   </span>
                 </div>

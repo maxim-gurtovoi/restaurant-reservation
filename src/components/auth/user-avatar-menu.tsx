@@ -59,7 +59,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
         variant="ghost"
         aria-haspopup="menu"
         aria-expanded={open}
-        className="h-9 w-9 cursor-pointer rounded-full p-0"
+        className="h-9 w-9 cursor-pointer rounded-full p-0 transition-all duration-150 ease-in-out hover:scale-[1.03] hover:shadow-sm"
         onClick={() => setOpen((v) => !v)}
       >
         <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary-hover">
@@ -70,12 +70,12 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-gray-200 bg-background shadow-sm"
+          className="absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-background shadow-sm"
         >
           <button
             type="button"
             role="menuitem"
-            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 hover:font-semibold"
+            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
             onClick={() => setOpen(false)}
           >
             Profile
@@ -83,17 +83,17 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
           <button
             type="button"
             role="menuitem"
-            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 hover:font-semibold"
+            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
             onClick={() => setOpen(false)}
           >
             Settings
           </button>
-          <div className="my-1 h-px bg-gray-200" />
+          <div className="my-1 h-px bg-border" />
           <button
             type="button"
             role="menuitem"
             disabled={loggingOut}
-            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 hover:font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             onClick={onLogout}
           >
             {loggingOut ? 'Signing out…' : 'Logout'}

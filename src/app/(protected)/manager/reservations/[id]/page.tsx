@@ -34,10 +34,12 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
   const startTimeStr = start.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   });
   const endTimeStr = end.toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
+    hour12: false,
   });
   const statusLabel = formatReservationStatus(reservation.status);
   const canOpenCheckIn = reservation.status === 'CONFIRMED' && !!reservation.qrToken;
@@ -92,14 +94,14 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
           <div>
             <p className="text-xs text-slate-400">Created</p>
             <p className="text-sm text-slate-100">
-              {new Date(reservation.createdAt).toLocaleString('en-US')}
+              {new Date(reservation.createdAt).toLocaleString('en-US', { hour12: false })}
             </p>
           </div>
           {reservation.checkedInAt ? (
             <div>
               <p className="text-xs text-slate-400">Checked in</p>
               <p className="text-sm text-slate-100">
-                {new Date(reservation.checkedInAt).toLocaleString('en-US')}
+                {new Date(reservation.checkedInAt).toLocaleString('en-US', { hour12: false })}
               </p>
             </div>
           ) : null}
@@ -107,7 +109,7 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
             <div>
               <p className="text-xs text-slate-400">Cancelled</p>
               <p className="text-sm text-slate-100">
-                {new Date(reservation.cancelledAt).toLocaleString('en-US')}
+                {new Date(reservation.cancelledAt).toLocaleString('en-US', { hour12: false })}
               </p>
             </div>
           ) : null}

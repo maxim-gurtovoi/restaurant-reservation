@@ -34,10 +34,12 @@ export function MyReservationsList({
         const startTimeStr = start.toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
+          hour12: false,
         });
         const endTimeStr = end.toLocaleTimeString('en-US', {
           hour: '2-digit',
           minute: '2-digit',
+          hour12: false,
         });
 
         return (

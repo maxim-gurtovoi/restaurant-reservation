@@ -64,7 +64,7 @@ async function main() {
       name: 'Gastrobar',
       slug: 'gastrobar',
       description:
-        'House-made cocktails and seasonal small plates, served in a warm, music-filled bar atmosphere. Come for an unhurried dinner with friends.',
+        'House-made cocktails and seasonal small plates in a warm, lively Chișinău bar. A great choice for an unhurried dinner with friends.',
       address: 'Str. Alexandru Bernardazzi 66, Chișinău',
       isActive: true,
     },
@@ -75,7 +75,7 @@ async function main() {
       name: 'Pegas Terrace & Restaurant',
       slug: 'pegas-terrace-restaurant',
       description:
-        'A sunlit terrace with attentive service and shareable dishes. Perfect for long lunches and relaxed Chișinău evenings.',
+        'A bright terrace with attentive service and shareable plates. Designed for long lunches, calm conversations, and warm Chișinău evenings.',
       address: 'Str. Albișoara 20/1, Chișinău',
       isActive: true,
     },
@@ -86,7 +86,7 @@ async function main() {
       name: 'Smokehouse',
       slug: 'smokehouse',
       description:
-        'Slow-smoked meats, house barbecue sauces, and hearty sides. A go-to for guests who love bold, smoky flavors.',
+        'Slow-smoked meats, signature barbecue sauces, and hearty sides. For guests who like bold, smoky flavors and generous portions.',
       address: 'Bd. Ștefan cel Mare și Sfînt 128, Chișinău',
       isActive: true,
     },
@@ -97,7 +97,7 @@ async function main() {
       name: 'Àttico Terrace & Restaurant',
       slug: 'attico-terrace-restaurant',
       description:
-        'Rooftop terrace dining with modern Mediterranean plates and elegant cocktails. Made for celebrations and date nights.',
+        'Rooftop terrace dining with modern Mediterranean plates and elegant cocktails. Ideal for date nights and memorable celebrations.',
       address: 'Str. Nicolae Dimo 32, Chișinău',
       isActive: true,
     },
@@ -108,7 +108,7 @@ async function main() {
       name: 'Garden Restaurant & Terrace',
       slug: 'garden-restaurant-terrace',
       description:
-        'Garden-inspired cooking with fresh, seasonal ingredients. Comfortable, bright seating for family dinners and casual gatherings.',
+        'Garden-inspired cuisine built around fresh, seasonal ingredients. Bright, comfortable seating for family dinners and relaxed gatherings.',
       address: 'Strada Vasile Alecsandri 8, Chișinău',
       isActive: true,
     },

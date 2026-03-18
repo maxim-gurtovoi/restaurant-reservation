@@ -31,8 +31,16 @@ export default async function ManagerCheckInPage({ params }: Props) {
     month: 'short',
     day: 'numeric',
   });
-  const startTimeStr = start.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-  const endTimeStr = end.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const startTimeStr = start.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const endTimeStr = end.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
 
   const canConfirm = reservation.status === 'CONFIRMED';
   const statusLabel = formatReservationStatus(reservation.status);

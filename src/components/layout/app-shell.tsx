@@ -10,7 +10,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
   const canSeeManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-gray-200 bg-background shadow-sm">
+      <header className="border-b border-border bg-background shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
           <Link
             href={ROUTES.home}
@@ -25,17 +25,17 @@ export async function AppShell({ children }: { children: ReactNode }) {
             <span>Reservations</span>
           </Link>
           <div className="flex items-center gap-4">
-            <nav className="flex gap-5 text-sm text-gray-600">
+            <nav className="flex gap-5 text-sm text-muted">
               <Link
                 href={ROUTES.restaurants}
-                className="cursor-pointer transition-colors hover:text-gray-900 hover:font-semibold"
+                className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
               >
                 Restaurants
               </Link>
               {user ? (
                 <Link
                   href={ROUTES.myReservations}
-                  className="cursor-pointer transition-colors hover:text-gray-900 hover:font-semibold"
+                  className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
                 >
                   My reservations
                 </Link>
@@ -43,7 +43,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
               {canSeeManager ? (
                 <Link
                   href={ROUTES.managerDashboard}
-                  className="cursor-pointer transition-colors hover:text-gray-900 hover:font-semibold"
+                  className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
                 >
                   Manager
                 </Link>
@@ -62,8 +62,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <main className="flex-1 bg-background">
         <div className="container mx-auto px-4 py-8">{children}</div>
       </main>
-      <footer className="border-t border-gray-200 bg-background">
-        <div className="container mx-auto px-4 py-3 text-xs text-gray-500">
+      <footer className="border-t border-border bg-background">
+        <div className="container mx-auto px-4 py-3 text-xs text-muted">
           &copy; {new Date().getFullYear()} Diploma project
         </div>
       </footer>
