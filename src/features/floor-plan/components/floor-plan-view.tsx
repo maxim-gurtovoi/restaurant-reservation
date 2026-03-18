@@ -35,7 +35,7 @@ export function FloorPlanView({
 }: FloorPlanViewProps) {
   if (!floorPlans.length || !tables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-400">
+      <div className="space-y-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
         <p>No floor plan is configured for this restaurant yet.</p>
       </div>
     );
@@ -46,7 +46,7 @@ export function FloorPlanView({
 
   if (!planTables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-slate-800 bg-slate-950/40 p-4 text-sm text-slate-400">
+      <div className="space-y-2 rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500">
         <p>This floor plan does not have any tables yet.</p>
       </div>
     );
@@ -61,20 +61,20 @@ export function FloorPlanView({
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between gap-2">
-        <p className="text-xs text-slate-400">
-          Floor plan: <span className="font-medium text-slate-200">{floorPlan.name}</span>
+        <p className="text-xs text-gray-500">
+          Floor plan: <span className="font-medium text-gray-800">{floorPlan.name}</span>
         </p>
-        <p className="text-[10px] text-slate-500">
+        <p className="text-[10px] text-gray-400">
           Size: {floorPlan.width}×{floorPlan.height}
         </p>
       </div>
 
       <div className="flex justify-center">
         <div
-          className="relative rounded-xl border border-slate-800 bg-slate-900/60 p-3"
+          className="relative rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
           style={{ width: targetWidth, height: targetHeight }}>
           <div
-            className="relative bg-slate-950/60"
+            className="relative bg-gray-100"
             style={{
               width: floorPlan.width,
               height: floorPlan.height,
@@ -100,19 +100,15 @@ export function FloorPlanView({
 
               let stateClasses = '';
               if (!table.isActive) {
-                // Inactive table
-                stateClasses = 'border border-slate-700 bg-slate-900/40 text-slate-500 opacity-60';
+                stateClasses = 'border border-gray-300 bg-gray-200 text-gray-500 opacity-60';
               } else if (isUnavailable) {
-                // Active but unavailable
-                stateClasses = 'border border-red-500/60 bg-red-500/10 text-red-300 opacity-70';
+                stateClasses = 'border border-red-300 bg-red-50 text-red-600 opacity-80';
               } else if (isSelected) {
-                // Active, available, and selected
                 stateClasses =
-                  'border border-emerald-400 bg-emerald-500/30 text-emerald-50 shadow-lg shadow-emerald-500/30';
+                  'border-2 border-[#107c41] bg-[#107c41]/15 text-[#0d6b36] shadow-md cursor-pointer';
               } else {
-                // Active and available
                 stateClasses =
-                  'border border-emerald-500/70 bg-emerald-500/10 text-emerald-100 hover:border-emerald-300 hover:bg-emerald-500/20 cursor-pointer';
+                  'border border-[#107c41]/50 bg-[#107c41]/5 text-gray-800 hover:border-[#107c41] hover:bg-[#107c41]/10 cursor-pointer';
               }
 
               return (
@@ -132,7 +128,7 @@ export function FloorPlanView({
                     onSelectTable(table.id);
                   }}>
                   <span>{table.label}</span>
-                  <span className="text-[9px] font-normal text-slate-300/80">
+                  <span className="text-[9px] font-normal text-gray-500">
                     {table.capacity} seats
                   </span>
                 </div>

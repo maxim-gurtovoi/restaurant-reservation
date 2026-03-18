@@ -40,7 +40,7 @@ export function LoginForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
-        <label className="block text-sm text-slate-300" htmlFor="email">
+        <label className="block text-sm font-medium text-gray-700" htmlFor="email">
           Email
         </label>
         <input
@@ -48,11 +48,11 @@ export function LoginForm() {
           name="email"
           type="email"
           required
-          className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
         />
       </div>
       <div className="space-y-1">
-        <label className="block text-sm text-slate-300" htmlFor="password">
+        <label className="block text-sm font-medium text-gray-700" htmlFor="password">
           Password
         </label>
         <input
@@ -60,13 +60,13 @@ export function LoginForm() {
           name="password"
           type="password"
           required
-          className="w-full rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
         />
       </div>
       <Button className="w-full" type="submit" disabled={submitting}>
         {submitting ? 'Signing in…' : 'Sign in'}
       </Button>
-      {error ? <p className="text-xs text-red-300">{error}</p> : null}
+      {error ? <p className="text-xs text-red-600">{error}</p> : null}
     </form>
   );
 }

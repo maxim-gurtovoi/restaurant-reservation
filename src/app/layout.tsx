@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { DM_Sans } from 'next/font/google';
 import './globals.css';
 import { AppShell } from '@/components/layout/app-shell';
+
+const dmSans = DM_Sans({
+  subsets: ['latin'],
+  variable: '--font-dm-sans',
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+});
 
 export const metadata: Metadata = {
   title: 'Multi-Restaurant Reservations',
@@ -13,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-slate-950 text-slate-50 antialiased">
+    <html lang="en" className={dmSans.variable}>
+      <body className="min-h-screen bg-white text-gray-900 antialiased font-sans">
         <AppShell>{children}</AppShell>
       </body>
     </html>

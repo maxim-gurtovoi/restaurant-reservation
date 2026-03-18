@@ -70,16 +70,16 @@ export default async function ReservationDetailsPage({
         <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
           <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs text-slate-400">Reservation ID</p>
-            <p className="font-mono text-sm font-semibold text-slate-100">{reservation.id}</p>
+            <p className="text-xs text-gray-500">Reservation ID</p>
+            <p className="font-mono text-sm font-semibold text-gray-900">{reservation.id}</p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400">Status</p>
+            <p className="text-xs text-gray-500">Status</p>
             <p
               className={[
                 'text-sm font-semibold',
-                reservation.status === 'CANCELLED' ? 'text-red-300' : 'text-emerald-400',
+                reservation.status === 'CANCELLED' ? 'text-red-600' : 'text-[#107c41]',
               ].join(' ')}
             >
               {statusLabel}
@@ -87,44 +87,44 @@ export default async function ReservationDetailsPage({
           </div>
 
           <div>
-            <p className="text-xs text-slate-400">Restaurant</p>
-            <p className="text-sm text-slate-100">{reservation.restaurant.name}</p>
+            <p className="text-xs text-gray-500">Restaurant</p>
+            <p className="text-sm text-gray-900">{reservation.restaurant.name}</p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400">Table</p>
-            <p className="text-sm text-slate-100">
+            <p className="text-xs text-gray-500">Table</p>
+            <p className="text-sm text-gray-900">
               {reservation.table.label} ({reservation.table.capacity} seats)
             </p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400">Date</p>
-            <p className="text-sm text-slate-100">{dateStr}</p>
+            <p className="text-xs text-gray-500">Date</p>
+            <p className="text-sm text-gray-900">{dateStr}</p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400">Time</p>
-            <p className="text-sm text-slate-100">
+            <p className="text-xs text-gray-500">Time</p>
+            <p className="text-sm text-gray-900">
               {startTimeStr} – {endTimeStr}
             </p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400">Guest Count</p>
-            <p className="text-sm text-slate-100">{reservation.guestCount} guests</p>
+            <p className="text-xs text-gray-500">Guest Count</p>
+            <p className="text-sm text-gray-900">{reservation.guestCount} guests</p>
           </div>
 
           <div>
-            <p className="text-xs text-slate-400">Created</p>
-            <p className="text-sm text-slate-100">
+            <p className="text-xs text-gray-500">Created</p>
+            <p className="text-sm text-gray-900">
               {new Date(reservation.createdAt).toLocaleString('en-US')}
             </p>
           </div>
           {reservation.cancelledAt ? (
             <div>
-              <p className="text-xs text-slate-400">Cancelled</p>
-              <p className="text-sm text-slate-100">
+              <p className="text-xs text-gray-500">Cancelled</p>
+              <p className="text-sm text-gray-900">
                 {new Date(reservation.cancelledAt).toLocaleString('en-US')}
               </p>
             </div>
@@ -132,14 +132,14 @@ export default async function ReservationDetailsPage({
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs text-slate-400">Check-in QR</p>
+            <p className="text-xs text-gray-500">Check-in QR</p>
             <QrCode value={checkInUrl} />
             <div className="space-y-1">
-              <p className="text-[11px] text-slate-500">
+              <p className="text-[11px] text-gray-500">
                 Scan this QR code to open the manager check-in page.
               </p>
-              <div className="flex items-center justify-between gap-2 rounded-md bg-slate-950/60 p-2">
-                <p className="truncate font-mono text-[10px] text-slate-300">
+              <div className="flex items-center justify-between gap-2 rounded-md bg-gray-100 p-2">
+                <p className="truncate font-mono text-[10px] text-gray-600">
                   {checkInUrl}
                 </p>
                 <CopyButton value={checkInUrl} label="Copy URL" small />
@@ -153,12 +153,12 @@ export default async function ReservationDetailsPage({
           </div>
         </div>
 
-        <div className="border-t border-slate-700 pt-4">
-          <p className="text-xs text-slate-400 mb-2">QR Token</p>
-          <div className="rounded-md bg-slate-950/60 p-3 break-all">
-            <p className="font-mono text-xs text-slate-300">{reservation.qrToken}</p>
+        <div className="border-t border-gray-200 pt-4">
+          <p className="text-xs text-gray-500 mb-2">QR Token</p>
+          <div className="rounded-md bg-gray-100 p-3 break-all">
+            <p className="font-mono text-xs text-gray-600">{reservation.qrToken}</p>
           </div>
-          <p className="text-xs text-slate-500 mt-2">
+          <p className="text-xs text-gray-500 mt-2">
             This token is linked to the reservation and used for check-in.
           </p>
           <div className="mt-2">
@@ -166,27 +166,27 @@ export default async function ReservationDetailsPage({
           </div>
         </div>
 
-        <div className="border-t border-slate-700 pt-4">
-          <p className="text-xs text-slate-400 mb-2">Contact Information</p>
+        <div className="border-t border-gray-200 pt-4">
+          <p className="text-xs text-gray-500 mb-2">Contact Information</p>
           <div className="space-y-1">
-            <p className="text-sm text-slate-100">
-              <span className="text-slate-400">Name: </span>
+            <p className="text-sm text-gray-900">
+              <span className="text-gray-500">Name: </span>
               {reservation.contactName || '—'}
             </p>
-            <p className="text-sm text-slate-100">
-              <span className="text-slate-400">Phone: </span>
+            <p className="text-sm text-gray-900">
+              <span className="text-gray-500">Phone: </span>
               {reservation.contactPhone || '—'}
             </p>
-            <p className="text-sm text-slate-100">
-              <span className="text-slate-400">Email: </span>
+            <p className="text-sm text-gray-900">
+              <span className="text-gray-500">Email: </span>
               {reservation.contactEmail || '—'}
             </p>
           </div>
         </div>
       </Card>
 
-      <Card className="bg-blue-950/20 border-blue-800/40">
-        <p className="text-sm text-blue-300">
+      <Card className="bg-blue-50 border-blue-200">
+        <p className="text-sm text-blue-700">
           Tip: keep this screen available. For check-in, the QR code is the fastest option.
         </p>
       </Card>
