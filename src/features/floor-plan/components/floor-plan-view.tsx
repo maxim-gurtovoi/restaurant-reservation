@@ -59,7 +59,7 @@ export function FloorPlanView({
   const scale = Math.min(scaleX, scaleY);
 
   return (
-    <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="space-y-3 rounded-xl border border-gray-200 bg-background p-4 shadow-sm">
       <div className="flex items-baseline justify-between gap-2">
         <div className="space-y-0.5">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -73,7 +73,7 @@ export function FloorPlanView({
 
       <div className="flex">
         <div
-          className="relative mx-auto rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+          className="relative mx-auto rounded-xl border border-gray-200 bg-background p-3 shadow-sm"
           style={{ width: targetWidth, height: targetHeight }}>
           <div
             className="relative bg-transparent"
@@ -102,15 +102,17 @@ export function FloorPlanView({
 
               let stateClasses = '';
               if (!table.isActive) {
-                stateClasses = 'border border-gray-300 bg-gray-200 text-gray-500 opacity-60';
+                stateClasses =
+                  'border border-gray-300 bg-gray-200 text-gray-500 opacity-60 cursor-not-allowed';
               } else if (isUnavailable) {
-                stateClasses = 'border border-red-300 bg-red-50 text-red-600 opacity-80';
+                stateClasses =
+                  'border border-red-300 bg-red-50 text-red-600 opacity-80 cursor-not-allowed';
               } else if (isSelected) {
                 stateClasses =
-                  'border-2 border-[#107c41] bg-[#107c41]/15 text-[#0d6b36] shadow-md cursor-pointer scale-[1.04]';
+                  'border-2 border-primary bg-primary/18 text-primary-hover shadow-md cursor-pointer scale-[1.05] font-semibold';
               } else {
                 stateClasses =
-                  'border border-[#107c41]/50 bg-[#107c41]/5 text-gray-800 hover:border-[#107c41] hover:bg-[#107c41]/10 hover:scale-[1.02] cursor-pointer';
+                  'border border-primary/50 bg-primary/5 text-gray-800 hover:border-primary hover:bg-primary/10 hover:scale-[1.03] cursor-pointer';
               }
 
               return (

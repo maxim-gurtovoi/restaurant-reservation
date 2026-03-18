@@ -2,7 +2,7 @@
 const MOCK_RESERVATIONS = [
   {
     id: 'r1',
-    restaurantName: 'Ocean Breeze',
+    restaurantName: 'Gastrobar',
     date: '2026-04-01',
     time: '19:00',
     guests: 2,

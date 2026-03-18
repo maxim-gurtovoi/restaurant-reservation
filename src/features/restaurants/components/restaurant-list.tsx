@@ -11,7 +11,7 @@ export function RestaurantList({ restaurants }: RestaurantListProps) {
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {restaurants.map((r) => (
         <Link key={r.id} href={`/restaurants/${r.slug}`}>
-          <Card className="h-full cursor-pointer transition hover:border-[#107c41] hover:shadow-md">
+          <Card className="h-full cursor-pointer transition hover:border-primary hover:shadow-md">
             <h2 className="text-lg font-semibold text-gray-900">{r.name}</h2>
             <p className="text-xs text-gray-500">{r.city}</p>
           </Card>

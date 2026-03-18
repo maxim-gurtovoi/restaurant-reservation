@@ -58,380 +58,331 @@ async function main() {
     },
   });
 
-  // Restaurants
-  const oceanBreeze = await prisma.restaurant.create({
+  // Restaurants (Chișinău only)
+  const gastrobar = await prisma.restaurant.create({
     data: {
-      name: 'Ocean Breeze',
-      slug: 'ocean-breeze',
-      description: 'Seafood restaurant with ocean-view terrace.',
-      address: '123 Seaside Avenue, Lisbon',
-      phone: '+351-21-000-000',
-      email: 'contact@ocean-breeze.example.com',
-      imageUrl: 'https://example.com/images/ocean-breeze.jpg',
+      name: 'Gastrobar',
+      slug: 'gastrobar',
+      description:
+        'House-made cocktails and seasonal small plates, served in a warm, music-filled bar atmosphere. Come for an unhurried dinner with friends.',
+      address: 'Str. Alexandru Bernardazzi 66, Chișinău',
       isActive: true,
     },
   });
 
-  const urbanGrill = await prisma.restaurant.create({
+  const pegasTerrace = await prisma.restaurant.create({
     data: {
-      name: 'Urban Grill',
-      slug: 'urban-grill',
-      description: 'Modern grill in the heart of the city.',
-      address: '45 Central Street, Berlin',
-      phone: '+49-30-000-000',
-      email: 'hello@urban-grill.example.com',
-      imageUrl: 'https://example.com/images/urban-grill.jpg',
+      name: 'Pegas Terrace & Restaurant',
+      slug: 'pegas-terrace-restaurant',
+      description:
+        'A sunlit terrace with attentive service and shareable dishes. Perfect for long lunches and relaxed Chișinău evenings.',
+      address: 'Str. Albișoara 20/1, Chișinău',
       isActive: true,
     },
   });
+
+  const smokehouse = await prisma.restaurant.create({
+    data: {
+      name: 'Smokehouse',
+      slug: 'smokehouse',
+      description:
+        'Slow-smoked meats, house barbecue sauces, and hearty sides. A go-to for guests who love bold, smoky flavors.',
+      address: 'Bd. Ștefan cel Mare și Sfînt 128, Chișinău',
+      isActive: true,
+    },
+  });
+
+  const atticoTerrace = await prisma.restaurant.create({
+    data: {
+      name: 'Àttico Terrace & Restaurant',
+      slug: 'attico-terrace-restaurant',
+      description:
+        'Rooftop terrace dining with modern Mediterranean plates and elegant cocktails. Made for celebrations and date nights.',
+      address: 'Str. Nicolae Dimo 32, Chișinău',
+      isActive: true,
+    },
+  });
+
+  const gardenTerrace = await prisma.restaurant.create({
+    data: {
+      name: 'Garden Restaurant & Terrace',
+      slug: 'garden-restaurant-terrace',
+      description:
+        'Garden-inspired cooking with fresh, seasonal ingredients. Comfortable, bright seating for family dinners and casual gatherings.',
+      address: 'Strada Vasile Alecsandri 8, Chișinău',
+      isActive: true,
+    },
+  });
+
+  const createFloorPlan = async (
+    restaurantId: string,
+    name: string,
+    width: number,
+    height: number,
+  ) => {
+    return prisma.floorPlan.create({
+      data: {
+        restaurantId,
+        name,
+        width,
+        height,
+        backgroundImageUrl: null,
+      },
+    });
+  };
 
   // Floor plans
-  const oceanFloor = await prisma.floorPlan.create({
-    data: {
-      restaurantId: oceanBreeze.id,
-      name: 'Main Hall',
-      width: 800,
-      height: 600,
-      backgroundImageUrl: null,
-    },
+  const gastroFloor = await createFloorPlan(gastrobar.id, 'Main hall', 900, 620);
+  const pegasFloor = await createFloorPlan(pegasTerrace.id, 'Terrace', 820, 560);
+  const smokeFloor = await createFloorPlan(smokehouse.id, 'Dining room', 880, 640);
+  const atticoFloor = await createFloorPlan(atticoTerrace.id, 'Terrace', 860, 600);
+  const gardenFloor = await createFloorPlan(gardenTerrace.id, 'Garden room', 780, 560);
+
+  const createTablesForFloor = async (args: {
+    restaurantId: string;
+    floorPlanId: string;
+    labels: string[];
+    capacities: number[];
+    shapes: TableShape[];
+    layout: { x: number; y: number; w: number; h: number; r?: number }[];
+  }) => {
+    const created = await Promise.all(
+      args.labels.map((label, i) => {
+        const pos = args.layout[i];
+        return prisma.restaurantTable.create({
+          data: {
+            restaurantId: args.restaurantId,
+            floorPlanId: args.floorPlanId,
+            label,
+            capacity: args.capacities[i],
+            shape: args.shapes[i],
+            x: pos.x,
+            y: pos.y,
+            width: pos.w,
+            height: pos.h,
+            rotation: pos.r ?? 0,
+            isActive: true,
+          },
+        });
+      }),
+    );
+    return created;
+  };
+
+  // Tables: keep a small but varied set for demo
+  const gastroTables = await createTablesForFloor({
+    restaurantId: gastrobar.id,
+    floorPlanId: gastroFloor.id,
+    labels: ['G1', 'G2', 'G3', 'G4', 'G5'],
+    capacities: [2, 4, 2, 4, 6],
+    shapes: [
+      TableShape.ROUND,
+      TableShape.RECTANGLE,
+      TableShape.SQUARE,
+      TableShape.ROUND,
+      TableShape.RECTANGLE,
+    ],
+    layout: [
+      { x: 120, y: 115, w: 72, h: 72 },
+      { x: 220, y: 105, w: 150, h: 72, r: -8 },
+      { x: 410, y: 130, w: 92, h: 92 },
+      { x: 525, y: 120, w: 74, h: 74, r: 6 },
+      { x: 170, y: 300, w: 330, h: 90 },
+    ],
   });
 
-  const urbanFloor = await prisma.floorPlan.create({
-    data: {
-      restaurantId: urbanGrill.id,
-      name: 'Ground Floor',
-      width: 900,
-      height: 650,
-      backgroundImageUrl: null,
-    },
+  const pegasTables = await createTablesForFloor({
+    restaurantId: pegasTerrace.id,
+    floorPlanId: pegasFloor.id,
+    labels: ['P1', 'P2', 'P3', 'P4'],
+    capacities: [2, 3, 4, 6],
+    shapes: [TableShape.RECTANGLE, TableShape.ROUND, TableShape.SQUARE, TableShape.RECTANGLE],
+    layout: [
+      { x: 140, y: 120, w: 140, h: 72, r: 8 },
+      { x: 320, y: 135, w: 82, h: 82 },
+      { x: 430, y: 105, w: 140, h: 140, r: -4 },
+      { x: 190, y: 300, w: 300, h: 82, r: -6 },
+    ],
   });
 
-  // Tables for Ocean Breeze (6 tables)
-  const oceanTables = await Promise.all([
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: oceanBreeze.id,
-        floorPlanId: oceanFloor.id,
-        label: 'T1',
-        capacity: 2,
-        shape: TableShape.ROUND,
-        x: 80,
-        y: 100,
-        width: 60,
-        height: 60,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: oceanBreeze.id,
-        floorPlanId: oceanFloor.id,
-        label: 'T2',
-        capacity: 4,
-        shape: TableShape.RECTANGLE,
-        x: 200,
-        y: 120,
-        width: 100,
-        height: 60,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: oceanBreeze.id,
-        floorPlanId: oceanFloor.id,
-        label: 'T3',
-        capacity: 4,
-        shape: TableShape.SQUARE,
-        x: 350,
-        y: 140,
-        width: 80,
-        height: 80,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: oceanBreeze.id,
-        floorPlanId: oceanFloor.id,
-        label: 'T4',
-        capacity: 6,
-        shape: TableShape.RECTANGLE,
-        x: 120,
-        y: 260,
-        width: 140,
-        height: 70,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: oceanBreeze.id,
-        floorPlanId: oceanFloor.id,
-        label: 'T5',
-        capacity: 2,
-        shape: TableShape.ROUND,
-        x: 300,
-        y: 280,
-        width: 60,
-        height: 60,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: oceanBreeze.id,
-        floorPlanId: oceanFloor.id,
-        label: 'T6',
-        capacity: 4,
-        shape: TableShape.SQUARE,
-        x: 460,
-        y: 220,
-        width: 80,
-        height: 80,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-  ]);
+  const smokeTables = await createTablesForFloor({
+    restaurantId: smokehouse.id,
+    floorPlanId: smokeFloor.id,
+    labels: ['S1', 'S2', 'S3', 'S4', 'S5'],
+    capacities: [2, 4, 2, 4, 6],
+    shapes: [
+      TableShape.ROUND,
+      TableShape.RECTANGLE,
+      TableShape.ROUND,
+      TableShape.SQUARE,
+      TableShape.RECTANGLE,
+    ],
+    layout: [
+      { x: 115, y: 125, w: 74, h: 74 },
+      { x: 215, y: 110, w: 165, h: 72, r: 10 },
+      { x: 440, y: 130, w: 92, h: 92, r: -6 },
+      { x: 570, y: 115, w: 125, h: 125 },
+      { x: 150, y: 315, w: 380, h: 90, r: 4 },
+    ],
+  });
 
-  // Tables for Urban Grill (6 tables)
-  const urbanTables = await Promise.all([
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: urbanGrill.id,
-        floorPlanId: urbanFloor.id,
-        label: 'A1',
-        capacity: 2,
-        shape: TableShape.ROUND,
-        x: 90,
-        y: 110,
-        width: 60,
-        height: 60,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: urbanGrill.id,
-        floorPlanId: urbanFloor.id,
-        label: 'A2',
-        capacity: 4,
-        shape: TableShape.RECTANGLE,
-        x: 230,
-        y: 130,
-        width: 100,
-        height: 60,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: urbanGrill.id,
-        floorPlanId: urbanFloor.id,
-        label: 'A3',
-        capacity: 4,
-        shape: TableShape.SQUARE,
-        x: 380,
-        y: 150,
-        width: 80,
-        height: 80,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: urbanGrill.id,
-        floorPlanId: urbanFloor.id,
-        label: 'B1',
-        capacity: 6,
-        shape: TableShape.RECTANGLE,
-        x: 140,
-        y: 270,
-        width: 140,
-        height: 70,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: urbanGrill.id,
-        floorPlanId: urbanFloor.id,
-        label: 'B2',
-        capacity: 2,
-        shape: TableShape.ROUND,
-        x: 320,
-        y: 290,
-        width: 60,
-        height: 60,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-    prisma.restaurantTable.create({
-      data: {
-        restaurantId: urbanGrill.id,
-        floorPlanId: urbanFloor.id,
-        label: 'B3',
-        capacity: 4,
-        shape: TableShape.SQUARE,
-        x: 480,
-        y: 230,
-        width: 80,
-        height: 80,
-        rotation: 0,
-        isActive: true,
-      },
-    }),
-  ]);
+  const atticoTables = await createTablesForFloor({
+    restaurantId: atticoTerrace.id,
+    floorPlanId: atticoFloor.id,
+    labels: ['A1', 'A2', 'A3', 'A4'],
+    capacities: [2, 4, 4, 6],
+    shapes: [TableShape.ROUND, TableShape.RECTANGLE, TableShape.SQUARE, TableShape.RECTANGLE],
+    layout: [
+      { x: 145, y: 115, w: 78, h: 78 },
+      { x: 255, y: 95, w: 210, h: 78, r: -12 },
+      { x: 490, y: 135, w: 94, h: 94 },
+      { x: 255, y: 310, w: 320, h: 78 },
+    ],
+  });
 
-  // Working hours (10:00–22:00, 7 days) for both restaurants
+  const gardenTables = await createTablesForFloor({
+    restaurantId: gardenTerrace.id,
+    floorPlanId: gardenFloor.id,
+    labels: ['D1', 'D2', 'D3'],
+    capacities: [2, 4, 6],
+    shapes: [TableShape.ROUND, TableShape.RECTANGLE, TableShape.SQUARE],
+    layout: [
+      { x: 140, y: 125, w: 82, h: 82 },
+      { x: 270, y: 110, w: 170, h: 78, r: 6 },
+      { x: 475, y: 140, w: 128, h: 128 },
+    ],
+  });
+
+  // Working hours (plausible demo times, 7 days)
   const daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
+  const restaurantsForHours = [gastrobar, pegasTerrace, smokehouse, atticoTerrace, gardenTerrace];
 
   await Promise.all(
-    daysOfWeek.flatMap((day) => [
-      prisma.workingHours.create({
-        data: {
-          restaurantId: oceanBreeze.id,
-          dayOfWeek: day,
-          openTime: '10:00',
-          closeTime: '22:00',
-          isClosed: false,
-        },
-      }),
-      prisma.workingHours.create({
-        data: {
-          restaurantId: urbanGrill.id,
-          dayOfWeek: day,
-          openTime: '11:00',
-          closeTime: '23:00',
-          isClosed: false,
-        },
-      }),
-    ]),
+    daysOfWeek.flatMap((day) =>
+      restaurantsForHours.map((restaurant) =>
+        prisma.workingHours.create({
+          data: {
+            restaurantId: restaurant.id,
+            dayOfWeek: day,
+            openTime: '11:00',
+            closeTime: '23:00',
+            isClosed: false,
+          },
+        }),
+      ),
+    ),
   );
 
-  // Restaurant manager link (managerUser -> Ocean Breeze)
-  await prisma.restaurantManager.create({
-    data: {
-      userId: managerUser.id,
-      restaurantId: oceanBreeze.id,
-    },
-  });
+  // Restaurant manager link (manager -> all 5 restaurants)
+  await Promise.all(
+    restaurantsForHours.map((restaurant) =>
+      prisma.restaurantManager.create({
+        data: {
+          userId: managerUser.id,
+          restaurantId: restaurant.id,
+        },
+      }),
+    ),
+  );
 
-  // Reservations
+  // Reservations (seed CONFIRMED for demo/QR)
   const now = new Date();
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-  const dayAfterTomorrow = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+  const startOfWindow = (minutesOffsetHours: number) => {
+    const dt = new Date(tomorrow);
+    dt.setHours(minutesOffsetHours, 0, 0, 0);
+    return dt;
+  };
+  const withDuration = (startAt: Date, minutes: number) => {
+    return new Date(startAt.getTime() + minutes * 60 * 1000);
+  };
 
-  const reservation1 = await prisma.reservation.create({
-    data: {
-      userId: userBob.id,
-      restaurantId: oceanBreeze.id,
-      tableId: oceanTables[1].id,
-      guestCount: 2,
-      startAt: new Date(tomorrow.setHours(19, 0, 0, 0)),
-      endAt: new Date(tomorrow.setHours(21, 0, 0, 0)),
-      status: ReservationStatus.CONFIRMED,
-      qrToken: 'qr_ocean_breeze_res_1',
-      contactName: 'Bob Customer',
-      contactPhone: userBob.phone,
-      contactEmail: userBob.email,
-      notes: 'Window seat if possible.',
-    },
-  });
+  const reservationDurationMinutes = 90;
 
-  const reservation2 = await prisma.reservation.create({
-    data: {
-      userId: userCarol.id,
-      restaurantId: oceanBreeze.id,
-      tableId: oceanTables[3].id,
-      guestCount: 4,
-      startAt: new Date(dayAfterTomorrow.setHours(20, 0, 0, 0)),
-      endAt: new Date(dayAfterTomorrow.setHours(22, 0, 0, 0)),
-      status: ReservationStatus.CANCELLED,
-      qrToken: 'qr_ocean_breeze_res_2',
-      contactName: 'Carol Diner',
-      contactPhone: userCarol.phone,
-      contactEmail: userCarol.email,
-      notes: 'Birthday dinner.',
-      cancelledAt: new Date(),
-    },
-  });
+  const reservations = await Promise.all([
+    prisma.reservation.create({
+      data: {
+        userId: userBob.id,
+        restaurantId: gastrobar.id,
+        tableId: gastroTables[1].id,
+        guestCount: 2,
+        startAt: startOfWindow(19),
+        endAt: withDuration(startOfWindow(19), reservationDurationMinutes),
+        status: ReservationStatus.CONFIRMED,
+        qrToken: 'qr_gastrobar_1',
+        contactName: 'Bob Customer',
+        contactPhone: userBob.phone,
+        contactEmail: userBob.email,
+        notes: 'Demo reservation for QR check-in.',
+      },
+    }),
+    prisma.reservation.create({
+      data: {
+        userId: userBob.id,
+        restaurantId: pegasTerrace.id,
+        tableId: pegasTables[2].id,
+        guestCount: 4,
+        startAt: startOfWindow(20),
+        endAt: withDuration(startOfWindow(20), reservationDurationMinutes),
+        status: ReservationStatus.CONFIRMED,
+        qrToken: 'qr_pegas_1',
+        contactName: 'Bob Customer',
+        contactPhone: userBob.phone,
+        contactEmail: userBob.email,
+        notes: 'Demo reservation for QR check-in.',
+      },
+    }),
+    prisma.reservation.create({
+      data: {
+        userId: userBob.id,
+        restaurantId: smokehouse.id,
+        tableId: smokeTables[0].id,
+        guestCount: 2,
+        startAt: startOfWindow(18),
+        endAt: withDuration(startOfWindow(18), reservationDurationMinutes),
+        status: ReservationStatus.CONFIRMED,
+        qrToken: 'qr_smokehouse_1',
+        contactName: 'Bob Customer',
+        contactPhone: userBob.phone,
+        contactEmail: userBob.email,
+        notes: 'Demo reservation for QR check-in.',
+      },
+    }),
+    prisma.reservation.create({
+      data: {
+        userId: userBob.id,
+        restaurantId: atticoTerrace.id,
+        tableId: atticoTables[3].id,
+        guestCount: 6,
+        startAt: startOfWindow(19),
+        endAt: withDuration(startOfWindow(19), reservationDurationMinutes),
+        status: ReservationStatus.CONFIRMED,
+        qrToken: 'qr_attico_1',
+        contactName: 'Bob Customer',
+        contactPhone: userBob.phone,
+        contactEmail: userBob.email,
+        notes: 'Demo reservation for QR check-in.',
+      },
+    }),
+    prisma.reservation.create({
+      data: {
+        userId: userBob.id,
+        restaurantId: gardenTerrace.id,
+        tableId: gardenTables[1].id,
+        guestCount: 4,
+        startAt: startOfWindow(20),
+        endAt: withDuration(startOfWindow(20), reservationDurationMinutes),
+        status: ReservationStatus.CONFIRMED,
+        qrToken: 'qr_garden_1',
+        contactName: 'Bob Customer',
+        contactPhone: userBob.phone,
+        contactEmail: userBob.email,
+        notes: 'Demo reservation for QR check-in.',
+      },
+    }),
+  ]);
 
-  const reservation3 = await prisma.reservation.create({
-    data: {
-      userId: userBob.id,
-      restaurantId: urbanGrill.id,
-      tableId: urbanTables[0].id,
-      guestCount: 2,
-      startAt: new Date(now.setHours(now.getHours() - 2)),
-      endAt: new Date(now.setHours(now.getHours() - 1)),
-      status: ReservationStatus.CHECKED_IN,
-      qrToken: 'qr_urban_grill_res_1',
-      contactName: 'Bob Customer',
-      contactPhone: userBob.phone,
-      contactEmail: userBob.email,
-      notes: null,
-      checkedInAt: new Date(),
-    },
-  });
-
-  // Check-in log for reservation3 by manager
-  await prisma.checkInLog.create({
-    data: {
-      reservationId: reservation3.id,
-      checkedInByUserId: managerUser.id,
-      checkedInAt: new Date(),
-      method: CheckInMethod.QR,
-      notes: 'Checked in via QR at entrance.',
-    },
-  });
-
-  // A completed reservation
-  await prisma.reservation.create({
-    data: {
-      userId: userCarol.id,
-      restaurantId: urbanGrill.id,
-      tableId: urbanTables[2].id,
-      guestCount: 3,
-      startAt: new Date(now.getTime() - 3 * 60 * 60 * 1000),
-      endAt: new Date(now.getTime() - 1 * 60 * 60 * 1000),
-      status: ReservationStatus.COMPLETED,
-      qrToken: 'qr_urban_grill_res_2',
-      contactName: 'Carol Diner',
-      contactPhone: userCarol.phone,
-      contactEmail: userCarol.email,
-      notes: 'Celebration dinner.',
-    },
-  });
-
-  // A no-show reservation
-  await prisma.reservation.create({
-    data: {
-      userId: userBob.id,
-      restaurantId: oceanBreeze.id,
-      tableId: oceanTables[5].id,
-      guestCount: 2,
-      startAt: new Date(now.getTime() - 5 * 60 * 60 * 1000),
-      endAt: new Date(now.getTime() - 3 * 60 * 60 * 1000),
-      status: ReservationStatus.NO_SHOW,
-      qrToken: 'qr_ocean_breeze_res_3',
-      contactName: 'Bob Customer',
-      contactPhone: userBob.phone,
-      contactEmail: userBob.email,
-      notes: 'Customer did not show up.',
-    },
-  });
+  void reservations;
 }
 
 main()

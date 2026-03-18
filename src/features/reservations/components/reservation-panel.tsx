@@ -61,7 +61,7 @@ export function ReservationPanel({
   };
 
   return (
-    <div className="space-y-5 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+    <div className="space-y-5 rounded-xl border border-gray-200 bg-background p-5 shadow-sm">
       <header className="space-y-1">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
           Step 1 · Choose date &amp; time
@@ -76,30 +76,78 @@ export function ReservationPanel({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-gray-700" htmlFor="res-date">
-              Date
+              Date <span className="ml-2 text-[11px] font-normal text-gray-500">(calendar)</span>
             </label>
-            <input
-              id="res-date"
-              type="date"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-              value={date}
-              onChange={(e) => onDateChange(e.target.value)}
-              disabled={isSubmitting}
-            />
+            <div className="relative">
+              <svg
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M8 2v2M16 2v2M3.5 9h17M5 5h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7.5 13.5h3M7.5 16.5h3M13.5 13.5h3M13.5 16.5h3"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <input
+                id="res-date"
+                type="date"
+                title="Select a date"
+                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                value={date}
+                onChange={(e) => onDateChange(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-gray-700" htmlFor="res-time">
-              Time
+              Time <span className="ml-2 text-[11px] font-normal text-gray-500">(picker)</span>
             </label>
-            <input
-              id="res-time"
-              type="time"
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
-              value={time}
-              onChange={(e) => onTimeChange(e.target.value)}
-              disabled={isSubmitting}
-            />
+            <div className="relative">
+              <svg
+                aria-hidden="true"
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M12 7v5l3 2"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <input
+                id="res-time"
+                type="time"
+                title="Select a time"
+                className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm text-gray-900 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                value={time}
+                onChange={(e) => onTimeChange(e.target.value)}
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
         </div>
 
@@ -120,28 +168,28 @@ export function ReservationPanel({
 
         <div className="space-y-2">
           {isCheckingAvailability && (
-            <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
+            <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
               <span className="mt-0.5 text-xs text-gray-400">●</span>
               <p>Checking availability…</p>
             </div>
           )}
 
           {!isCheckingAvailability && availabilityCheckedAt && !submissionError && (
-            <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
+            <div className="flex items-start gap-2 rounded-lg bg-emerald-50 px-3 py-2.5 text-sm text-emerald-800">
               <span className="mt-0.5 text-base">✓</span>
               <p>Availability updated for your selected date and time.</p>
             </div>
           )}
 
           {submissionError && (
-            <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <div className="flex items-start gap-2 rounded-lg bg-red-50 px-3 py-2.5 text-sm text-red-700">
               <span className="mt-0.5 text-base">!</span>
               <p>{submissionError}</p>
             </div>
           )}
 
           {!date || !time ? (
-            <div className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
+            <div className="flex items-start gap-2 rounded-lg bg-gray-50 px-3 py-2.5 text-sm text-gray-600">
               <span className="mt-0.5 text-xs text-gray-400">i</span>
               <p>Select date and time to check table availability.</p>
             </div>
@@ -155,16 +203,21 @@ export function ReservationPanel({
           {selectedTable ? (
             <>
               <p className="text-sm text-gray-800">
-                {selectedTable.label}{' '}
+                <span className="inline-flex items-center gap-2 font-semibold">
+                  <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary-hover">
+                    ✓
+                  </span>
+                  {selectedTable.label}
+                </span>{' '}
                 <span className="text-gray-500">· up to {selectedTable.capacity} guests</span>
               </p>
               {exceedsCapacity ? (
                 <p className="text-[11px] text-amber-700">
-                  Guest count exceeds table capacity. Reduce guests or choose a larger table.
+                  This party size may exceed table capacity. Adjust guests or choose another table.
                 </p>
               ) : (
                 <p className="text-[11px] text-gray-500">
-                  You can adjust your party size or pick a different table before confirming.
+                  Selected for your chosen time. You can still adjust guests before confirming.
                 </p>
               )}
             </>

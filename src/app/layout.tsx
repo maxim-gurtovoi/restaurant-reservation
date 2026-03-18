@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={dmSans.variable}>
-      <body className="min-h-screen bg-white text-gray-900 antialiased font-sans">
+      <body className="min-h-screen bg-background text-gray-900 antialiased font-sans">
         <AppShell>{children}</AppShell>
       </body>
     </html>

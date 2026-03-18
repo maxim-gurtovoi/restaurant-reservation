@@ -79,7 +79,7 @@ export default async function ReservationDetailsPage({
             <p
               className={[
                 'text-sm font-semibold',
-                reservation.status === 'CANCELLED' ? 'text-red-600' : 'text-[#107c41]',
+                reservation.status === 'CANCELLED' ? 'text-red-600' : 'text-primary',
               ].join(' ')}
             >
               {statusLabel}

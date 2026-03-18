@@ -1,19 +1,20 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
-import { LogoutButton } from '@/components/auth/logout-button';
+import { Button } from '@/components/ui/button';
+import { UserAvatarMenu } from '@/components/auth/user-avatar-menu';
 import { getCurrentUser } from '@/server/auth';
 
 export async function AppShell({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
   const canSeeManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
   return (
-    <div className="flex min-h-screen flex-col bg-white">
-      <header className="border-b border-gray-200 bg-white shadow-sm">
+    <div className="flex min-h-screen flex-col bg-background">
+      <header className="border-b border-gray-200 bg-background shadow-sm">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
           <Link
             href={ROUTES.home}
-            className="inline-flex items-center gap-2 text-xl font-semibold text-[#107c41]"
+            className="inline-flex items-center gap-2 text-xl font-semibold text-primary"
           >
             <img
               src="/fork-and-knife.svg"
@@ -25,28 +26,43 @@ export async function AppShell({ children }: { children: ReactNode }) {
           </Link>
           <div className="flex items-center gap-4">
             <nav className="flex gap-5 text-sm text-gray-600">
-              <Link href={ROUTES.restaurants} className="hover:text-gray-900">
+              <Link
+                href={ROUTES.restaurants}
+                className="cursor-pointer transition-colors hover:text-gray-900 hover:font-semibold"
+              >
                 Restaurants
               </Link>
               {user ? (
-                <Link href={ROUTES.myReservations} className="hover:text-gray-900">
+                <Link
+                  href={ROUTES.myReservations}
+                  className="cursor-pointer transition-colors hover:text-gray-900 hover:font-semibold"
+                >
                   My reservations
                 </Link>
               ) : null}
               {canSeeManager ? (
-                <Link href={ROUTES.managerDashboard} className="hover:text-gray-900">
+                <Link
+                  href={ROUTES.managerDashboard}
+                  className="cursor-pointer transition-colors hover:text-gray-900 hover:font-semibold"
+                >
                   Manager
                 </Link>
               ) : null}
             </nav>
-            {user ? <LogoutButton /> : null}
+            {user ? (
+              <UserAvatarMenu user={user} />
+            ) : (
+              <Button asChild variant="outline">
+                <Link href={ROUTES.login}>Sign in</Link>
+              </Button>
+            )}
           </div>
         </div>
       </header>
-      <main className="flex-1 bg-gray-50">
+      <main className="flex-1 bg-background">
         <div className="container mx-auto px-4 py-8">{children}</div>
       </main>
-      <footer className="border-t border-gray-200 bg-white">
+      <footer className="border-t border-gray-200 bg-background">
         <div className="container mx-auto px-4 py-3 text-xs text-gray-500">
           &copy; {new Date().getFullYear()} Diploma project
         </div>
