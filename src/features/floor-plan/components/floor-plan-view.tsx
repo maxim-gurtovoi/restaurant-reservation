@@ -69,17 +69,14 @@ export function FloorPlanView({
             Floor plan: <span className="font-semibold">{floorPlan.name}</span>
           </p>
         </div>
-        <p className="text-[11px] text-gray-500">
-          Size {floorPlan.width}×{floorPlan.height}
-        </p>
       </div>
 
       <div className="flex">
         <div
-          className="relative mx-auto rounded-xl border border-gray-200 bg-gray-50 p-3 shadow-sm"
+          className="relative mx-auto rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
           style={{ width: targetWidth, height: targetHeight }}>
           <div
-            className="relative bg-gray-100"
+            className="relative bg-transparent"
             style={{
               width: floorPlan.width,
               height: floorPlan.height,
