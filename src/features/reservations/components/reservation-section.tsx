@@ -125,21 +125,20 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
   const selectedTable = tables.find((table) => table.id === selectedTableId) ?? null;
 
   return (
-    <section className="mt-2 space-y-4">
+    <section className="mt-4 space-y-4">
       <header className="space-y-1">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
           Booking
         </p>
-        <h2 className="text-lg font-semibold text-slate-50">
-          Choose a table and time
+        <h2 className="text-lg font-semibold text-gray-900">
+          Reserve a table in just a few steps
         </h2>
-        <p className="text-sm text-slate-400">
-          Start by selecting a date and time, then pick a table on the floor plan to continue to
-          booking.
+        <p className="text-sm text-gray-600">
+          First pick date, time and party size, then choose any available table on the floor plan.
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.6fr),minmax(0,1.1fr)] lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[2fr,1.1fr] lg:items-start">
         <div className="space-y-4">
           <FloorPlanView
             floorPlans={floorPlans}

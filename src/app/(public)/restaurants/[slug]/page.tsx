@@ -34,21 +34,21 @@ export default async function RestaurantDetailsPage({
 
         <aside
           aria-label="About this restaurant"
-          className="space-y-4 rounded-xl border border-slate-800/60 bg-slate-900/40 p-5 shadow-sm">
+          className="space-y-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
           {restaurant.description ? (
             <div>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
                 About
               </h2>
-              <p className="text-sm leading-relaxed text-slate-200">{restaurant.description}</p>
+              <p className="text-sm leading-relaxed text-gray-700">{restaurant.description}</p>
             </div>
           ) : null}
 
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
               Details
             </h3>
-            <div className="space-y-1 text-sm text-slate-300">
+            <div className="space-y-1 text-sm text-gray-700">
               {restaurant.address ? <p>{restaurant.address}</p> : null}
               {restaurant.phone ? <p>Phone: {restaurant.phone}</p> : null}
               {restaurant.email ? <p>Email: {restaurant.email}</p> : null}
