@@ -1,14 +1,28 @@
 import { PrismaClient, UserRole, ReservationStatus, TableShape, CheckInMethod } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  const DEMO_PASSWORD = 'Demo12345!';
+  const demoPasswordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+
+  // Make seed re-runnable for local demo/dev.
+  await prisma.checkInLog.deleteMany();
+  await prisma.reservation.deleteMany();
+  await prisma.restaurantTable.deleteMany();
+  await prisma.floorPlan.deleteMany();
+  await prisma.workingHours.deleteMany();
+  await prisma.restaurantManager.deleteMany();
+  await prisma.restaurant.deleteMany();
+  await prisma.user.deleteMany();
+
   // Users
   const admin = await prisma.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@example.com',
-      passwordHash: 'hashed-password-admin',
+      passwordHash: demoPasswordHash,
       phone: '+1-555-000-0000',
       role: UserRole.ADMIN,
     },
@@ -18,7 +32,7 @@ async function main() {
     data: {
       name: 'Manager Alice',
       email: 'manager.alice@example.com',
-      passwordHash: 'hashed-password-manager',
+      passwordHash: demoPasswordHash,
       phone: '+1-555-100-0000',
       role: UserRole.MANAGER,
     },
@@ -28,7 +42,7 @@ async function main() {
     data: {
       name: 'Bob Customer',
       email: 'bob@example.com',
-      passwordHash: 'hashed-password-bob',
+      passwordHash: demoPasswordHash,
       phone: '+1-555-200-0000',
       role: UserRole.USER,
     },
@@ -38,7 +52,7 @@ async function main() {
     data: {
       name: 'Carol Diner',
       email: 'carol@example.com',
-      passwordHash: 'hashed-password-carol',
+      passwordHash: demoPasswordHash,
       phone: '+1-555-300-0000',
       role: UserRole.USER,
     },

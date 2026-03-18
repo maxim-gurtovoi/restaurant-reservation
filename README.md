@@ -100,6 +100,15 @@ Check-in realizat de manager prin scanarea codului QR
 
 Panou manager pentru vizualizarea rezervărilor
 
+## Demo credentials (local seed)
+
+After running `npm run db:seed`, you can log in with:
+
+- **Shared password**: `Demo12345!`
+- **Manager**: `manager.alice@example.com`
+- **Regular user**: `bob@example.com`
+- **Admin (optional)**: `admin@example.com`
+
 6. Perspective de dezvoltare
 
 Integrarea notificărilor (email/SMS)

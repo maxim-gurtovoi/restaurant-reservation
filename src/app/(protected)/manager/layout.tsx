@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react';
+import { requireManager } from '@/server/auth';
 
 export default async function ManagerLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  // TODO: enforce manager role here
+  await requireManager();
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between">

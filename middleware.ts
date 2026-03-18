@@ -9,7 +9,12 @@ export function middleware(req: NextRequest) {
   const user = verifyUserJwt(token);
   if (!user) return NextResponse.redirect(new URL('/auth/login', req.url));
 
-  // TODO: enforce role for /manager paths
+  if (req.nextUrl.pathname.startsWith('/manager')) {
+    if (user.role !== 'MANAGER' && user.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

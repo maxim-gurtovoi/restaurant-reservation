@@ -2,8 +2,11 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
 import { LogoutButton } from '@/components/auth/logout-button';
+import { getCurrentUser } from '@/server/auth';
 
-export function AppShell({ children }: { children: ReactNode }) {
+export async function AppShell({ children }: { children: ReactNode }) {
+  const user = await getCurrentUser();
+  const canSeeManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
   return (
     <div className="flex min-h-screen flex-col bg-white">
       <header className="border-b border-gray-200 bg-white shadow-sm">
@@ -25,14 +28,18 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Link href={ROUTES.restaurants} className="hover:text-gray-900">
                 Restaurants
               </Link>
-              <Link href={ROUTES.myReservations} className="hover:text-gray-900">
-                My reservations
-              </Link>
-              <Link href={ROUTES.managerDashboard} className="hover:text-gray-900">
-                Manager
-              </Link>
+              {user ? (
+                <Link href={ROUTES.myReservations} className="hover:text-gray-900">
+                  My reservations
+                </Link>
+              ) : null}
+              {canSeeManager ? (
+                <Link href={ROUTES.managerDashboard} className="hover:text-gray-900">
+                  Manager
+                </Link>
+              ) : null}
             </nav>
-            <LogoutButton />
+            {user ? <LogoutButton /> : null}
           </div>
         </div>
       </header>
