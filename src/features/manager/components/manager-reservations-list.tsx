@@ -81,7 +81,7 @@ export function ManagerReservationsList({
                 {formatReservationStatus(r.status)}
               </span>
               <div className="flex gap-2 text-[11px] text-emerald-300">
-                <Link href={`/reservations/${r.id}`} className="hover:underline">
+                <Link href={`/manager/reservations/${r.id}`} className="hover:underline">
                   View details
                 </Link>
                 {canOpenCheckIn && (

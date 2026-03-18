@@ -1,6 +1,24 @@
 import 'server-only';
+import type { ReservationStatus } from '@prisma/client';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
+
+export type ManagerReservationDetails = {
+  id: string;
+  status: ReservationStatus;
+  guestCount: number;
+  startAt: Date;
+  endAt: Date;
+  qrToken: string;
+  contactName: string;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  cancelledAt: Date | null;
+  checkedInAt: Date | null;
+  createdAt: Date;
+  restaurant: { name: string };
+  table: { label: string };
+};
 
 export type ManagerReservationListItem = {
   id: string;
@@ -78,6 +96,45 @@ export async function listManagerReservations(input: {
   }));
 
   return { status: 200, body: dto };
+}
+
+export async function getReservationDetailsForManager(input: {
+  reservationId: string;
+  managerUserId: string;
+}): Promise<ManagerReservationDetails | null> {
+  const reservation = await prisma.reservation.findFirst({
+    where: {
+      id: input.reservationId,
+      restaurant: {
+        managers: {
+          some: { userId: input.managerUserId },
+        },
+      },
+    },
+    include: {
+      restaurant: { select: { name: true } },
+      table: { select: { label: true } },
+    },
+  });
+
+  if (!reservation) return null;
+
+  return {
+    id: reservation.id,
+    status: reservation.status,
+    guestCount: reservation.guestCount,
+    startAt: reservation.startAt,
+    endAt: reservation.endAt,
+    qrToken: reservation.qrToken,
+    contactName: reservation.contactName,
+    contactPhone: reservation.contactPhone,
+    contactEmail: reservation.contactEmail,
+    cancelledAt: reservation.cancelledAt,
+    checkedInAt: reservation.checkedInAt,
+    createdAt: reservation.createdAt,
+    restaurant: reservation.restaurant,
+    table: reservation.table,
+  };
 }
 
 
