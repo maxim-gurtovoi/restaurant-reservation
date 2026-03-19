@@ -49,8 +49,6 @@ npm install
 
 Configurarea fișierului .env:
 
-DATABASE_URL=postgresql://user:password@localhost:5432/db
-JWT_SECRET=your_secret
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 Migrarea bazei de date:
