@@ -66,6 +66,7 @@ async function main() {
       description:
         'House-made cocktails and seasonal small plates in a warm, lively Chișinău bar. A great choice for an unhurried dinner with friends.',
       address: 'Str. Alexandru Bernardazzi 66, Chișinău',
+      imageUrl: '/images/restaurants/gastrobar.png',
       isActive: true,
     },
   });
@@ -77,6 +78,7 @@ async function main() {
       description:
         'A bright terrace with attentive service and shareable plates. Designed for long lunches, calm conversations, and warm Chișinău evenings.',
       address: 'Str. Albișoara 20/1, Chișinău',
+      imageUrl: '/images/restaurants/pegas.png',
       isActive: true,
     },
   });
@@ -88,6 +90,7 @@ async function main() {
       description:
         'Slow-smoked meats, signature barbecue sauces, and hearty sides. For guests who like bold, smoky flavors and generous portions.',
       address: 'Bd. Ștefan cel Mare și Sfînt 128, Chișinău',
+      imageUrl: '/images/restaurants/smokehouse.png',
       isActive: true,
     },
   });
@@ -99,6 +102,7 @@ async function main() {
       description:
         'Rooftop terrace dining with modern Mediterranean plates and elegant cocktails. Ideal for date nights and memorable celebrations.',
       address: 'Str. Nicolae Dimo 32, Chișinău',
+      imageUrl: '/images/restaurants/attico.png',
       isActive: true,
     },
   });
@@ -110,6 +114,19 @@ async function main() {
       description:
         'Garden-inspired cuisine built around fresh, seasonal ingredients. Bright, comfortable seating for family dinners and relaxed gatherings.',
       address: 'Strada Vasile Alecsandri 8, Chișinău',
+      imageUrl: '/images/restaurants/garden.png',
+      isActive: true,
+    },
+  });
+
+  const laPlacinte = await prisma.restaurant.create({
+    data: {
+      name: 'La Plăcinte',
+      slug: 'la-placinte-stefan-cel-mare',
+      description:
+        'Traditional Moldovan cuisine with a modern touch. Famous for homemade pies, local dishes, and a cozy atmosphere.',
+      address: 'Chișinău, Bulevardul Ștefan cel Mare și Sfânt 182',
+      imageUrl: '/images/restaurants/la-placinte.png',
       isActive: true,
     },
   });
@@ -137,6 +154,7 @@ async function main() {
   const smokeFloor = await createFloorPlan(smokehouse.id, 'Dining room', 880, 640);
   const atticoFloor = await createFloorPlan(atticoTerrace.id, 'Terrace', 860, 600);
   const gardenFloor = await createFloorPlan(gardenTerrace.id, 'Garden room', 780, 560);
+  const laPlacinteFloor = await createFloorPlan(laPlacinte.id, 'Main hall', 840, 580);
 
   const createTablesForFloor = async (args: {
     restaurantId: string;
@@ -253,9 +271,30 @@ async function main() {
     ],
   });
 
+  const laPlacinteTables = await createTablesForFloor({
+    restaurantId: laPlacinte.id,
+    floorPlanId: laPlacinteFloor.id,
+    labels: ['L1', 'L2', 'L3', 'L4'],
+    capacities: [2, 4, 4, 6],
+    shapes: [TableShape.ROUND, TableShape.RECTANGLE, TableShape.SQUARE, TableShape.RECTANGLE],
+    layout: [
+      { x: 130, y: 115, w: 78, h: 78 },
+      { x: 250, y: 105, w: 185, h: 78, r: -5 },
+      { x: 470, y: 130, w: 110, h: 110 },
+      { x: 220, y: 300, w: 310, h: 82, r: 4 },
+    ],
+  });
+
   // Working hours (plausible demo times, 7 days)
   const daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
-  const restaurantsForHours = [gastrobar, pegasTerrace, smokehouse, atticoTerrace, gardenTerrace];
+  const restaurantsForHours = [
+    gastrobar,
+    pegasTerrace,
+    smokehouse,
+    atticoTerrace,
+    gardenTerrace,
+    laPlacinte,
+  ];
 
   await Promise.all(
     daysOfWeek.flatMap((day) =>
@@ -273,7 +312,7 @@ async function main() {
     ),
   );
 
-  // Restaurant manager link (manager -> all 5 restaurants)
+  // Restaurant manager link (manager -> all 6 restaurants)
   await Promise.all(
     restaurantsForHours.map((restaurant) =>
       prisma.restaurantManager.create({
@@ -377,6 +416,22 @@ async function main() {
         contactName: 'Bob Customer',
         contactPhone: userBob.phone,
         contactEmail: userBob.email,
+        notes: 'Demo reservation for QR check-in.',
+      },
+    }),
+    prisma.reservation.create({
+      data: {
+        userId: userCarol.id,
+        restaurantId: laPlacinte.id,
+        tableId: laPlacinteTables[2].id,
+        guestCount: 4,
+        startAt: startOfWindow(18),
+        endAt: withDuration(startOfWindow(18), reservationDurationMinutes),
+        status: ReservationStatus.CONFIRMED,
+        qrToken: 'qr_la_placinte_1',
+        contactName: 'Carol Diner',
+        contactPhone: userCarol.phone,
+        contactEmail: userCarol.email,
         notes: 'Demo reservation for QR check-in.',
       },
     }),
