@@ -3,6 +3,7 @@ import type { ApiError, ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 import { checkTableAvailability } from './check-table-availability';
 import { createReservation as createReservationInDb } from './create-reservation';
+import { WorkingHoursDomainError } from './working-hours-validation';
 
 export type UserReservationListItem = {
   id: string;
@@ -90,6 +91,12 @@ export async function createReservation(input: {
     const result = await createReservationInDb(input);
     return { status: 201, body: result };
   } catch (error) {
+    if (error instanceof WorkingHoursDomainError) {
+      return {
+        status: 400,
+        body: { error: error.message, code: error.code },
+      };
+    }
     const message = error instanceof Error ? error.message : 'Failed to create reservation';
     console.error('Error creating reservation:', error);
     const err: ApiError = { status: 400, body: { error: message } };
@@ -112,6 +119,9 @@ export async function getAvailability(input: {
     const result = await checkTableAvailability(input);
     return { status: 200, body: result };
   } catch (error) {
+    if (error instanceof WorkingHoursDomainError) {
+      return { status: 400, body: { error: error.message, code: error.code } };
+    }
     console.error('Error checking availability:', error);
     const err: ApiError = {
       status: 500,

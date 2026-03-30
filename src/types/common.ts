@@ -7,7 +7,7 @@ export interface ApiSuccess<T> {
 
 export interface ApiError {
   status: number;
-  body: { error: string };
+  body: { error: string; code?: string };
 }
 
 export type ApiResult<T> = ApiSuccess<T> | ApiError;

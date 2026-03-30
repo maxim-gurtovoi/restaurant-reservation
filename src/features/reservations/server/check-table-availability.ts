@@ -1,6 +1,7 @@
 import 'server-only';
 import { prisma } from '@/lib/prisma';
 import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
+import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
 
 export async function checkTableAvailability(input: {
   restaurantId: string;
@@ -14,6 +15,12 @@ export async function checkTableAvailability(input: {
   const { restaurantId, date, time } = input;
 
   const { startAt, endAt } = computeReservationWindow({ date, time });
+
+  await ensureWorkingHoursAllowReservation({
+    restaurantId,
+    startAt,
+    endAt,
+  });
 
   // Query reservations that block availability
   // These are overlapping reservations with statuses: CONFIRMED or CHECKED_IN

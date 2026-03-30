@@ -2,6 +2,7 @@ import 'server-only';
 import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
+import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
 
 function generateQRToken(): string {
   return randomUUID();
@@ -28,6 +29,12 @@ export async function createReservation(input: {
   const { userId, restaurantId, tableId, date, time, guestCount } = input;
 
   const { startAt, endAt } = computeReservationWindow({ date, time });
+
+  await ensureWorkingHoursAllowReservation({
+    restaurantId,
+    startAt,
+    endAt,
+  });
 
   // Validate table exists and belongs to restaurant
   const table = await prisma.restaurantTable.findFirst({
