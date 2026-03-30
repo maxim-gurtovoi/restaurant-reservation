@@ -8,6 +8,8 @@ export type RestaurantListItem = {
   name: string;
   slug: string;
   city: string;
+  address: string | null;
+  description: string | null;
   imageUrl: string | null;
 };
 
@@ -77,6 +79,8 @@ export async function listRestaurants(input: {
     name: r.name,
     slug: r.slug,
     city: deriveCity(r.address),
+    address: r.address ?? null,
+    description: r.description ?? null,
     imageUrl: r.imageUrl ?? null,
   }));
 
