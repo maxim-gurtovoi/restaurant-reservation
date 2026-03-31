@@ -1,4 +1,6 @@
 import 'server-only';
+import { readdir } from 'node:fs/promises';
+import path from 'node:path';
 import type { TableShape } from '@prisma/client';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
@@ -23,6 +25,7 @@ export type RestaurantDetails = {
   phone: string | null;
   email: string | null;
   imageUrl: string | null;
+  galleryImages: string[];
   floorPlans: {
     id: string;
     name: string;
@@ -51,6 +54,8 @@ export type RestaurantDetails = {
   }[];
 };
 
+const GALLERY_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+
 function deriveCity(address: string | null | undefined): string {
   if (!address) {
     return 'Unknown city';
@@ -60,6 +65,30 @@ function deriveCity(address: string | null | undefined): string {
   const parts = address.split(',').map((part) => part.trim());
   const candidate = parts[parts.length - 1];
   return candidate.length > 0 ? candidate : 'Unknown city';
+}
+
+async function resolveRestaurantGalleryImages(input: {
+  slug: string;
+  fallbackImageUrl: string | null;
+}): Promise<string[]> {
+  const folderPath = path.join(process.cwd(), 'public', 'images', 'restaurants', input.slug);
+  try {
+    const entries = await readdir(folderPath, { withFileTypes: true });
+    const imageFiles = entries
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((name) => GALLERY_EXTENSIONS.has(path.extname(name).toLowerCase()))
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+      .slice(0, 6);
+
+    if (imageFiles.length > 0) {
+      return imageFiles.map((name) => `/images/restaurants/${input.slug}/${name}`);
+    }
+  } catch {
+    // If folder is missing, we simply fall back to preview image.
+  }
+
+  return input.fallbackImageUrl ? [input.fallbackImageUrl] : [];
 }
 
 export async function listRestaurants(input: {
@@ -109,6 +138,11 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
     return null;
   }
 
+  const galleryImages = await resolveRestaurantGalleryImages({
+    slug: restaurant.slug,
+    fallbackImageUrl: restaurant.imageUrl ?? null,
+  });
+
   return {
     id: restaurant.id,
     name: restaurant.name,
@@ -119,6 +153,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
     phone: restaurant.phone ?? null,
     email: restaurant.email ?? null,
     imageUrl: restaurant.imageUrl ?? null,
+    galleryImages,
     floorPlans: restaurant.floorPlans.map((fp) => ({
       id: fp.id,
       name: fp.name,

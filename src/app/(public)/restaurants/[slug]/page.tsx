@@ -18,7 +18,7 @@ export default async function RestaurantDetailsPage({
     notFound();
   }
 
-  const galleryImages = restaurant.imageUrl ? [restaurant.imageUrl] : [];
+  const galleryImages = restaurant.galleryImages;
 
   return (
     <div className="space-y-8">
