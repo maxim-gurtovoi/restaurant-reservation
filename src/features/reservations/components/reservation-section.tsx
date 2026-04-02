@@ -38,6 +38,7 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
   const [unavailableTableIds, setUnavailableTableIds] = useState<string[]>([]);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
   const [availabilityCheckedAt, setAvailabilityCheckedAt] = useState<Date | null>(null);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
@@ -45,10 +46,12 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
     if (!date || !time) {
       setUnavailableTableIds([]);
       setAvailabilityCheckedAt(null);
+      setAvailabilityError(null);
       return;
     }
 
     setIsCheckingAvailability(true);
+    setAvailabilityError(null);
     try {
       const params = new URLSearchParams({
         restaurantId,
@@ -57,7 +60,14 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
       });
 
       const response = await fetch(`/api/reservations/availability?${params}`);
-      if (!response.ok) throw new Error(`Availability check failed: ${response.status}`);
+      if (!response.ok) {
+        const errorPayload = await response.json().catch(() => ({}));
+        const message =
+          typeof errorPayload?.error === 'string'
+            ? errorPayload.error
+            : `Availability check failed: ${response.status}`;
+        throw new Error(message);
+      }
 
       const result = await response.json();
       setUnavailableTableIds(result.unavailableTableIds || []);
@@ -71,6 +81,12 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
     } catch (error) {
       console.error('Error checking availability:', error);
       setUnavailableTableIds([]);
+      setAvailabilityCheckedAt(null);
+      setAvailabilityError(
+        error instanceof Error
+          ? error.message
+          : 'Could not load availability right now. Please try again.',
+      );
     } finally {
       setIsCheckingAvailability(false);
     }
@@ -125,6 +141,7 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
   };
 
   const selectedTable = tables.find((table) => table.id === selectedTableId) ?? null;
+  const activeTablesCount = tables.filter((table) => table.isActive).length;
 
   return (
     <section className="mt-4 space-y-4">
@@ -161,6 +178,8 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
           restaurantId={restaurantId}
           isCheckingAvailability={isCheckingAvailability}
           availabilityCheckedAt={availabilityCheckedAt}
+          availabilityError={availabilityError}
+          activeTablesCount={activeTablesCount}
           isSubmitting={isSubmitting}
           submissionError={submissionError}
           onDateChange={handleDateChange}

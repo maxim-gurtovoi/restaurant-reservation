@@ -15,10 +15,16 @@ export function middleware(req: NextRequest) {
     }
   }
 
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    if (user.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/', req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/my-reservations/:path*', '/manager/:path*'],
+  matcher: ['/my-reservations/:path*', '/manager/:path*', '/admin/:path*'],
 };
 

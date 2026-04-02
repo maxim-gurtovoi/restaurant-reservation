@@ -16,6 +16,8 @@ type ReservationPanelProps = {
   restaurantId: string;
   isCheckingAvailability?: boolean;
   availabilityCheckedAt?: Date | null;
+  availabilityError?: string | null;
+  activeTablesCount?: number;
   isSubmitting?: boolean;
   submissionError?: string | null;
   onDateChange: (date: string) => void;
@@ -38,6 +40,8 @@ export function ReservationPanel({
   restaurantId,
   isCheckingAvailability = false,
   availabilityCheckedAt = null,
+  availabilityError = null,
+  activeTablesCount = 0,
   isSubmitting = false,
   submissionError = null,
   onDateChange,
@@ -174,10 +178,17 @@ export function ReservationPanel({
             </div>
           )}
 
-          {!isCheckingAvailability && availabilityCheckedAt && !submissionError && (
+          {!isCheckingAvailability && availabilityCheckedAt && !submissionError && !availabilityError && (
             <div className="flex items-start gap-2 rounded-lg bg-primary/12 px-3 py-2.5 text-sm text-primary-hover">
               <span className="mt-0.5 text-base">✓</span>
               <p>Availability updated for your selected date and time.</p>
+            </div>
+          )}
+
+          {availabilityError && (
+            <div className="flex items-start gap-2 rounded-lg bg-background px-3 py-2.5 text-sm text-foreground">
+              <span className="mt-0.5 text-base">!</span>
+              <p>{availabilityError}</p>
             </div>
           )}
 
@@ -187,6 +198,13 @@ export function ReservationPanel({
               <p>{submissionError}</p>
             </div>
           )}
+
+          {!activeTablesCount ? (
+            <div className="flex items-start gap-2 rounded-lg bg-background px-3 py-2.5 text-sm text-muted">
+              <span className="mt-0.5 text-xs text-muted">i</span>
+              <p>No active tables are available for this restaurant yet.</p>
+            </div>
+          ) : null}
 
           {!date || !time ? (
             <div className="flex items-start gap-2 rounded-lg bg-background px-3 py-2.5 text-sm text-muted">

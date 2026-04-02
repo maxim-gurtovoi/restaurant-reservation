@@ -8,6 +8,7 @@ import { getCurrentUser } from '@/server/auth';
 export async function AppShell({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
   const canSeeManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
+  const canSeeAdmin = user?.role === 'ADMIN';
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border bg-background shadow-sm">
@@ -46,6 +47,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
                   className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
                 >
                   Manager
+                </Link>
+              ) : null}
+              {canSeeAdmin ? (
+                <Link
+                  href={ROUTES.admin}
+                  className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
+                >
+                  Admin
                 </Link>
               ) : null}
             </nav>

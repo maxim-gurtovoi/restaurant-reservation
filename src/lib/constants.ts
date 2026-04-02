@@ -7,6 +7,7 @@ export const ROUTES = {
   register: '/auth/register',
   myReservations: '/my-reservations',
   managerDashboard: '/manager/dashboard',
+  admin: '/admin',
 } as const;
 
 export const ROLE = {

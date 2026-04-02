@@ -20,6 +20,13 @@ export type ManagerReservationDetails = {
   table: { label: string };
 };
 
+export type ManagerDashboardStats = {
+  todayReservations: number;
+  upcomingReservations: number;
+  checkedInToday: number;
+  managedRestaurants: number;
+};
+
 export type ManagerReservationListItem = {
   id: string;
   status: string;
@@ -96,6 +103,72 @@ export async function listManagerReservations(input: {
   }));
 
   return { status: 200, body: dto };
+}
+
+export async function getManagerDashboardStats(input: {
+  managerUserId: string;
+}): Promise<ManagerDashboardStats> {
+  const now = new Date();
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+  const startOfTomorrow = new Date(startOfDay);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+  const managerRestaurantWhere = {
+    restaurant: {
+      managers: {
+        some: {
+          userId: input.managerUserId,
+        },
+      },
+    },
+  } as const;
+
+  const [todayReservations, upcomingReservations, checkedInToday, managedRestaurants] =
+    await prisma.$transaction([
+      prisma.reservation.count({
+        where: {
+          ...managerRestaurantWhere,
+          startAt: {
+            gte: startOfDay,
+            lt: startOfTomorrow,
+          },
+        },
+      }),
+      prisma.reservation.count({
+        where: {
+          ...managerRestaurantWhere,
+          status: {
+            in: ['CONFIRMED', 'CHECKED_IN'],
+          },
+          startAt: {
+            gte: now,
+          },
+        },
+      }),
+      prisma.reservation.count({
+        where: {
+          ...managerRestaurantWhere,
+          status: 'CHECKED_IN',
+          checkedInAt: {
+            gte: startOfDay,
+            lt: startOfTomorrow,
+          },
+        },
+      }),
+      prisma.restaurantManager.count({
+        where: {
+          userId: input.managerUserId,
+        },
+      }),
+    ]);
+
+  return {
+    todayReservations,
+    upcomingReservations,
+    checkedInToday,
+    managedRestaurants,
+  };
 }
 
 export async function getReservationDetailsForManager(input: {

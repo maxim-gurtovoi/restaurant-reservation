@@ -95,6 +95,15 @@ export default async function ManagerCheckInPage({ params }: Props) {
           </div>
         )}
       </Card>
+
+      <Card className="space-y-2">
+        <p className="text-xs uppercase tracking-wide text-slate-400">Check-in tips</p>
+        <ul className="space-y-1 text-xs text-slate-300">
+          <li>• Verify reservation id and guest name before confirming.</li>
+          <li>• If already checked in, no second confirmation is needed.</li>
+          <li>• Use reservations list for manual follow-up and status tracking.</li>
+        </ul>
+      </Card>
     </div>
   );
 }

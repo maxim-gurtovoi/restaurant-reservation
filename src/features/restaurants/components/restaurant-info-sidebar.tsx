@@ -1,3 +1,8 @@
+import {
+  WORKING_HOURS_ERROR_CODES,
+  validateReservationAgainstWorkingHours,
+} from '@/features/reservations/server/working-hours-validation';
+
 type WorkingHoursItem = {
   dayOfWeek: number;
   openTime: string;
@@ -22,21 +27,94 @@ const DAY_LABELS: Record<number, string> = {
   6: 'Saturday',
 };
 
-function getOpenStatus(workingHours: WorkingHoursItem[]): { label: string; tone: string } {
+type StatusBadge = {
+  label: string;
+  tone: string;
+};
+
+type WeekRow = {
+  dayOfWeek: number;
+  label: string;
+  isToday: boolean;
+  value: string;
+  isEmphasized: boolean;
+};
+
+function parseHHmmToMinutes(value: string): number | null {
+  const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    return null;
+  }
+  return hours * 60 + minutes;
+}
+
+function formatWorkingHoursValue(item: WorkingHoursItem | undefined): {
+  text: string;
+  emphasized: boolean;
+} {
+  if (!item || item.isClosed) {
+    return { text: 'Closed', emphasized: false };
+  }
+
+  const openMins = parseHHmmToMinutes(item.openTime);
+  const closeMins = parseHHmmToMinutes(item.closeTime);
+  if (openMins === null || closeMins === null || closeMins <= openMins) {
+    return { text: 'Unavailable', emphasized: false };
+  }
+
+  return { text: `${item.openTime} - ${item.closeTime}`, emphasized: true };
+}
+
+function buildWeeklyRows(workingHours: WorkingHoursItem[]): WeekRow[] {
   const now = new Date();
   const today = now.getDay();
-  const hh = now.getHours().toString().padStart(2, '0');
-  const mm = now.getMinutes().toString().padStart(2, '0');
-  const nowTime = `${hh}:${mm}`;
+  const byDay = new Map(workingHours.map((item) => [item.dayOfWeek, item]));
 
-  const schedule = workingHours.find((wh) => wh.dayOfWeek === today);
-  if (!schedule || schedule.isClosed) {
-    return { label: 'Closed now', tone: 'text-error' };
-  }
-  if (nowTime >= schedule.openTime && nowTime < schedule.closeTime) {
+  return Array.from({ length: 7 }, (_, dayOfWeek) => {
+    const item = byDay.get(dayOfWeek);
+    const value = formatWorkingHoursValue(item);
+    return {
+      dayOfWeek,
+      label: DAY_LABELS[dayOfWeek] ?? `Day ${dayOfWeek}`,
+      isToday: dayOfWeek === today,
+      value: value.text,
+      isEmphasized: value.emphasized,
+    };
+  });
+}
+
+function getOpenStatus(workingHours: WorkingHoursItem[]): StatusBadge {
+  const now = new Date();
+  const minuteLater = new Date(now.getTime() + 60 * 1000);
+  const result = validateReservationAgainstWorkingHours({
+    workingHours,
+    startAt: now,
+    endAt: minuteLater,
+  });
+
+  if (result.valid) {
     return { label: 'Open now', tone: 'text-primary' };
   }
-  return { label: 'Closed now', tone: 'text-error' };
+
+  if (
+    result.code === WORKING_HOURS_ERROR_CODES.NO_WORKING_HOURS_FOR_DAY ||
+    result.code === WORKING_HOURS_ERROR_CODES.RESTAURANT_CLOSED ||
+    result.code === WORKING_HOURS_ERROR_CODES.OUTSIDE_WORKING_HOURS
+  ) {
+    return { label: 'Closed now', tone: 'text-error' };
+  }
+
+  return { label: 'Hours unavailable', tone: 'text-muted' };
 }
 
 export function RestaurantInfoSidebar({
@@ -45,8 +123,8 @@ export function RestaurantInfoSidebar({
   email,
   workingHours,
 }: RestaurantInfoSidebarProps) {
-  const orderedHours = [...workingHours].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
-  const openStatus = getOpenStatus(orderedHours);
+  const openStatus = getOpenStatus(workingHours);
+  const weeklyRows = buildWeeklyRows(workingHours);
 
   return (
     <aside className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-sm lg:sticky lg:top-24">
@@ -63,16 +141,23 @@ export function RestaurantInfoSidebar({
       <section className="space-y-2 border-t border-border pt-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Working hours</h3>
         <div className="space-y-1.5 text-sm text-foreground">
-          {orderedHours.length ? (
-            orderedHours.map((wh) => (
-              <div key={`${wh.dayOfWeek}-${wh.openTime}`} className="flex items-start justify-between gap-3">
-                <span className="text-muted">{DAY_LABELS[wh.dayOfWeek] ?? `Day ${wh.dayOfWeek}`}</span>
-                <span>{wh.isClosed ? 'Closed' : `${wh.openTime} - ${wh.closeTime}`}</span>
-              </div>
-            ))
-          ) : (
-            <p className="text-muted">Working hours are not available.</p>
-          )}
+          {weeklyRows.map((row) => (
+            <div
+              key={row.dayOfWeek}
+              className={[
+                'flex items-start justify-between gap-3 rounded-md px-2 py-1',
+                row.isToday ? 'bg-primary/10' : '',
+              ].join(' ')}
+            >
+              <span className={row.isToday ? 'font-semibold text-foreground' : 'text-muted'}>
+                {row.label}
+                {row.isToday ? ' · Today' : ''}
+              </span>
+              <span className={row.isEmphasized ? 'text-foreground' : 'text-muted'}>
+                {row.value}
+              </span>
+            </div>
+          ))}
         </div>
       </section>
 
