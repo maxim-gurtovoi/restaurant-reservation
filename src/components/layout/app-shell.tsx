@@ -11,11 +11,11 @@ export async function AppShell({ children }: { children: ReactNode }) {
   const canSeeAdmin = user?.role === 'ADMIN';
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-border bg-background shadow-sm">
-        <div className="container mx-auto flex items-center justify-between px-4 py-3">
+      <header className="border-b border-border/70 bg-surface/95 shadow-[0_1px_12px_rgba(28,28,28,0.06)] backdrop-blur-sm supports-backdrop-filter:bg-surface/90">
+        <div className="container mx-auto flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <Link
             href={ROUTES.home}
-            className="inline-flex items-center gap-2 text-xl font-semibold text-primary"
+            className="inline-flex shrink-0 items-center gap-2 text-xl font-semibold text-primary"
           >
             <img
               src="/fork-and-knife.svg"
@@ -25,8 +25,8 @@ export async function AppShell({ children }: { children: ReactNode }) {
             />
             <span>TableFlow</span>
           </Link>
-          <div className="flex items-center gap-4">
-            <nav className="flex gap-5 text-sm text-muted">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+            <nav className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted">
               <Link
                 href={ROUTES.restaurants}
                 className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"

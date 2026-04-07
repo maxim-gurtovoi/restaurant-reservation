@@ -79,16 +79,16 @@ export default async function ReservationDetailsPage({
         <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
           <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs text-gray-500">Reservation ID</p>
-            <p className="font-mono text-sm font-semibold text-gray-900">{reservation.id}</p>
+            <p className="text-xs font-medium text-muted">Reservation ID</p>
+            <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
           </div>
 
           <div>
-            <p className="text-xs text-gray-500">Status</p>
+            <p className="text-xs font-medium text-muted">Status</p>
             <p
               className={[
                 'text-sm font-semibold',
-                reservation.status === 'CANCELLED' ? 'text-red-600' : 'text-primary',
+                reservation.status === 'CANCELLED' ? 'text-error' : 'text-accent-text',
               ].join(' ')}
             >
               {statusLabel}
@@ -96,44 +96,44 @@ export default async function ReservationDetailsPage({
           </div>
 
           <div>
-            <p className="text-xs text-gray-500">Restaurant</p>
-            <p className="text-sm text-gray-900">{reservation.restaurant.name}</p>
+            <p className="text-xs font-medium text-muted">Restaurant</p>
+            <p className="text-sm text-foreground">{reservation.restaurant.name}</p>
           </div>
 
           <div>
-            <p className="text-xs text-gray-500">Table</p>
-            <p className="text-sm text-gray-900">
+            <p className="text-xs font-medium text-muted">Table</p>
+            <p className="text-sm text-foreground">
               {reservation.table.label} ({reservation.table.capacity} seats)
             </p>
           </div>
 
           <div>
-            <p className="text-xs text-gray-500">Date</p>
-            <p className="text-sm text-gray-900">{dateStr}</p>
+            <p className="text-xs font-medium text-muted">Date</p>
+            <p className="text-sm text-foreground">{dateStr}</p>
           </div>
 
           <div>
-            <p className="text-xs text-gray-500">Time</p>
-            <p className="text-sm text-gray-900">
+            <p className="text-xs font-medium text-muted">Time</p>
+            <p className="text-sm text-foreground">
               {startTimeStr} – {endTimeStr}
             </p>
           </div>
 
           <div>
-            <p className="text-xs text-gray-500">Guest Count</p>
-            <p className="text-sm text-gray-900">{reservation.guestCount} guests</p>
+            <p className="text-xs font-medium text-muted">Guest Count</p>
+            <p className="text-sm text-foreground">{reservation.guestCount} guests</p>
           </div>
 
           <div>
-            <p className="text-xs text-gray-500">Created</p>
-            <p className="text-sm text-gray-900">
+            <p className="text-xs font-medium text-muted">Created</p>
+            <p className="text-sm text-foreground">
               {new Date(reservation.createdAt).toLocaleString('en-US', { hour12: false })}
             </p>
           </div>
           {reservation.cancelledAt ? (
             <div>
-              <p className="text-xs text-gray-500">Cancelled</p>
-              <p className="text-sm text-gray-900">
+              <p className="text-xs font-medium text-muted">Cancelled</p>
+              <p className="text-sm text-foreground">
                 {new Date(reservation.cancelledAt).toLocaleString('en-US', { hour12: false })}
               </p>
             </div>
@@ -141,14 +141,14 @@ export default async function ReservationDetailsPage({
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs text-gray-500">Check-in QR</p>
+            <p className="text-xs font-medium text-muted">Check-in QR</p>
             <QrCode value={checkInUrl} />
             <div className="space-y-1">
-              <p className="text-[11px] text-gray-500">
+              <p className="text-[11px] text-muted">
                 Scan this QR code to open the manager check-in page.
               </p>
-              <div className="flex items-center justify-between gap-2 rounded-md bg-gray-100 p-2">
-                <p className="truncate font-mono text-[10px] text-gray-600">
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background p-2">
+                <p className="truncate font-mono text-[10px] text-muted">
                   {checkInUrl}
                 </p>
                 <CopyButton value={checkInUrl} label="Copy URL" small />
@@ -162,12 +162,12 @@ export default async function ReservationDetailsPage({
           </div>
         </div>
 
-        <div className="border-t border-gray-200 pt-4">
-          <p className="text-xs text-gray-500 mb-2">QR Token</p>
-          <div className="rounded-md bg-gray-100 p-3 break-all">
-            <p className="font-mono text-xs text-gray-600">{reservation.qrToken}</p>
+        <div className="border-t border-border pt-4">
+          <p className="mb-2 text-xs font-medium text-muted">QR Token</p>
+          <div className="break-all rounded-xl border border-border/60 bg-background p-3">
+            <p className="font-mono text-xs text-foreground/85">{reservation.qrToken}</p>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
+          <p className="mt-2 text-xs text-muted">
             This token is linked to the reservation and used for check-in.
           </p>
           <div className="mt-2">
@@ -175,27 +175,27 @@ export default async function ReservationDetailsPage({
           </div>
         </div>
 
-        <div className="border-t border-gray-200 pt-4">
-          <p className="text-xs text-gray-500 mb-2">Contact Information</p>
+        <div className="border-t border-border pt-4">
+          <p className="mb-2 text-xs font-medium text-muted">Contact Information</p>
           <div className="space-y-1">
-            <p className="text-sm text-gray-900">
-              <span className="text-gray-500">Name: </span>
+            <p className="text-sm text-foreground">
+              <span className="text-muted">Name: </span>
               {reservation.contactName || '—'}
             </p>
-            <p className="text-sm text-gray-900">
-              <span className="text-gray-500">Phone: </span>
+            <p className="text-sm text-foreground">
+              <span className="text-muted">Phone: </span>
               {reservation.contactPhone || '—'}
             </p>
-            <p className="text-sm text-gray-900">
-              <span className="text-gray-500">Email: </span>
+            <p className="text-sm text-foreground">
+              <span className="text-muted">Email: </span>
               {reservation.contactEmail || '—'}
             </p>
           </div>
         </div>
       </Card>
 
-      <Card className="bg-blue-50 border-blue-200">
-        <p className="text-sm text-blue-700">
+      <Card className="border-primary/25 bg-primary/5">
+        <p className="text-sm text-foreground">
           Tip: keep this screen available. For check-in, the QR code is the fastest option.
         </p>
       </Card>

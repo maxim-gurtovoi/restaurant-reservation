@@ -24,6 +24,9 @@ type FloorPlanViewProps = {
   selectedTableId?: string | null;
   unavailableTableIds?: string[];
   onSelectTable?: (tableId: string) => void;
+  /** Read-only overview (e.g. manager monitor) — no selection, neutral table styling */
+  readOnly?: boolean;
+  headerEyebrow?: string;
 };
 
 export function FloorPlanView({
@@ -32,10 +35,12 @@ export function FloorPlanView({
   selectedTableId,
   unavailableTableIds = [],
   onSelectTable,
+  readOnly = false,
+  headerEyebrow = 'Step 2 · Select a table',
 }: FloorPlanViewProps) {
   if (!floorPlans.length || !tables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-border bg-surface p-4 text-sm text-muted">
+      <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">
         <p>No floor plan is configured for this restaurant yet.</p>
       </div>
     );
@@ -46,7 +51,7 @@ export function FloorPlanView({
 
   if (!planTables.length) {
     return (
-      <div className="space-y-2 rounded-xl border border-dashed border-border bg-surface p-4 text-sm text-muted">
+      <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">
         <p>This floor plan does not have any tables yet.</p>
       </div>
     );
@@ -59,11 +64,11 @@ export function FloorPlanView({
   const scale = Math.min(scaleX, scaleY);
 
   return (
-    <div className="space-y-3 rounded-xl border border-border bg-surface p-4 shadow-sm">
+    <div className="space-y-3 rounded-2xl border border-border/50 bg-surface p-5 shadow-card">
       <div className="flex items-baseline justify-between gap-2">
         <div className="space-y-0.5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Step 2 · Select a table
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-accent-text/80">
+            {headerEyebrow}
           </p>
           <p className="text-sm font-medium text-foreground">
             Floor plan: <span className="font-semibold">{floorPlan.name}</span>
@@ -71,9 +76,9 @@ export function FloorPlanView({
         </div>
       </div>
 
-      <div className="flex">
+      <div className="w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
         <div
-          className="relative mx-auto rounded-xl border border-border bg-surface p-3 shadow-sm"
+          className="relative mx-auto shrink-0 rounded-2xl border border-border/50 bg-surface-soft p-3 shadow-card-soft"
           style={{ width: targetWidth, height: targetHeight }}>
           <div
             className="relative bg-transparent"
@@ -93,7 +98,6 @@ export function FloorPlanView({
               } else if (table.shape === 'SQUARE') {
                 shapeClasses = 'rounded-md';
               } else {
-                // RECTANGLE or any other
                 shapeClasses = 'rounded-lg';
               }
 
@@ -101,18 +105,26 @@ export function FloorPlanView({
               const isUnavailable = unavailableTableIds.includes(table.id);
 
               let stateClasses = '';
-              if (!table.isActive) {
+              if (readOnly) {
+                if (!table.isActive) {
+                  stateClasses =
+                    'border border-dashed border-border/60 bg-surface-soft text-muted opacity-50 cursor-default';
+                } else {
+                  stateClasses =
+                    'border border-border/60 bg-surface text-foreground/80 shadow-card-soft cursor-default';
+                }
+              } else if (!table.isActive) {
                 stateClasses =
-                  'border border-border bg-background text-muted opacity-60 cursor-not-allowed';
+                  'border border-border/60 bg-surface-soft text-muted opacity-50 cursor-not-allowed';
               } else if (isUnavailable) {
                 stateClasses =
-                  'border border-error bg-error/10 text-error opacity-80 cursor-not-allowed';
+                  'border border-error/35 bg-error/8 text-error opacity-80 cursor-not-allowed';
               } else if (isSelected) {
                 stateClasses =
-                  'border-2 border-primary bg-primary/18 text-primary-hover shadow-md cursor-pointer scale-[1.05] font-semibold';
+                  'border-2 border-accent-text bg-accent-bg text-accent-text shadow-md cursor-pointer scale-[1.05] font-semibold';
               } else {
                 stateClasses =
-                  'border border-primary/50 bg-primary/5 text-foreground/90 hover:border-primary hover:bg-primary/10 hover:scale-[1.03] cursor-pointer';
+                  'border border-accent-border/55 bg-accent-bg/70 text-accent-text hover:border-accent-border hover:bg-accent-bg hover:scale-[1.03] cursor-pointer shadow-card-soft';
               }
 
               return (
@@ -128,11 +140,11 @@ export function FloorPlanView({
                     transformOrigin: 'center',
                   }}
                   onClick={() => {
-                    if (!table.isActive || isUnavailable || !onSelectTable) return;
+                    if (readOnly || !table.isActive || isUnavailable || !onSelectTable) return;
                     onSelectTable(table.id);
                   }}>
                   <span>{table.label}</span>
-                  <span className="text-[9px] font-normal text-muted">
+                  <span className="text-[9px] font-normal opacity-70">
                     {table.capacity} seats
                   </span>
                 </div>

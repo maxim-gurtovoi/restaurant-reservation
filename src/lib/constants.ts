@@ -7,6 +7,8 @@ export const ROUTES = {
   register: '/auth/register',
   myReservations: '/my-reservations',
   managerDashboard: '/manager/dashboard',
+  managerReservations: '/manager/reservations',
+  managerFloorPlan: '/manager/floor-plan',
   admin: '/admin',
 } as const;
 

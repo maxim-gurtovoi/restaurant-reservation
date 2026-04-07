@@ -100,12 +100,20 @@ Panou manager pentru vizualizarea rezervărilor
 
 ## Demo credentials (local seed)
 
-After running `npm run db:seed`, you can log in with:
+After running `npm run db:seed` (or `npx prisma db seed`), you can log in with:
 
 - **Shared password**: `Demo12345!`
 - **Manager**: `manager.alice@example.com`
 - **Regular user**: `bob@example.com`
 - **Admin (optional)**: `admin@example.com`
+
+### Demo walkthrough (~5 minutes)
+
+1. **Guest path** — Open `/restaurants`, open any venue, scroll through photos and practical info, then use **Book a table**: pick date, time, party size, select a table on the floor plan, and submit. Sign in as `bob@example.com` first if you want the reservation tied to an account; the confirmation page shows the QR code for check-in.
+2. **Manager path** — Sign in as `manager.alice@example.com`. Use **Manager** in the header: **Dashboard** (today’s stats), **Reservations** (list and detail), **Floor plan** (read-only layout), and **Check-in** from a reservation detail or by scanning/opening the check-in link with the QR token.
+3. **Admin path** — Sign in as `admin@example.com`, open `/admin`: create a restaurant, assign a manager, and use flash messages on redirect for quick feedback.
+
+**Note:** Only one `npm run dev` instance should use port 3000; a second dev server causes a `.next/dev/lock` error.
 
 6. Perspective de dezvoltare
 

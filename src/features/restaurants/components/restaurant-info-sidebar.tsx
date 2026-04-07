@@ -127,29 +127,29 @@ export function RestaurantInfoSidebar({
   const weeklyRows = buildWeeklyRows(workingHours);
 
   return (
-    <aside className="space-y-4 rounded-xl border border-border bg-surface p-4 shadow-sm lg:sticky lg:top-24">
+    <aside className="space-y-4 rounded-2xl border border-border/50 bg-surface p-5 shadow-card lg:sticky lg:top-24">
       <div className="space-y-2">
         <button
           type="button"
-          className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-95"
+          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_2px_6px_rgba(123,47,155,0.25),0_8px_20px_rgba(123,47,155,0.15)] transition hover:bg-primary-hover"
         >
           {phone ? `Call ${phone}` : 'Call restaurant'}
         </button>
         <p className={`text-xs font-medium ${openStatus.tone}`}>{openStatus.label}</p>
       </div>
 
-      <section className="space-y-2 border-t border-border pt-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Working hours</h3>
+      <section className="space-y-2 border-t border-border/60 pt-3">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Working hours</h3>
         <div className="space-y-1.5 text-sm text-foreground">
           {weeklyRows.map((row) => (
             <div
               key={row.dayOfWeek}
               className={[
-                'flex items-start justify-between gap-3 rounded-md px-2 py-1',
-                row.isToday ? 'bg-primary/10' : '',
+                'flex items-start justify-between gap-3 rounded-lg px-2.5 py-1.5',
+                row.isToday ? 'border border-accent-border/40 bg-accent-bg/50' : '',
               ].join(' ')}
             >
-              <span className={row.isToday ? 'font-semibold text-foreground' : 'text-muted'}>
+              <span className={row.isToday ? 'font-semibold text-accent-text' : 'text-muted'}>
                 {row.label}
                 {row.isToday ? ' · Today' : ''}
               </span>
@@ -161,14 +161,14 @@ export function RestaurantInfoSidebar({
         </div>
       </section>
 
-      <section className="space-y-2 border-t border-border pt-3 text-sm">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Address</h3>
-        <p className="text-foreground">{address ?? 'Address not provided'}</p>
+      <section className="space-y-2 border-t border-border/60 pt-3 text-sm">
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Address</h3>
+        <p className="wrap-break-word text-foreground">{address ?? 'Address not provided'}</p>
       </section>
 
       {(email || phone) && (
-        <section className="space-y-2 border-t border-border pt-3 text-sm">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted">Contacts</h3>
+        <section className="space-y-2 border-t border-border/60 pt-3 text-sm">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Contacts</h3>
           {phone ? <p className="text-foreground">Phone: {phone}</p> : null}
           {email ? <p className="text-foreground">Email: {email}</p> : null}
         </section>

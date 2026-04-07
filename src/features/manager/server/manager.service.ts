@@ -1,5 +1,5 @@
 import 'server-only';
-import type { ReservationStatus } from '@prisma/client';
+import type { ReservationStatus, TableShape } from '@prisma/client';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 
@@ -210,4 +210,94 @@ export async function getReservationDetailsForManager(input: {
   };
 }
 
+export type ManagerFloorPlanRestaurantOption = {
+  id: string;
+  name: string;
+};
+
+export type ManagerFloorPlanContext = {
+  restaurant: ManagerFloorPlanRestaurantOption | null;
+  restaurants: ManagerFloorPlanRestaurantOption[];
+  floorPlans: {
+    id: string;
+    name: string;
+    width: number;
+    height: number;
+  }[];
+  tables: {
+    id: string;
+    floorPlanId: string;
+    label: string;
+    capacity: number;
+    shape: TableShape;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    isActive: boolean;
+  }[];
+};
+
+export async function getManagerFloorPlanContext(input: {
+  managerUserId: string;
+  restaurantId?: string | null;
+}): Promise<ManagerFloorPlanContext> {
+  const links = await prisma.restaurantManager.findMany({
+    where: { userId: input.managerUserId },
+    select: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          floorPlans: { orderBy: { name: 'asc' } },
+          tables: true,
+        },
+      },
+    },
+    orderBy: { restaurant: { name: 'asc' } },
+  });
+
+  const restaurants: ManagerFloorPlanRestaurantOption[] = links.map((l) => ({
+    id: l.restaurant.id,
+    name: l.restaurant.name,
+  }));
+
+  if (!restaurants.length) {
+    return { restaurant: null, restaurants: [], floorPlans: [], tables: [] };
+  }
+
+  const requestedId =
+    typeof input.restaurantId === 'string' && input.restaurantId.length > 0
+      ? input.restaurantId
+      : null;
+  const allowed = requestedId && restaurants.some((r) => r.id === requestedId);
+  const selectedId = allowed ? requestedId! : restaurants[0]!.id;
+  const row = links.find((l) => l.restaurant.id === selectedId)!;
+  const r = row.restaurant;
+
+  return {
+    restaurant: { id: r.id, name: r.name },
+    restaurants,
+    floorPlans: r.floorPlans.map((fp) => ({
+      id: fp.id,
+      name: fp.name,
+      width: fp.width,
+      height: fp.height,
+    })),
+    tables: r.tables.map((t) => ({
+      id: t.id,
+      floorPlanId: t.floorPlanId,
+      label: t.label,
+      capacity: t.capacity,
+      shape: t.shape,
+      x: t.x,
+      y: t.y,
+      width: t.width,
+      height: t.height,
+      rotation: t.rotation,
+      isActive: t.isActive,
+    })),
+  };
+}
 

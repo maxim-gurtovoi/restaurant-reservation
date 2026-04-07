@@ -55,41 +55,41 @@ export default async function ManagerCheckInPage({ params }: Props) {
       <Card className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs text-slate-400">Restaurant</p>
-            <p className="text-sm text-slate-100">{reservation.restaurant.name}</p>
+            <p className="text-xs font-medium text-muted">Restaurant</p>
+            <p className="text-sm text-foreground">{reservation.restaurant.name}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Status</p>
-            <p className="text-sm font-semibold text-slate-100">{statusLabel}</p>
+            <p className="text-xs font-medium text-muted">Status</p>
+            <p className="text-sm font-semibold text-foreground">{statusLabel}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Reservation</p>
-            <p className="font-mono text-xs text-slate-200">{reservation.id}</p>
+            <p className="text-xs font-medium text-muted">Reservation</p>
+            <p className="font-mono text-xs text-foreground/90">{reservation.id}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Table</p>
-            <p className="text-sm text-slate-100">{reservation.table.label}</p>
+            <p className="text-xs font-medium text-muted">Table</p>
+            <p className="text-sm text-foreground">{reservation.table.label}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">When</p>
-            <p className="text-sm text-slate-100">
+            <p className="text-xs font-medium text-muted">When</p>
+            <p className="text-sm text-foreground">
               {dateStr} · {startTimeStr}–{endTimeStr}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Guests</p>
-            <p className="text-sm text-slate-100">{reservation.guestCount}</p>
+            <p className="text-xs font-medium text-muted">Guests</p>
+            <p className="text-sm text-foreground">{reservation.guestCount}</p>
           </div>
           <div className="sm:col-span-2">
-            <p className="text-xs text-slate-400">Contact</p>
-            <p className="text-sm text-slate-100">{reservation.contactName || '—'}</p>
+            <p className="text-xs font-medium text-muted">Contact</p>
+            <p className="text-sm text-foreground">{reservation.contactName || '—'}</p>
           </div>
         </div>
 
         {canConfirm ? (
           <CheckInConfirmButton token={token} />
         ) : (
-          <div className="rounded-md border border-slate-800 bg-slate-950/60 p-3 text-xs text-slate-400">
+          <div className="rounded-xl border border-border bg-background/80 p-3 text-xs text-muted">
             This reservation cannot be checked in from status{' '}
             <span className="font-mono">{statusLabel}</span>.
           </div>
@@ -97,8 +97,8 @@ export default async function ManagerCheckInPage({ params }: Props) {
       </Card>
 
       <Card className="space-y-2">
-        <p className="text-xs uppercase tracking-wide text-slate-400">Check-in tips</p>
-        <ul className="space-y-1 text-xs text-slate-300">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Check-in tips</p>
+        <ul className="space-y-1 text-xs text-muted">
           <li>• Verify reservation id and guest name before confirming.</li>
           <li>• If already checked in, no second confirmation is needed.</li>
           <li>• Use reservations list for manual follow-up and status tracking.</li>

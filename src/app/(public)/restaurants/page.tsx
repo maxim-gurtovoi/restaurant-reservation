@@ -12,7 +12,7 @@ export default async function RestaurantsPage() {
         subtitle="Select a restaurant to see available tables and floor plans."
       />
       {'error' in result.body ? (
-        <p className="text-sm text-red-300">{result.body.error}</p>
+        <p className="text-sm text-error">{result.body.error}</p>
       ) : (
         <RestaurantList restaurants={result.body} />
       )}

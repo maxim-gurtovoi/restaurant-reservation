@@ -13,7 +13,7 @@ const MOCK_RESERVATIONS = [
 export function ReservationsList() {
   if (!MOCK_RESERVATIONS.length) {
     return (
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-muted">
         You have no upcoming reservations yet.
       </p>
     );
@@ -24,15 +24,15 @@ export function ReservationsList() {
       {MOCK_RESERVATIONS.map((r) => (
         <li
           key={r.id}
-          className="flex items-center justify-between rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2 text-sm"
+          className="flex items-center justify-between rounded-xl border border-border bg-surface px-3 py-2.5 text-sm shadow-sm"
         >
           <div>
-            <p className="font-medium">{r.restaurantName}</p>
-            <p className="text-xs text-slate-400">
+            <p className="font-medium text-foreground">{r.restaurantName}</p>
+            <p className="text-xs text-muted">
               {r.date} at {r.time} · {r.guests} guests
             </p>
           </div>
-          <span className="text-xs text-emerald-400">
+          <span className="text-xs font-medium text-accent-text">
             {r.status.toLowerCase()}
           </span>
         </li>
@@ -40,4 +40,3 @@ export function ReservationsList() {
     </ul>
   );
 }
-

@@ -62,7 +62,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
         className="h-9 w-9 cursor-pointer rounded-full p-0 transition-all duration-150 ease-in-out hover:scale-[1.03] hover:shadow-sm"
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary-hover">
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent-bg text-sm font-semibold text-accent-text">
           {avatarLetter}
         </span>
       </Button>
@@ -70,7 +70,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-border bg-background shadow-sm"
+          className="absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-border/55 bg-surface shadow-card"
         >
           <button
             type="button"

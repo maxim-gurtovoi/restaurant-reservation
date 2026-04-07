@@ -48,8 +48,8 @@ export function CheckInConfirmButton({
       <Button type="button" className="w-full" onClick={onConfirm} disabled={disabled || loading}>
         {loading ? 'Confirming…' : 'Confirm check-in'}
       </Button>
-      {error ? <p className="text-xs text-red-300">{error}</p> : null}
-      {success ? <p className="text-xs text-emerald-300">{success}</p> : null}
+      {error ? <p className="text-xs text-error">{error}</p> : null}
+      {success ? <p className="text-xs text-accent-text">{success}</p> : null}
     </div>
   );
 }

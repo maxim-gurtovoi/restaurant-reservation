@@ -157,8 +157,8 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-[2fr,1.1fr] lg:items-start">
-        <div className="space-y-4">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[2fr,1.1fr] lg:items-start">
+        <div className="min-w-0 space-y-4">
           <FloorPlanView
             floorPlans={floorPlans}
             tables={tables}
@@ -168,25 +168,29 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
           />
         </div>
 
-        <ReservationPanel
-          date={date}
-          time={time}
-          guests={guests}
-          selectedTable={
-            selectedTable ? { id: selectedTable.id, label: selectedTable.label, capacity: selectedTable.capacity } : null
-          }
-          restaurantId={restaurantId}
-          isCheckingAvailability={isCheckingAvailability}
-          availabilityCheckedAt={availabilityCheckedAt}
-          availabilityError={availabilityError}
-          activeTablesCount={activeTablesCount}
-          isSubmitting={isSubmitting}
-          submissionError={submissionError}
-          onDateChange={handleDateChange}
-          onTimeChange={handleTimeChange}
-          onGuestsChange={setGuests}
-          onSubmit={handleSubmitReservation}
-        />
+        <div className="min-w-0">
+          <ReservationPanel
+            date={date}
+            time={time}
+            guests={guests}
+            selectedTable={
+              selectedTable
+                ? { id: selectedTable.id, label: selectedTable.label, capacity: selectedTable.capacity }
+                : null
+            }
+            restaurantId={restaurantId}
+            isCheckingAvailability={isCheckingAvailability}
+            availabilityCheckedAt={availabilityCheckedAt}
+            availabilityError={availabilityError}
+            activeTablesCount={activeTablesCount}
+            isSubmitting={isSubmitting}
+            submissionError={submissionError}
+            onDateChange={handleDateChange}
+            onTimeChange={handleTimeChange}
+            onGuestsChange={setGuests}
+            onSubmit={handleSubmitReservation}
+          />
+        </div>
       </div>
     </section>
   );

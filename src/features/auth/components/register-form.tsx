@@ -3,6 +3,7 @@
 import type { FormEvent } from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { formInputClass, formLabelClass } from '@/lib/form-field-classes';
 import { useRouter } from 'next/navigation';
 
 export function RegisterForm() {
@@ -45,7 +46,7 @@ export function RegisterForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700" htmlFor="name">
+        <label className={formLabelClass} htmlFor="name">
           Name
         </label>
         <input
@@ -53,11 +54,11 @@ export function RegisterForm() {
           name="name"
           type="text"
           required
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          className={formInputClass}
         />
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700" htmlFor="email">
+        <label className={formLabelClass} htmlFor="email">
           Email
         </label>
         <input
@@ -65,11 +66,11 @@ export function RegisterForm() {
           name="email"
           type="email"
           required
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          className={formInputClass}
         />
       </div>
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700" htmlFor="password">
+        <label className={formLabelClass} htmlFor="password">
           Password
         </label>
         <input
@@ -77,13 +78,13 @@ export function RegisterForm() {
           name="password"
           type="password"
           required
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+          className={formInputClass}
         />
       </div>
       <Button className="w-full" type="submit" disabled={submitting}>
         {submitting ? 'Creating…' : 'Create account'}
       </Button>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-error">{error}</p> : null}
     </form>
   );
 }

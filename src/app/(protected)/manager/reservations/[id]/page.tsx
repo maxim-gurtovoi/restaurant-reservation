@@ -54,70 +54,70 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
       <Card className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs text-slate-400">Reservation ID</p>
-            <p className="font-mono text-sm font-semibold text-slate-100">{reservation.id}</p>
+            <p className="text-xs font-medium text-muted">Reservation ID</p>
+            <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Status</p>
+            <p className="text-xs font-medium text-muted">Status</p>
             <p
               className={
                 reservation.status === 'CANCELLED'
-                  ? 'text-sm font-semibold text-red-300'
-                  : 'text-sm font-semibold text-slate-100'
+                  ? 'text-sm font-semibold text-error'
+                  : 'text-sm font-semibold text-foreground'
               }
             >
               {statusLabel}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Restaurant</p>
-            <p className="text-sm text-slate-100">{reservation.restaurant.name}</p>
+            <p className="text-xs font-medium text-muted">Restaurant</p>
+            <p className="text-sm text-foreground">{reservation.restaurant.name}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Table</p>
-            <p className="text-sm text-slate-100">{reservation.table.label}</p>
+            <p className="text-xs font-medium text-muted">Table</p>
+            <p className="text-sm text-foreground">{reservation.table.label}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Date</p>
-            <p className="text-sm text-slate-100">{dateStr}</p>
+            <p className="text-xs font-medium text-muted">Date</p>
+            <p className="text-sm text-foreground">{dateStr}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Time</p>
-            <p className="text-sm text-slate-100">
+            <p className="text-xs font-medium text-muted">Time</p>
+            <p className="text-sm text-foreground">
               {startTimeStr} – {endTimeStr}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Guest count</p>
-            <p className="text-sm text-slate-100">{reservation.guestCount} guests</p>
+            <p className="text-xs font-medium text-muted">Guest count</p>
+            <p className="text-sm text-foreground">{reservation.guestCount} guests</p>
           </div>
           <div>
-            <p className="text-xs text-slate-400">Created</p>
-            <p className="text-sm text-slate-100">
+            <p className="text-xs font-medium text-muted">Created</p>
+            <p className="text-sm text-foreground">
               {new Date(reservation.createdAt).toLocaleString('en-US', { hour12: false })}
             </p>
           </div>
           {reservation.checkedInAt ? (
             <div>
-              <p className="text-xs text-slate-400">Checked in</p>
-              <p className="text-sm text-slate-100">
+              <p className="text-xs font-medium text-muted">Checked in</p>
+              <p className="text-sm text-foreground">
                 {new Date(reservation.checkedInAt).toLocaleString('en-US', { hour12: false })}
               </p>
             </div>
           ) : null}
           {reservation.cancelledAt ? (
             <div>
-              <p className="text-xs text-slate-400">Cancelled</p>
-              <p className="text-sm text-slate-100">
+              <p className="text-xs font-medium text-muted">Cancelled</p>
+              <p className="text-sm text-foreground">
                 {new Date(reservation.cancelledAt).toLocaleString('en-US', { hour12: false })}
               </p>
             </div>
           ) : null}
         </div>
 
-        <div className="border-t border-slate-700 pt-4">
-          <p className="text-xs text-slate-400 mb-2">Contact</p>
-          <div className="space-y-1 text-sm text-slate-100">
+        <div className="border-t border-border pt-4">
+          <p className="mb-2 text-xs font-medium text-muted">Contact</p>
+          <div className="space-y-1 text-sm text-foreground">
             <p>Name: {reservation.contactName || '—'}</p>
             <p>Phone: {reservation.contactPhone || '—'}</p>
             <p>Email: {reservation.contactEmail || '—'}</p>
@@ -125,14 +125,14 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
         </div>
 
         {reservation.qrToken ? (
-          <div className="border-t border-slate-700 pt-4">
-            <p className="text-xs text-slate-400 mb-2">QR token</p>
-            <p className="font-mono text-xs text-slate-300 break-all">{reservation.qrToken}</p>
+          <div className="border-t border-border pt-4">
+            <p className="mb-2 text-xs font-medium text-muted">QR token</p>
+            <p className="break-all font-mono text-xs text-foreground/85">{reservation.qrToken}</p>
           </div>
         ) : null}
 
         {canOpenCheckIn ? (
-          <div className="border-t border-slate-700 pt-4">
+          <div className="border-t border-border pt-4">
             <Button asChild variant="primary">
               <Link href={`/manager/check-in/${encodeURIComponent(reservation.qrToken)}`}>
                 Open check-in

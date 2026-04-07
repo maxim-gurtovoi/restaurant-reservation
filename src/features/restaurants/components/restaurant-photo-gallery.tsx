@@ -27,7 +27,7 @@ export function RestaurantPhotoGallery({ restaurantName, imageUrls }: Restaurant
           <div
             key={`${tile.kind}-${tile.src ?? index}`}
             className={[
-              'overflow-hidden rounded-xl border border-border bg-surface shadow-sm',
+              'overflow-hidden rounded-2xl border border-border/50 bg-surface shadow-card',
               index === 0 ? 'col-span-2 sm:col-span-2' : '',
             ].join(' ')}
           >
@@ -40,9 +40,9 @@ export function RestaurantPhotoGallery({ restaurantName, imageUrls }: Restaurant
                   loading="lazy"
                 />
               ) : (
-                <div className="relative flex h-full w-full items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.24)_1px,transparent_0)] bg-size-[14px_14px]" />
-                  <span className="relative rounded-lg border border-gray-300 bg-white/70 px-3 py-1.5 text-xs text-gray-600">
+                <div className="relative flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#F8F8F8_0%,#F3EAFF_100%)]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(123,47,155,0.07)_1px,transparent_0)] bg-size-[16px_16px]" />
+                  <span className="relative rounded-xl border border-accent-border/50 bg-surface/95 px-3 py-1.5 text-xs text-muted shadow-card-soft">
                     Photo placeholder
                   </span>
                 </div>

@@ -1,33 +1,89 @@
 @import "tailwindcss";
 
+/*
+ * TableFlow — visual system v3
+ * Page: #F3F3F3 neutral gray | Cards: #FEFEFE clean white | CTA: herb green
+ * Accent: #EEC0FF / #F9E7FF soft purple — selective, not dominant.
+ *
+ * Token rule: bg-background | bg-surface | bg-surface-soft | bg-booking,
+ * text-foreground | text-muted, border-border | border-border-strong,
+ * text-primary | text-accent-text | text-error — avoid raw color-* utilities.
+ */
+
 :root {
-  --background: #fbf7ef;
-  --foreground: #171717;
-  --muted: #6b7280;
-  --border: #e5e7eb;
-  --primary: #107c41;
-  --primary-hover: #0d6b36;
+  /* ── Page & base surfaces ─────────────────────────────────────── */
+  --background:       #F3F3F3;
+  --foreground:       #1C1C1C;
+  --muted:            #7A7A7A;
 
-  /* Keep subtle surfaces for hierarchy (warm/cream, not harsh white) */
-  --surface: var(--background);
-  --booking-surface: var(--background);
+  /* ── Borders ──────────────────────────────────────────────────── */
+  --border:           #E4E4E4;
+  --border-strong:    #CECECE;
 
-  /* Error color for alerts and unavailable states */
-  --error: #ef4444;
+  /* ── Primary CTA (purple) ────────────────────────────────────── */
+  --primary:          #7B2F9B;
+  --primary-hover:    #6B21A8;
+  --primary-foreground: #ffffff;
+
+  /* ── Card surfaces ────────────────────────────────────────────── */
+  --surface:          #FEFEFE;
+  --surface-soft:     #F8F8F8;
+  --surface-strong:   #FEFEFE;
+
+  /* ── Booking / hero accent panel ──────────────────────────────── */
+  --booking-surface:  #F9E7FF;
+
+  /* ── Soft purple accent ───────────────────────────────────────── */
+  --accent:           #EEC0FF;
+  --accent-bg:        #F9E7FF;
+  --accent-text:      #7B2F9B;
+  --accent-border:    #E0ACFE;
+
+  /* ── Backwards-compat: warm-accent aliases → purple ──────────── */
+  --accent-warm:        #7B2F9B;
+  --accent-warm-bg:     #F9E7FF;
+  --accent-warm-border: #E0ACFE;
+
+  /* ── Error ────────────────────────────────────────────────────── */
+  --error: #DC2626;
+
+  /* ── Shadow scale (28,28,28 base) ────────────────────────────── */
+  --shadow-card:        0 1px 3px rgba(28,28,28,0.07), 0 10px 28px rgba(28,28,28,0.07);
+  --shadow-card-soft:   0 1px 2px rgba(28,28,28,0.05), 0 6px 16px rgba(28,28,28,0.04);
+  --shadow-card-strong: 0 2px 8px  rgba(28,28,28,0.12), 0 20px 44px rgba(28,28,28,0.09);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
+  --color-background:    var(--background);
+  --color-foreground:    var(--foreground);
+  --color-muted:         var(--muted);
+  --color-border:        var(--border);
+  --color-border-strong: var(--border-strong);
 
-  --color-surface: var(--surface);
-  --color-booking: var(--booking-surface);
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
+  --color-surface:        var(--surface);
+  --color-surface-soft:   var(--surface-soft);
+  --color-surface-strong: var(--surface-strong);
+  --color-booking:        var(--booking-surface);
+
+  --color-primary:            var(--primary);
+  --color-primary-hover:      var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-accent:        var(--accent);
+  --color-accent-bg:     var(--accent-bg);
+  --color-accent-text:   var(--accent-text);
+  --color-accent-border: var(--accent-border);
+
+  /* Backwards-compat aliases */
+  --color-accent-warm:        var(--accent-warm);
+  --color-accent-warm-bg:     var(--accent-warm-bg);
+  --color-accent-warm-border: var(--accent-warm-border);
 
   --color-error: var(--error);
+
+  --shadow-card:        var(--shadow-card);
+  --shadow-card-soft:   var(--shadow-card-soft);
+  --shadow-card-strong: var(--shadow-card-strong);
 
   --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;

@@ -27,11 +27,11 @@ function formatDateRange(startIso: string, endIso: string) {
   return { dateStr, startTimeStr, endTimeStr };
 }
 
-function statusClass(status: string) {
-  if (status === 'CANCELLED') return 'text-red-300 border-red-700/60';
-  if (status === 'CHECKED_IN') return 'text-blue-300 border-blue-700/60';
-  if (status === 'CONFIRMED') return 'text-emerald-300 border-emerald-700/60';
-  return 'text-slate-200 border-slate-700/60';
+function statusBadgeClass(status: string) {
+  if (status === 'CANCELLED') return 'border-error/30 bg-error/8 text-error';
+  if (status === 'CHECKED_IN') return 'border-sky-200 bg-sky-50 text-sky-700';
+  if (status === 'CONFIRMED') return 'border-accent-border/70 bg-accent-bg text-accent-text';
+  return 'border-border/60 bg-surface-soft text-muted';
 }
 
 export function ManagerReservationsList({
@@ -41,9 +41,9 @@ export function ManagerReservationsList({
 }) {
   if (!reservations.length) {
     return (
-      <Card className="border-dashed bg-slate-950/40">
-        <p className="text-sm text-slate-300">No reservations for your restaurants yet.</p>
-        <p className="mt-1 text-xs text-slate-500">
+      <Card className="border-dashed border-border/50 bg-surface">
+        <p className="text-sm text-foreground">No reservations for your restaurants yet.</p>
+        <p className="mt-1 text-xs text-muted">
           Once guests start booking, their reservations will appear here.
         </p>
       </Card>
@@ -59,36 +59,34 @@ export function ManagerReservationsList({
         return (
           <Card
             key={r.id}
-            className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            className="flex flex-col gap-3 border-border/50 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-slate-100">{r.restaurant.name}</p>
-              <p className="text-xs text-slate-400">
+              <p className="text-sm font-semibold text-foreground">{r.restaurant.name}</p>
+              <p className="text-xs text-muted">
                 {dateStr} · {startTimeStr}–{endTimeStr}
               </p>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-muted">
                 Table {r.table.label} · {r.guestCount} guests
               </p>
               {r.contactName ? (
-                <p className="text-xs text-slate-500">Contact: {r.contactName}</p>
+                <p className="text-xs text-muted/80">Contact: {r.contactName}</p>
               ) : null}
             </div>
 
             <div className="flex flex-col items-start gap-2 sm:items-end">
               <span
-                className={`inline-flex rounded-full border px-2 py-1 text-[11px] ${statusClass(
-                  r.status,
-                )}`}
+                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusBadgeClass(r.status)}`}
               >
                 {formatReservationStatus(r.status)}
               </span>
-              <div className="flex gap-2 text-[11px] text-emerald-300">
+              <div className="flex gap-2 text-[11px] font-medium text-primary">
                 <Link href={`/manager/reservations/${r.id}`} className="hover:underline">
                   View details
                 </Link>
                 {canOpenCheckIn && (
                   <>
-                    <span className="text-slate-600">·</span>
+                    <span className="text-muted">·</span>
                     <Link
                       href={`/manager/check-in/${encodeURIComponent(r.qrToken)}`}
                       className="hover:underline"
@@ -105,4 +103,3 @@ export function ManagerReservationsList({
     </div>
   );
 }
-

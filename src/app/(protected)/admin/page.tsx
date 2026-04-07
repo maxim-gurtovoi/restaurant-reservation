@@ -7,6 +7,8 @@ import {
   createRestaurantBasic,
   getAdminOverviewData,
 } from '@/features/admin/server/admin.service';
+import { formInputClass } from '@/lib/form-field-classes';
+import { cn } from '@/lib/utils';
 
 type AdminPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -70,13 +72,13 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       />
 
       {flashError ? (
-        <Card className="border-red-300 bg-red-50">
-          <p className="text-sm text-red-700">{flashError}</p>
+        <Card className="border-error/30 bg-error/5">
+          <p className="text-sm text-error">{flashError}</p>
         </Card>
       ) : null}
       {flashOk ? (
-        <Card className="border-emerald-300 bg-emerald-50">
-          <p className="text-sm text-emerald-700">
+        <Card className="border-primary/30 bg-primary/5">
+          <p className="text-sm text-primary">
             {flashOk === 'restaurant-created'
               ? 'Restaurant created successfully.'
               : 'Manager assignment saved successfully.'}
@@ -86,40 +88,40 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900">Create restaurant</h2>
+          <h2 className="text-base font-semibold text-foreground">Create restaurant</h2>
           <form action={createRestaurantAction} className="space-y-3">
             <input
               name="name"
               placeholder="Restaurant name"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={formInputClass}
               required
             />
             <input
               name="slug"
               placeholder="slug-example"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={formInputClass}
               required
             />
             <input
               name="address"
               placeholder="Address"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={formInputClass}
               required
             />
             <input
               name="phone"
               placeholder="Phone (optional)"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={formInputClass}
             />
             <textarea
               name="description"
               placeholder="Short description"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={cn(formInputClass, 'min-h-[5.5rem] resize-y')}
               rows={3}
             />
             <button
               type="submit"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
+              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary-hover"
             >
               Create restaurant
             </button>
@@ -127,11 +129,11 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </Card>
 
         <Card className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900">Assign manager</h2>
+          <h2 className="text-base font-semibold text-foreground">Assign manager</h2>
           <form action={assignManagerAction} className="space-y-3">
             <select
               name="managerUserId"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={formInputClass}
               required
             >
               <option value="">Select manager</option>
@@ -143,7 +145,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </select>
             <select
               name="restaurantId"
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className={formInputClass}
               required
             >
               <option value="">Select restaurant</option>
@@ -155,7 +157,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             </select>
             <button
               type="submit"
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
+              className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary-hover"
             >
               Assign manager
             </button>
@@ -164,17 +166,17 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
       </div>
 
       <Card className="space-y-2">
-        <h2 className="text-base font-semibold text-gray-900">Current manager links</h2>
+        <h2 className="text-base font-semibold text-foreground">Current manager links</h2>
         {overview.managerLinks.length ? (
           <div className="space-y-1.5">
             {overview.managerLinks.map((link) => (
-              <p key={link.id} className="text-sm text-gray-700">
+              <p key={link.id} className="text-sm text-foreground">
                 {link.user.name} {'->'} {link.restaurant.name}
               </p>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-500">No manager assignments yet.</p>
+          <p className="text-sm text-muted">No manager assignments yet.</p>
         )}
       </Card>
     </div>

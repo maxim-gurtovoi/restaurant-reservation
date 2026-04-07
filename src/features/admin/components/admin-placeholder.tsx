@@ -1,6 +1,6 @@
 export function AdminPlaceholder() {
   return (
-    <p className="text-sm text-slate-400">
+    <p className="text-sm text-muted">
       Admin module will handle multi-restaurant management and configuration.
     </p>
   );
