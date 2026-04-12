@@ -8,8 +8,14 @@ function addressLine(address: string | null, city: string): string | null {
   if (!address) return null;
   const parts = address.split(',').map((p) => p.trim()).filter(Boolean);
   if (!parts.length) return null;
-  if (parts[parts.length - 1]?.toLowerCase() === city.trim().toLowerCase()) parts.pop();
-  return parts.length ? parts.join(', ') : null;
+  const cityLower = city.trim().toLowerCase();
+  if (parts[0]?.toLowerCase() === cityLower) parts.shift();
+  else if (parts[parts.length - 1]?.toLowerCase() === cityLower) parts.pop();
+  const normalized = parts
+    .join(', ')
+    .replace(/\bstrada\b/gi, 'Str.')
+    .replace(/\bbulevardul\b/gi, 'Bd.');
+  return normalized.length ? normalized : null;
 }
 
 export function RestaurantCard({ restaurant }: { restaurant: RestaurantListItem }) {
@@ -71,7 +77,7 @@ export function RestaurantCard({ restaurant }: { restaurant: RestaurantListItem 
             )}
           </div>
 
-          <div className="rounded-xl border border-border/65 bg-surface-soft px-4 py-2.5 text-center text-sm font-medium text-foreground transition-colors group-hover:border-accent-border/70 group-hover:bg-accent-bg/40 group-hover:text-accent-text">
+          <div className="rounded-xl border border-border/65 bg-surface-soft px-4 py-2.5 text-center text-sm font-medium text-foreground transition-colors group-hover:border-primary group-hover:bg-primary group-hover:text-white">
             View details
           </div>
         </div>

@@ -46,12 +46,31 @@ const HOW_IT_WORKS = [
 ];
 
 const CATEGORIES = [
-  { label: '🌇 Rooftop', },
-  { label: '🍔 Casual dining', },
-  { label: '🍷 Fine dining', },
-  { label: '👨‍👩‍👧 Family friendly', },
-  { label: '🌿 Garden terrace', },
-  { label: '🎶 Live music', },
+  { label: '🌇 Rooftop' },
+  { label: '🍔 Casual dining' },
+  { label: '🍷 Fine dining' },
+  { label: '👨‍👩‍👧 Family friendly' },
+  { label: '🌿 Garden terrace' },
+  { label: '🎶 Live music' },
+];
+
+const PLATFORM_HIGHLIGHTS = [
+  {
+    title: 'Visual floor plan',
+    desc: 'Guests pick specific tables directly on interactive restaurant layouts.',
+  },
+  {
+    title: 'QR check-in',
+    desc: 'Every reservation includes a QR code for faster on-site confirmation.',
+  },
+  {
+    title: 'Real-time availability',
+    desc: 'Only available active tables are offered for the selected date and time.',
+  },
+  {
+    title: 'Multi-restaurant platform',
+    desc: 'One account can browse and book across multiple restaurant concepts.',
+  },
 ];
 
 export default async function HomePage() {
@@ -59,19 +78,15 @@ export default async function HomePage() {
   const featured = 'error' in result.body ? [] : result.body.slice(0, 6);
 
   return (
-    <div className="space-y-20 pb-12">
+    <div className="space-y-14 pb-14 sm:space-y-16">
 
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="space-y-6 pt-4">
-        <div className="max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-accent-border/70 bg-accent-bg px-3 py-1.5 text-xs font-medium text-accent-text">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent-text/60" />
-            Restaurant reservation platform
-          </div>
-          <h1 className="text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl">
+      <section className="space-y-7 pt-5">
+        <div className="max-w-3xl space-y-4">
+          <h1 className="text-4xl font-bold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl">
             Book a table at<br className="hidden sm:block" /> your favorite restaurant
           </h1>
-          <p className="text-base leading-relaxed text-muted sm:text-lg">
+          <p className="max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
             Browse restaurants, pick a table on the interactive floor plan, and confirm your reservation instantly with a QR code.
           </p>
         </div>
@@ -86,7 +101,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Categories ────────────────────────────────────────────── */}
-      <section className="space-y-4">
+      <section className="space-y-4 rounded-2xl border border-border/45 bg-surface-soft/70 p-4 shadow-card-soft sm:p-5">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted">Browse by type</p>
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map(({ label }) => (
@@ -103,11 +118,12 @@ export default async function HomePage() {
 
       {/* ── Featured restaurants ──────────────────────────────────── */}
       {featured.length > 0 && (
-        <section className="space-y-6">
+        <section className="space-y-7">
           <div className="flex items-end justify-between gap-4">
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase tracking-widest text-muted">Top picks</p>
-              <h2 className="text-2xl font-bold text-foreground">Featured restaurants</h2>
+              <h2 className="text-2xl font-bold text-foreground sm:text-3xl">Featured restaurants</h2>
+              <p className="text-sm text-muted">Popular places guests book most often.</p>
             </div>
             <Link
               href="/restaurants"
@@ -116,7 +132,7 @@ export default async function HomePage() {
               View all →
             </Link>
           </div>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featured.map((r) => (
               <RestaurantCard key={r.id} restaurant={r} />
             ))}
@@ -125,7 +141,7 @@ export default async function HomePage() {
       )}
 
       {/* ── How it works ──────────────────────────────────────────── */}
-      <section className="space-y-8">
+      <section className="space-y-6">
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted">Simple process</p>
           <h2 className="text-2xl font-bold text-foreground">How it works</h2>
@@ -135,7 +151,7 @@ export default async function HomePage() {
           {HOW_IT_WORKS.map(({ icon, step, title, desc }) => (
             <div
               key={step}
-              className="relative space-y-4 rounded-2xl border border-border/50 bg-surface p-6 shadow-card"
+              className="relative space-y-3 rounded-2xl border border-border/45 bg-surface p-5 shadow-card-soft"
             >
               <div className="flex items-start justify-between">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent-border/60 bg-accent-bg text-accent-text">
@@ -154,8 +170,27 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* ── Key advantages ────────────────────────────────────────── */}
+      <section className="space-y-5">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">Platform strengths</p>
+          <h2 className="text-2xl font-bold text-foreground">Why guests use TableFlow</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {PLATFORM_HIGHLIGHTS.map((item) => (
+            <article
+              key={item.title}
+              className="rounded-2xl border border-border/45 bg-surface p-4 shadow-card-soft"
+            >
+              <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted">{item.desc}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
       {/* ── Bottom CTA ────────────────────────────────────────────── */}
-      <section className="overflow-hidden rounded-3xl border border-accent-border/50 bg-booking p-8 sm:p-12">
+      <section className="overflow-hidden rounded-3xl border border-accent-border/55 bg-booking p-8 shadow-card-strong sm:p-10">
         <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
           <div className="space-y-2">
             <h2 className="text-2xl font-bold text-foreground">Ready to book your table?</h2>

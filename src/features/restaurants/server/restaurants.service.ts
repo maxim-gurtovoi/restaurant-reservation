@@ -61,9 +61,19 @@ function deriveCity(address: string | null | undefined): string {
     return 'Unknown city';
   }
 
-  // Very simple, explicit heuristic: take the last comma-separated part.
-  const parts = address.split(',').map((part) => part.trim());
-  const candidate = parts[parts.length - 1];
+  const parts = address.split(',').map((part) => part.trim()).filter(Boolean);
+  if (!parts.length) return 'Unknown city';
+  if (parts.length === 1) return parts[0];
+
+  const streetLikePattern =
+    /\b(strada|str\.?|bulevardul|bd\.?|bul\.?|aleea|sos\.?|soseaua|street|st\.?)\b/i;
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  const firstLooksStreet = streetLikePattern.test(first);
+  const lastLooksStreet = streetLikePattern.test(last);
+
+  const candidate =
+    lastLooksStreet && !firstLooksStreet ? first : firstLooksStreet && !lastLooksStreet ? last : last;
   return candidate.length > 0 ? candidate : 'Unknown city';
 }
 

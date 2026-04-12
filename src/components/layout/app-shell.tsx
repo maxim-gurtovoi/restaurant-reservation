@@ -7,7 +7,7 @@ import { getCurrentUser } from '@/server/auth';
 
 export async function AppShell({ children }: { children: ReactNode }) {
   const user = await getCurrentUser();
-  const canSeeManager = user?.role === 'MANAGER' || user?.role === 'ADMIN';
+  const canSeeManager = user?.role === 'MANAGER';
   const canSeeAdmin = user?.role === 'ADMIN';
   return (
     <div className="flex min-h-screen flex-col bg-background">

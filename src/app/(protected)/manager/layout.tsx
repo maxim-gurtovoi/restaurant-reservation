@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
 import { ManagerNav } from '@/components/manager/manager-nav';
 import { requireManager } from '@/server/auth';
 
@@ -7,7 +8,10 @@ export default async function ManagerLayout({
 }: {
   children: ReactNode;
 }) {
-  await requireManager();
+  const user = await requireManager();
+  if (user.role === 'ADMIN') {
+    redirect('/admin');
+  }
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

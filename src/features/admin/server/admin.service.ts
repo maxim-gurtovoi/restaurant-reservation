@@ -15,6 +15,10 @@ const assignManagerSchema = z.object({
   restaurantId: z.string().uuid(),
 });
 
+const removeManagerAssignmentSchema = z.object({
+  linkId: z.string().uuid(),
+});
+
 export async function getAdminOverviewData() {
   const [restaurants, managerUsers, managerLinks] = await prisma.$transaction([
     prisma.restaurant.findMany({
@@ -31,17 +35,45 @@ export async function getAdminOverviewData() {
         id: true,
         userId: true,
         restaurantId: true,
-        user: { select: { name: true } },
+        user: { select: { name: true, email: true } },
         restaurant: { select: { name: true } },
       },
       orderBy: { createdAt: 'desc' },
     }),
   ]);
 
+  const managerCountByRestaurantId = new Map<string, number>();
+  const restaurantsById = new Map(restaurants.map((r) => [r.id, r]));
+  for (const link of managerLinks) {
+    managerCountByRestaurantId.set(
+      link.restaurantId,
+      (managerCountByRestaurantId.get(link.restaurantId) ?? 0) + 1,
+    );
+  }
+
+  const restaurantsWithoutManagers = restaurants.filter(
+    (restaurant) => (managerCountByRestaurantId.get(restaurant.id) ?? 0) === 0,
+  );
+
+  const linksByManagerId = new Map<string, string[]>();
+  for (const link of managerLinks) {
+    const names = linksByManagerId.get(link.userId) ?? [];
+    const restaurantName = restaurantsById.get(link.restaurantId)?.name;
+    if (restaurantName) names.push(restaurantName);
+    linksByManagerId.set(link.userId, names);
+  }
+
+  const managersOverview = managerUsers.map((manager) => ({
+    ...manager,
+    restaurants: (linksByManagerId.get(manager.id) ?? []).sort((a, b) => a.localeCompare(b)),
+  }));
+
   return {
     restaurants,
     managerUsers,
     managerLinks,
+    restaurantsWithoutManagers,
+    managersOverview,
   };
 }
 
@@ -102,5 +134,26 @@ export async function assignManagerToRestaurant(input: unknown) {
   });
 
   return { ok: true as const, data: created };
+}
+
+export async function removeManagerAssignment(input: unknown) {
+  const parsed = removeManagerAssignmentSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: 'Invalid manager assignment payload' };
+  }
+
+  const exists = await prisma.restaurantManager.findUnique({
+    where: { id: parsed.data.linkId },
+    select: { id: true },
+  });
+  if (!exists) {
+    return { ok: false as const, error: 'Manager assignment not found' };
+  }
+
+  await prisma.restaurantManager.delete({
+    where: { id: parsed.data.linkId },
+  });
+
+  return { ok: true as const };
 }
 

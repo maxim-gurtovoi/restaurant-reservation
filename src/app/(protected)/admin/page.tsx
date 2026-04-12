@@ -6,6 +6,7 @@ import {
   assignManagerToRestaurant,
   createRestaurantBasic,
   getAdminOverviewData,
+  removeManagerAssignment,
 } from '@/features/admin/server/admin.service';
 import { formInputClass } from '@/lib/form-field-classes';
 import { cn } from '@/lib/utils';
@@ -64,6 +65,19 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
     redirect('/admin?ok=manager-assigned');
   }
 
+  async function removeManagerAssignmentAction(formData: FormData) {
+    'use server';
+    await requireAdmin();
+
+    const result = await removeManagerAssignment({
+      linkId: String(formData.get('linkId') ?? ''),
+    });
+    if (!result.ok) {
+      redirect(`/admin?error=${encodeURIComponent(result.error)}`);
+    }
+    redirect('/admin?ok=manager-unassigned');
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -81,7 +95,9 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
           <p className="text-sm text-primary">
             {flashOk === 'restaurant-created'
               ? 'Restaurant created successfully.'
-              : 'Manager assignment saved successfully.'}
+              : flashOk === 'manager-unassigned'
+                ? 'Manager assignment removed successfully.'
+                : 'Manager assignment saved successfully.'}
           </p>
         </Card>
       ) : null}
@@ -116,7 +132,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
             <textarea
               name="description"
               placeholder="Short description"
-              className={cn(formInputClass, 'min-h-[5.5rem] resize-y')}
+              className={cn(formInputClass, 'min-h-22 resize-y')}
               rows={3}
             />
             <button
@@ -165,14 +181,67 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         </Card>
       </div>
 
-      <Card className="space-y-2">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="space-y-3">
+          <h2 className="text-base font-semibold text-foreground">Managers overview</h2>
+          {overview.managersOverview.length ? (
+            <div className="space-y-2">
+              {overview.managersOverview.map((manager) => (
+                <div key={manager.id} className="rounded-xl border border-border/60 bg-surface-soft p-3">
+                  <p className="text-sm font-semibold text-foreground">{manager.name}</p>
+                  <p className="text-xs text-muted">{manager.email}</p>
+                  <p className="mt-1 text-xs text-foreground/85">
+                    {manager.restaurants.length
+                      ? `Assigned: ${manager.restaurants.join(', ')}`
+                      : 'No restaurant assigned'}
+                  </p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">No manager accounts found.</p>
+          )}
+        </Card>
+
+        <Card className="space-y-3">
+          <h2 className="text-base font-semibold text-foreground">Restaurants without manager</h2>
+          {overview.restaurantsWithoutManagers.length ? (
+            <div className="space-y-2">
+              {overview.restaurantsWithoutManagers.map((restaurant) => (
+                <p key={restaurant.id} className="text-sm text-foreground">
+                  {restaurant.name}{' '}
+                  <span className="text-xs text-muted">({restaurant.isActive ? 'active' : 'inactive'})</span>
+                </p>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">All restaurants currently have at least one manager.</p>
+          )}
+        </Card>
+      </div>
+
+      <Card className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">Current manager links</h2>
         {overview.managerLinks.length ? (
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {overview.managerLinks.map((link) => (
-              <p key={link.id} className="text-sm text-foreground">
-                {link.user.name} {'->'} {link.restaurant.name}
-              </p>
+              <div
+                key={link.id}
+                className="flex flex-col gap-2 rounded-xl border border-border/60 bg-surface-soft p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <p className="text-sm text-foreground">
+                  {link.user.name} ({link.user.email}) {'->'} {link.restaurant.name}
+                </p>
+                <form action={removeManagerAssignmentAction}>
+                  <input type="hidden" name="linkId" value={link.id} />
+                  <button
+                    type="submit"
+                    className="rounded-lg border border-error/35 bg-error/5 px-3 py-1.5 text-xs font-medium text-error transition-colors hover:bg-error/10"
+                  >
+                    Remove assignment
+                  </button>
+                </form>
+              </div>
             ))}
           </div>
         ) : (
