@@ -18,13 +18,13 @@ type RestaurantInfoSidebarProps = {
 };
 
 const DAY_LABELS: Record<number, string> = {
-  0: 'Sunday',
-  1: 'Monday',
-  2: 'Tuesday',
-  3: 'Wednesday',
-  4: 'Thursday',
-  5: 'Friday',
-  6: 'Saturday',
+  0: 'Воскресенье',
+  1: 'Понедельник',
+  2: 'Вторник',
+  3: 'Среда',
+  4: 'Четверг',
+  5: 'Пятница',
+  6: 'Суббота',
 };
 
 type StatusBadge = {
@@ -63,13 +63,13 @@ function formatWorkingHoursValue(item: WorkingHoursItem | undefined): {
   emphasized: boolean;
 } {
   if (!item || item.isClosed) {
-    return { text: 'Closed', emphasized: false };
+    return { text: 'Выходной', emphasized: false };
   }
 
   const openMins = parseHHmmToMinutes(item.openTime);
   const closeMins = parseHHmmToMinutes(item.closeTime);
   if (openMins === null || closeMins === null || closeMins <= openMins) {
-    return { text: 'Unavailable', emphasized: false };
+    return { text: 'Недоступно', emphasized: false };
   }
 
   return { text: `${item.openTime} - ${item.closeTime}`, emphasized: true };
@@ -85,7 +85,7 @@ function buildWeeklyRows(workingHours: WorkingHoursItem[]): WeekRow[] {
     const value = formatWorkingHoursValue(item);
     return {
       dayOfWeek,
-      label: DAY_LABELS[dayOfWeek] ?? `Day ${dayOfWeek}`,
+      label: DAY_LABELS[dayOfWeek] ?? `День ${dayOfWeek}`,
       isToday: dayOfWeek === today,
       value: value.text,
       isEmphasized: value.emphasized,
@@ -103,7 +103,7 @@ function getOpenStatus(workingHours: WorkingHoursItem[]): StatusBadge {
   });
 
   if (result.valid) {
-    return { label: 'Open now', tone: 'text-primary' };
+    return { label: 'Сейчас открыто', tone: 'text-primary' };
   }
 
   if (
@@ -111,10 +111,10 @@ function getOpenStatus(workingHours: WorkingHoursItem[]): StatusBadge {
     result.code === WORKING_HOURS_ERROR_CODES.RESTAURANT_CLOSED ||
     result.code === WORKING_HOURS_ERROR_CODES.OUTSIDE_WORKING_HOURS
   ) {
-    return { label: 'Closed now', tone: 'text-error' };
+    return { label: 'Сейчас закрыто', tone: 'text-error' };
   }
 
-  return { label: 'Hours unavailable', tone: 'text-muted' };
+  return { label: 'Часы работы недоступны', tone: 'text-muted' };
 }
 
 export function RestaurantInfoSidebar({
@@ -133,13 +133,13 @@ export function RestaurantInfoSidebar({
           type="button"
           className="w-full cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_2px_6px_rgba(123,47,155,0.25),0_8px_20px_rgba(123,47,155,0.15)] transition hover:bg-primary-hover"
         >
-          {phone ? `Call ${phone}` : 'Call restaurant'}
+          {phone ? `Позвонить: ${phone}` : 'Позвонить в ресторан'}
         </button>
         <p className={`text-xs font-medium ${openStatus.tone}`}>{openStatus.label}</p>
       </div>
 
       <section className="space-y-2 border-t border-border/60 pt-3">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Working hours</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Часы работы</h3>
         <div className="space-y-1.5 text-sm text-foreground">
           {weeklyRows.map((row) => (
             <div
@@ -151,7 +151,7 @@ export function RestaurantInfoSidebar({
             >
               <span className={row.isToday ? 'font-semibold text-accent-text' : 'text-muted'}>
                 {row.label}
-                {row.isToday ? ' · Today' : ''}
+                {row.isToday ? ' · сегодня' : ''}
               </span>
               <span className={row.isEmphasized ? 'text-foreground' : 'text-muted'}>
                 {row.value}
@@ -162,14 +162,14 @@ export function RestaurantInfoSidebar({
       </section>
 
       <section className="space-y-2 border-t border-border/60 pt-3 text-sm">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Address</h3>
-        <p className="wrap-break-word text-foreground">{address ?? 'Address not provided'}</p>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Адрес</h3>
+        <p className="wrap-break-word text-foreground">{address ?? 'Адрес не указан'}</p>
       </section>
 
       {(email || phone) && (
         <section className="space-y-2 border-t border-border/60 pt-3 text-sm">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Contacts</h3>
-          {phone ? <p className="text-foreground">Phone: {phone}</p> : null}
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-text">Контакты</h3>
+          {phone ? <p className="text-foreground">Телефон: {phone}</p> : null}
           {email ? <p className="text-foreground">Email: {email}</p> : null}
         </section>
       )}

@@ -36,12 +36,12 @@ export function FloorPlanView({
   unavailableTableIds = [],
   onSelectTable,
   readOnly = false,
-  headerEyebrow = 'Step 2 · Select a table',
+  headerEyebrow = 'Шаг 2 · Выберите столик',
 }: FloorPlanViewProps) {
   if (!floorPlans.length || !tables.length) {
     return (
       <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">
-        <p>No floor plan is configured for this restaurant yet.</p>
+        <p>Для этого ресторана ещё не настроен план зала.</p>
       </div>
     );
   }
@@ -52,7 +52,7 @@ export function FloorPlanView({
   if (!planTables.length) {
     return (
       <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">
-        <p>This floor plan does not have any tables yet.</p>
+        <p>На этом плане зала пока нет столиков.</p>
       </div>
     );
   }
@@ -71,7 +71,7 @@ export function FloorPlanView({
             {headerEyebrow}
           </p>
           <p className="text-sm font-medium text-foreground">
-            Floor plan: <span className="font-semibold">{floorPlan.name}</span>
+            План зала: <span className="font-semibold">{floorPlan.name}</span>
           </p>
         </div>
       </div>
@@ -145,7 +145,7 @@ export function FloorPlanView({
                   }}>
                   <span>{table.label}</span>
                   <span className="text-[9px] font-normal opacity-70">
-                    {table.capacity} seats
+                    {table.capacity} мест
                   </span>
                 </div>
               );

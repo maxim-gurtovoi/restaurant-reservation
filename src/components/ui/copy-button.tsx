@@ -9,7 +9,7 @@ type CopyButtonProps = {
   small?: boolean;
 };
 
-export function CopyButton({ value, label = 'Copy', small }: CopyButtonProps) {
+export function CopyButton({ value, label = 'Копировать', small }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -29,7 +29,7 @@ export function CopyButton({ value, label = 'Copy', small }: CopyButtonProps) {
       onClick={handleCopy}
       className={small ? 'px-2 py-1 text-xs h-7' : 'px-3 py-1 text-xs h-8'}
     >
-      {copied ? 'Copied' : label}
+      {copied ? 'Скопировано' : label}
     </Button>
   );
 }

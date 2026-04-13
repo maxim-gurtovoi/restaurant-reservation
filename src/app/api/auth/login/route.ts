@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const payload = await req.json().catch(() => null);
   const parsed = loginPayloadSchema.safeParse(payload);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: 'Некорректное тело запроса (JSON)' }, { status: 400 });
   }
 
   const result = await loginUser(parsed.data);

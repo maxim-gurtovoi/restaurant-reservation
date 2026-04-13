@@ -43,7 +43,7 @@ export function LoginForm({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof json?.error === 'string' ? json.error : 'Failed to sign in');
+        throw new Error(typeof json?.error === 'string' ? json.error : 'Не удалось войти');
       }
 
       if (embedInModal) {
@@ -55,7 +55,7 @@ export function LoginForm({
         onAuthenticated?.();
       }
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to sign in';
+      const message = e instanceof Error ? e.message : 'Не удалось войти';
       setError(message);
     } finally {
       setSubmitting(false);
@@ -66,7 +66,7 @@ export function LoginForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
         <label className={formLabelClass} htmlFor={emailId}>
-          Email
+          Электронная почта
         </label>
         <input
           id={emailId}
@@ -79,7 +79,7 @@ export function LoginForm({
       </div>
       <div className="space-y-1">
         <label className={formLabelClass} htmlFor={passwordId}>
-          Password
+          Пароль
         </label>
         <input
           id={passwordId}
@@ -91,7 +91,7 @@ export function LoginForm({
         />
       </div>
       <Button className="w-full" type="submit" disabled={submitting}>
-        {submitting ? 'Signing in…' : 'Sign in'}
+        {submitting ? 'Вход…' : 'Войти'}
       </Button>
       {error ? <p className="text-xs text-error">{error}</p> : null}
     </form>

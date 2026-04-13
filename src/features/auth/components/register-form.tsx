@@ -43,7 +43,7 @@ export function RegisterForm({
 
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof json?.error === 'string' ? json.error : 'Failed to create account');
+        throw new Error(typeof json?.error === 'string' ? json.error : 'Не удалось создать аккаунт');
       }
 
       if (embedInModal) {
@@ -55,7 +55,7 @@ export function RegisterForm({
         onAuthenticated?.();
       }
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to create account';
+      const message = e instanceof Error ? e.message : 'Не удалось создать аккаунт';
       setError(message);
     } finally {
       setSubmitting(false);
@@ -66,7 +66,7 @@ export function RegisterForm({
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
         <label className={formLabelClass} htmlFor={nameId}>
-          Name
+          Имя
         </label>
         <input
           id={nameId}
@@ -79,7 +79,7 @@ export function RegisterForm({
       </div>
       <div className="space-y-1">
         <label className={formLabelClass} htmlFor={emailId}>
-          Email
+          Электронная почта
         </label>
         <input
           id={emailId}
@@ -92,7 +92,7 @@ export function RegisterForm({
       </div>
       <div className="space-y-1">
         <label className={formLabelClass} htmlFor={passwordId}>
-          Password
+          Пароль
         </label>
         <input
           id={passwordId}
@@ -104,7 +104,7 @@ export function RegisterForm({
         />
       </div>
       <Button className="w-full" type="submit" disabled={submitting}>
-        {submitting ? 'Creating…' : 'Create account'}
+        {submitting ? 'Создание…' : 'Создать аккаунт'}
       </Button>
       {error ? <p className="text-xs text-error">{error}</p> : null}
     </form>

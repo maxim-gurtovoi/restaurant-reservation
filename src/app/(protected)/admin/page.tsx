@@ -81,8 +81,8 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Admin Console"
-        subtitle="Manage restaurants and manager assignments for the demo."
+        title="Панель администратора"
+        subtitle="Управление ресторанами и назначением менеджеров (демо)."
       />
 
       {flashError ? (
@@ -94,44 +94,44 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
         <Card className="border-primary/30 bg-primary/5">
           <p className="text-sm text-primary">
             {flashOk === 'restaurant-created'
-              ? 'Restaurant created successfully.'
+              ? 'Ресторан успешно создан.'
               : flashOk === 'manager-unassigned'
-                ? 'Manager assignment removed successfully.'
-                : 'Manager assignment saved successfully.'}
+                ? 'Назначение менеджера снято.'
+                : 'Назначение менеджера сохранено.'}
           </p>
         </Card>
       ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="space-y-3">
-          <h2 className="text-base font-semibold text-foreground">Create restaurant</h2>
+          <h2 className="text-base font-semibold text-foreground">Создать ресторан</h2>
           <form action={createRestaurantAction} className="space-y-3">
             <input
               name="name"
-              placeholder="Restaurant name"
+              placeholder="Название ресторана"
               className={formInputClass}
               required
             />
             <input
               name="slug"
-              placeholder="slug-example"
+              placeholder="slug-primer"
               className={formInputClass}
               required
             />
             <input
               name="address"
-              placeholder="Address"
+              placeholder="Адрес"
               className={formInputClass}
               required
             />
             <input
               name="phone"
-              placeholder="Phone (optional)"
+              placeholder="Телефон (необязательно)"
               className={formInputClass}
             />
             <textarea
               name="description"
-              placeholder="Short description"
+              placeholder="Краткое описание"
               className={cn(formInputClass, 'min-h-22 resize-y')}
               rows={3}
             />
@@ -139,20 +139,20 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               type="submit"
               className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary-hover"
             >
-              Create restaurant
+              Создать ресторан
             </button>
           </form>
         </Card>
 
         <Card className="space-y-3">
-          <h2 className="text-base font-semibold text-foreground">Assign manager</h2>
+          <h2 className="text-base font-semibold text-foreground">Назначить менеджера</h2>
           <form action={assignManagerAction} className="space-y-3">
             <select
               name="managerUserId"
               className={formInputClass}
               required
             >
-              <option value="">Select manager</option>
+              <option value="">Выберите менеджера</option>
               {overview.managerUsers.map((manager) => (
                 <option key={manager.id} value={manager.id}>
                   {manager.name} ({manager.email})
@@ -164,7 +164,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               className={formInputClass}
               required
             >
-              <option value="">Select restaurant</option>
+              <option value="">Выберите ресторан</option>
               {overview.restaurants.map((restaurant) => (
                 <option key={restaurant.id} value={restaurant.id}>
                   {restaurant.name}
@@ -175,7 +175,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
               type="submit"
               className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary-hover"
             >
-              Assign manager
+              Назначить
             </button>
           </form>
         </Card>
@@ -183,7 +183,7 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="space-y-3">
-          <h2 className="text-base font-semibold text-foreground">Managers overview</h2>
+          <h2 className="text-base font-semibold text-foreground">Менеджеры</h2>
           {overview.managersOverview.length ? (
             <div className="space-y-2">
               {overview.managersOverview.map((manager) => (
@@ -192,36 +192,36 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                   <p className="text-xs text-muted">{manager.email}</p>
                   <p className="mt-1 text-xs text-foreground/85">
                     {manager.restaurants.length
-                      ? `Assigned: ${manager.restaurants.join(', ')}`
-                      : 'No restaurant assigned'}
+                      ? `Назначен: ${manager.restaurants.join(', ')}`
+                      : 'Ресторан не назначен'}
                   </p>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted">No manager accounts found.</p>
+            <p className="text-sm text-muted">Аккаунты менеджеров не найдены.</p>
           )}
         </Card>
 
         <Card className="space-y-3">
-          <h2 className="text-base font-semibold text-foreground">Restaurants without manager</h2>
+          <h2 className="text-base font-semibold text-foreground">Рестораны без менеджера</h2>
           {overview.restaurantsWithoutManagers.length ? (
             <div className="space-y-2">
               {overview.restaurantsWithoutManagers.map((restaurant) => (
                 <p key={restaurant.id} className="text-sm text-foreground">
                   {restaurant.name}{' '}
-                  <span className="text-xs text-muted">({restaurant.isActive ? 'active' : 'inactive'})</span>
+                  <span className="text-xs text-muted">({restaurant.isActive ? 'активен' : 'неактивен'})</span>
                 </p>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted">All restaurants currently have at least one manager.</p>
+            <p className="text-sm text-muted">У всех ресторанов уже есть менеджер.</p>
           )}
         </Card>
       </div>
 
       <Card className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">Current manager links</h2>
+        <h2 className="text-base font-semibold text-foreground">Текущие связи менеджеров</h2>
         {overview.managerLinks.length ? (
           <div className="space-y-2">
             {overview.managerLinks.map((link) => (
@@ -238,14 +238,14 @@ export default async function AdminPage({ searchParams }: AdminPageProps) {
                     type="submit"
                     className="rounded-lg border border-error/35 bg-error/5 px-3 py-1.5 text-xs font-medium text-error transition-colors hover:bg-error/10"
                   >
-                    Remove assignment
+                    Снять назначение
                   </button>
                 </form>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted">No manager assignments yet.</p>
+          <p className="text-sm text-muted">Назначений пока нет.</p>
         )}
       </Card>
     </div>

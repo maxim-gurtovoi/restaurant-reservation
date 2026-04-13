@@ -13,8 +13,8 @@ export default async function ManagerReservationsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Reservations"
-        subtitle="View reservations for your restaurants and manage check-ins."
+        title="Брони"
+        subtitle="Просмотр броней по вашим ресторанам и управление заселением."
       />
       {'error' in result.body ? (
         <p className="text-sm text-red-300">{result.body.error}</p>

@@ -78,7 +78,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
             className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
             onClick={() => setOpen(false)}
           >
-            Profile
+            Профиль
           </button>
           <button
             type="button"
@@ -86,7 +86,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
             className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
             onClick={() => setOpen(false)}
           >
-            Settings
+            Настройки
           </button>
           <div className="my-1 h-px bg-border" />
           <button
@@ -96,7 +96,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
             className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             onClick={onLogout}
           >
-            {loggingOut ? 'Signing out…' : 'Logout'}
+            {loggingOut ? 'Выход…' : 'Выйти'}
           </button>
         </div>
       ) : null}

@@ -25,12 +25,12 @@ export function CancelReservationButton({
 
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof json?.error === 'string' ? json.error : 'Failed to cancel reservation');
+        throw new Error(typeof json?.error === 'string' ? json.error : 'Не удалось отменить бронь');
       }
 
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to cancel reservation');
+      setError(e instanceof Error ? e.message : 'Не удалось отменить бронь');
     } finally {
       setIsCancelling(false);
     }
@@ -45,7 +45,7 @@ export function CancelReservationButton({
         onClick={onCancel}
         disabled={isCancelling}
       >
-        {isCancelling ? 'Cancelling…' : 'Cancel reservation'}
+        {isCancelling ? 'Отмена…' : 'Отменить бронь'}
       </Button>
       {error ? <p className="text-xs text-red-300">{error}</p> : null}
     </div>

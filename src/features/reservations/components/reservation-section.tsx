@@ -65,7 +65,7 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
         const message =
           typeof errorPayload?.error === 'string'
             ? errorPayload.error
-            : `Availability check failed: ${response.status}`;
+            : `Ошибка проверки доступности: ${response.status}`;
         throw new Error(message);
       }
 
@@ -85,7 +85,7 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
       setAvailabilityError(
         error instanceof Error
           ? error.message
-          : 'Could not load availability right now. Please try again.',
+          : 'Не удалось загрузить доступность. Попробуйте ещё раз.',
       );
     } finally {
       setIsCheckingAvailability(false);
@@ -123,7 +123,7 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create reservation');
+        throw new Error(errorData.error || 'Не удалось создать бронь');
       }
 
       const result = await response.json();
@@ -132,7 +132,7 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
       // Ensure server components for the new route re-fetch data
       router.refresh();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to create reservation';
+      const message = error instanceof Error ? error.message : 'Не удалось создать бронь';
       setSubmissionError(message);
       console.error('Error submitting reservation:', error);
     } finally {
@@ -147,13 +147,13 @@ export function ReservationSection({ restaurantId, floorPlans, tables }: Reserva
     <section className="mt-4 space-y-4">
       <header className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-          Booking
+          Бронирование
         </p>
         <h2 className="text-lg font-semibold text-foreground">
-          Reserve a table in just a few steps
+          Забронируйте столик за несколько шагов
         </h2>
         <p className="text-sm text-muted">
-          First pick date, time and party size, then choose any available table on the floor plan.
+          Сначала укажите дату, время и число гостей, затем выберите свободный стол на плане зала.
         </p>
       </header>
 

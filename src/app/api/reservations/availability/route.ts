@@ -15,13 +15,13 @@ export async function GET(req: NextRequest) {
   const time = req.nextUrl.searchParams.get('time') ?? '';
 
   if (!restaurantId) {
-    return NextResponse.json({ error: 'restaurantId is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Укажите restaurantId' }, { status: 400 });
   }
   if (!date || !isValidDate(date)) {
-    return NextResponse.json({ error: 'date is required (YYYY-MM-DD)' }, { status: 400 });
+    return NextResponse.json({ error: 'Укажите дату (YYYY-MM-DD)' }, { status: 400 });
   }
   if (!time || !isValidTime(time)) {
-    return NextResponse.json({ error: 'time is required (HH:mm)' }, { status: 400 });
+    return NextResponse.json({ error: 'Укажите время (ЧЧ:мм)' }, { status: 400 });
   }
 
   const result = await getAvailability({ restaurantId, date, time });

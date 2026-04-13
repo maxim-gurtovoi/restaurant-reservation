@@ -80,7 +80,7 @@ export async function getAdminOverviewData() {
 export async function createRestaurantBasic(input: unknown) {
   const parsed = createRestaurantSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: 'Invalid restaurant payload' };
+    return { ok: false as const, error: 'Некорректные данные ресторана' };
   }
 
   const exists = await prisma.restaurant.findUnique({
@@ -88,7 +88,7 @@ export async function createRestaurantBasic(input: unknown) {
     select: { id: true },
   });
   if (exists) {
-    return { ok: false as const, error: 'Restaurant slug already exists' };
+    return { ok: false as const, error: 'Ресторан с таким slug уже существует' };
   }
 
   const created = await prisma.restaurant.create({
@@ -109,7 +109,7 @@ export async function createRestaurantBasic(input: unknown) {
 export async function assignManagerToRestaurant(input: unknown) {
   const parsed = assignManagerSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: 'Invalid manager assignment payload' };
+    return { ok: false as const, error: 'Некорректные данные назначения менеджера' };
   }
 
   const existingLink = await prisma.restaurantManager.findUnique({
@@ -122,7 +122,7 @@ export async function assignManagerToRestaurant(input: unknown) {
     select: { id: true },
   });
   if (existingLink) {
-    return { ok: false as const, error: 'Manager is already assigned to this restaurant' };
+    return { ok: false as const, error: 'Этот менеджер уже назначен на ресторан' };
   }
 
   const created = await prisma.restaurantManager.create({
@@ -139,7 +139,7 @@ export async function assignManagerToRestaurant(input: unknown) {
 export async function removeManagerAssignment(input: unknown) {
   const parsed = removeManagerAssignmentSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: 'Invalid manager assignment payload' };
+    return { ok: false as const, error: 'Некорректные данные назначения менеджера' };
   }
 
   const exists = await prisma.restaurantManager.findUnique({
@@ -147,7 +147,7 @@ export async function removeManagerAssignment(input: unknown) {
     select: { id: true },
   });
   if (!exists) {
-    return { ok: false as const, error: 'Manager assignment not found' };
+    return { ok: false as const, error: 'Связь менеджера с рестораном не найдена' };
   }
 
   await prisma.restaurantManager.delete({

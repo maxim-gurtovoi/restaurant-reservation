@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { getCurrentUser } from '@/server/auth';
 import { getReservationDetailsForManager } from '@/features/manager/server/manager.service';
 import { formatReservationStatus } from '@/lib/reservation-status';
+import { UI_LOCALE } from '@/lib/constants';
 import { ManagerReservationActions } from '@/features/manager/components/manager-reservation-actions';
 
 type Props = {
@@ -25,18 +26,18 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
 
   const start = new Date(reservation.startAt);
   const end = new Date(reservation.endAt);
-  const dateStr = start.toLocaleDateString('en-US', {
+  const dateStr = start.toLocaleDateString(UI_LOCALE, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
-  const startTimeStr = start.toLocaleTimeString('en-US', {
+  const startTimeStr = start.toLocaleTimeString(UI_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   });
-  const endTimeStr = end.toLocaleTimeString('en-US', {
+  const endTimeStr = end.toLocaleTimeString(UI_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
@@ -47,31 +48,31 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader
-          title="Reservation details"
-          subtitle="Operational view — update status or check in without QR."
+          title="Детали брони"
+          subtitle="Оперативный вид — смена статуса или заселение без QR."
         />
         <Link
           href="/manager/reservations"
           className="shrink-0 text-sm font-medium text-primary hover:underline"
         >
-          ← Back to list
+          ← К списку
         </Link>
       </div>
 
       <Card className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
-            <p className="text-xs font-medium text-muted">Guest</p>
+            <p className="text-xs font-medium text-muted">Гость</p>
             <p className="text-lg font-semibold text-foreground">
               {reservation.contactName || '—'}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Reservation ID</p>
+            <p className="text-xs font-medium text-muted">Номер брони</p>
             <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Status</p>
+            <p className="text-xs font-medium text-muted">Статус</p>
             <p
               className={
                 reservation.status === 'CANCELLED'
@@ -83,56 +84,56 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Restaurant</p>
+            <p className="text-xs font-medium text-muted">Ресторан</p>
             <p className="text-sm text-foreground">{reservation.restaurant.name}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Table</p>
+            <p className="text-xs font-medium text-muted">Столик</p>
             <p className="text-sm text-foreground">{reservation.table.label}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Date</p>
+            <p className="text-xs font-medium text-muted">Дата</p>
             <p className="text-sm text-foreground">{dateStr}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Time</p>
+            <p className="text-xs font-medium text-muted">Время</p>
             <p className="text-sm text-foreground">
               {startTimeStr} – {endTimeStr}
             </p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Guest count</p>
-            <p className="text-sm text-foreground">{reservation.guestCount} guests</p>
+            <p className="text-xs font-medium text-muted">Гостей</p>
+            <p className="text-sm text-foreground">{reservation.guestCount}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Created</p>
+            <p className="text-xs font-medium text-muted">Создано</p>
             <p className="text-sm text-foreground">
-              {new Date(reservation.createdAt).toLocaleString('en-US', { hour12: false })}
+              {new Date(reservation.createdAt).toLocaleString(UI_LOCALE, { hour12: false })}
             </p>
           </div>
           {reservation.checkedInAt ? (
             <div>
-              <p className="text-xs font-medium text-muted">Checked in</p>
+              <p className="text-xs font-medium text-muted">Заселение</p>
               <p className="text-sm text-foreground">
-                {new Date(reservation.checkedInAt).toLocaleString('en-US', { hour12: false })}
+                {new Date(reservation.checkedInAt).toLocaleString(UI_LOCALE, { hour12: false })}
               </p>
             </div>
           ) : null}
           {reservation.cancelledAt ? (
             <div>
-              <p className="text-xs font-medium text-muted">Cancelled</p>
+              <p className="text-xs font-medium text-muted">Отменено</p>
               <p className="text-sm text-foreground">
-                {new Date(reservation.cancelledAt).toLocaleString('en-US', { hour12: false })}
+                {new Date(reservation.cancelledAt).toLocaleString(UI_LOCALE, { hour12: false })}
               </p>
             </div>
           ) : null}
         </div>
 
         <div className="border-t border-border pt-4">
-          <p className="mb-2 text-xs font-medium text-muted">Contact</p>
+          <p className="mb-2 text-xs font-medium text-muted">Контакты</p>
           <div className="space-y-1 text-sm text-foreground">
-            <p>Name: {reservation.contactName || '—'}</p>
-            <p>Phone: {reservation.contactPhone || '—'}</p>
+            <p>Имя: {reservation.contactName || '—'}</p>
+            <p>Телефон: {reservation.contactPhone || '—'}</p>
             <p>Email: {reservation.contactEmail || '—'}</p>
           </div>
         </div>

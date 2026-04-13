@@ -39,9 +39,9 @@ export function ManagerReservationsView({
   if (empty) {
     return (
       <Card className="border-dashed border-border/50 bg-surface">
-        <p className="text-sm text-foreground">No reservations for your restaurants yet.</p>
+        <p className="text-sm text-foreground">Пока нет бронирований по вашим ресторанам.</p>
         <p className="mt-1 text-xs text-muted">
-          Once guests start booking, their reservations will appear here.
+          Когда гости начнут бронировать, записи появятся здесь.
         </p>
       </Card>
     );
@@ -61,13 +61,13 @@ export function ManagerReservationsView({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted">
           {mode === 'list'
-            ? `Showing ${filtered.length} of ${reservations.length} · chronological list.`
-            : `Showing ${filtered.length} of ${reservations.length} · by start time, grouped by hour.`}
+            ? `Показано ${filtered.length} из ${reservations.length} · список по времени.`
+            : `Показано ${filtered.length} из ${reservations.length} · по часам.`}
         </p>
         <div
           className="inline-flex rounded-xl border border-border/60 bg-surface-soft/80 p-1 shadow-card-soft"
           role="group"
-          aria-label="Reservation view mode"
+          aria-label="Режим просмотра броней"
         >
           <button
             type="button"
@@ -78,7 +78,7 @@ export function ManagerReservationsView({
                 : 'text-muted hover:text-foreground'
             }`}
           >
-            List
+            Список
           </button>
           <button
             type="button"
@@ -89,7 +89,7 @@ export function ManagerReservationsView({
                 : 'text-muted hover:text-foreground'
             }`}
           >
-            Timeline
+            Таймлайн
           </button>
         </div>
       </div>

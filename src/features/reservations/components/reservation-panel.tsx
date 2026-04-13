@@ -67,11 +67,11 @@ export function ReservationPanel({
     <div className="space-y-6 rounded-2xl border border-accent-border/50 bg-booking p-6 shadow-card-strong">
       <header className="space-y-1">
         <p className="text-[11px] font-semibold uppercase tracking-widest text-accent-text/80">
-          Step 1 · Choose date &amp; time
+          Шаг 1 · Дата и время
         </p>
-        <h2 className="text-base font-semibold text-foreground">Plan your visit</h2>
+        <h2 className="text-base font-semibold text-foreground">Спланируйте визит</h2>
         <p className="text-sm text-muted">
-          Start by selecting when you&apos;d like to arrive and how many guests are coming.
+          Укажите время прихода и сколько будет гостей.
         </p>
       </header>
 
@@ -79,7 +79,7 @@ export function ReservationPanel({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-foreground" htmlFor="res-date">
-              Date <span className="ml-1 text-[11px] font-normal text-muted">(calendar)</span>
+              Дата <span className="ml-1 text-[11px] font-normal text-muted">(календарь)</span>
             </label>
             <div className="relative">
               <svg
@@ -98,7 +98,7 @@ export function ReservationPanel({
                 />
               </svg>
               <input
-                id="res-date" type="date" title="Select a date"
+                id="res-date" type="date" title="Выберите дату"
                 className={inputWithIconClass}
                 value={date}
                 onChange={(e) => onDateChange(e.target.value)}
@@ -109,7 +109,7 @@ export function ReservationPanel({
 
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-foreground" htmlFor="res-time">
-              Time <span className="ml-1 text-[11px] font-normal text-muted">(picker)</span>
+              Время <span className="ml-1 text-[11px] font-normal text-muted">(выбор)</span>
             </label>
             <div className="relative">
               <svg
@@ -128,7 +128,7 @@ export function ReservationPanel({
                 />
               </svg>
               <input
-                id="res-time" type="time" title="Select a time"
+                id="res-time" type="time" title="Выберите время"
                 className={inputWithIconClass}
                 value={time}
                 onChange={(e) => onTimeChange(e.target.value)}
@@ -140,7 +140,7 @@ export function ReservationPanel({
 
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-foreground" htmlFor="res-guests">
-            Guests
+            Гости
           </label>
           <input
             id="res-guests" type="number" min={1}
@@ -155,14 +155,14 @@ export function ReservationPanel({
           {isCheckingAvailability && (
             <div className="flex items-start gap-2 rounded-xl border border-border/50 bg-surface px-3 py-2.5 text-sm text-muted shadow-card-soft">
               <span className="mt-0.5 text-xs">●</span>
-              <p>Checking availability…</p>
+              <p>Проверяем доступность…</p>
             </div>
           )}
 
           {!isCheckingAvailability && availabilityCheckedAt && !submissionError && !availabilityError && (
             <div className="flex items-start gap-2 rounded-xl border border-accent-border/60 bg-accent-bg/50 px-3 py-2.5 text-sm text-accent-text">
               <span className="mt-0.5 text-base">✓</span>
-              <p>Availability updated for your selected date and time.</p>
+              <p>Доступность обновлена для выбранных даты и времени.</p>
             </div>
           )}
 
@@ -183,21 +183,21 @@ export function ReservationPanel({
           {!activeTablesCount && (
             <div className="flex items-start gap-2 rounded-xl border border-border/50 bg-surface px-3 py-2.5 text-sm text-muted shadow-card-soft">
               <span className="mt-0.5 text-xs">i</span>
-              <p>No active tables are available for this restaurant yet.</p>
+              <p>Для этого ресторана пока нет активных столиков.</p>
             </div>
           )}
 
           {(!date || !time) && (
             <div className="flex items-start gap-2 rounded-xl border border-border/50 bg-surface px-3 py-2.5 text-sm text-muted shadow-card-soft">
               <span className="mt-0.5 text-xs">i</span>
-              <p>Select date and time to check table availability.</p>
+              <p>Укажите дату и время, чтобы проверить занятость столиков.</p>
             </div>
           )}
         </div>
 
         <section className="space-y-2 rounded-xl border border-border/50 bg-surface px-4 py-3.5 shadow-card-soft">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-accent-text/80">
-            Selected table
+            Выбранный столик
           </p>
           {selectedTable ? (
             <>
@@ -208,21 +208,21 @@ export function ReservationPanel({
                   </span>
                   {selectedTable.label}
                 </span>{' '}
-                <span className="text-muted">· up to {selectedTable.capacity} guests</span>
+                <span className="text-muted">· до {selectedTable.capacity} гостей</span>
               </p>
               {exceedsCapacity ? (
                 <p className="text-[11px] text-error">
-                  This party size may exceed table capacity. Adjust guests or choose another table.
+                  Возможно, гостей больше, чем вмещает стол. Измените число гостей или выберите другой стол.
                 </p>
               ) : (
                 <p className="text-[11px] text-muted">
-                  Selected for your chosen time. You can still adjust guests before confirming.
+                  Выбрано на указанное время. Число гостей можно изменить до подтверждения.
                 </p>
               )}
             </>
           ) : (
             <p className="text-[11px] text-muted">
-              Tap a table on the floor plan to select it. Only available tables can be chosen.
+              Нажмите столик на плане зала. Можно выбрать только свободные столики.
             </p>
           )}
         </section>
@@ -230,7 +230,7 @@ export function ReservationPanel({
 
       <div className="space-y-3 border-t border-accent-border/40 pt-4">
         <p className="text-[11px] font-semibold uppercase tracking-widest text-accent-text/80">
-          Step 3 · Continue to booking
+          Шаг 3 · Перейти к бронированию
         </p>
         <Button
           type="button"
@@ -239,12 +239,12 @@ export function ReservationPanel({
           variant="primary"
           onClick={handleSubmit}
         >
-          {isSubmitting ? 'Booking...' : 'Continue to booking'}
+          {isSubmitting ? 'Бронирование…' : 'Продолжить к брони'}
         </Button>
         <div className="space-y-1 text-center text-[11px] text-muted">
-          <p>You&apos;ll review all reservation details on the next step before confirming.</p>
-          <p>Instant confirmation, with your QR code and full details, will be shown after booking.</p>
-          <p>You can later view and cancel your reservation from the &quot;My reservations&quot; page.</p>
+          <p>На следующем шаге вы сможете проверить все данные перед подтверждением.</p>
+          <p>После брони сразу отобразится подтверждение, QR-код и полные детали.</p>
+          <p>Позже бронь можно посмотреть или отменить в разделе «Мои брони».</p>
         </div>
       </div>
     </div>

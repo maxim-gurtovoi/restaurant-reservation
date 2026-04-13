@@ -1,15 +1,15 @@
 export function formatReservationStatus(status: string): string {
   switch (status) {
     case 'CONFIRMED':
-      return 'Confirmed';
+      return 'Подтверждено';
     case 'CHECKED_IN':
-      return 'Checked in';
+      return 'Гости за столом';
     case 'CANCELLED':
-      return 'Cancelled';
+      return 'Отменено';
     case 'COMPLETED':
-      return 'Completed';
+      return 'Завершено';
     case 'NO_SHOW':
-      return 'No show';
+      return 'Неявка';
     default:
       return status;
   }

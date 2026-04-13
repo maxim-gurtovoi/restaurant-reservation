@@ -22,25 +22,25 @@ export async function POST(
 ) {
   const manager = await getCurrentUser();
   if (!manager) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
   }
 
   const { id: reservationId } = await ctx.params;
   if (!reservationId) {
-    return NextResponse.json({ error: 'Reservation id is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Укажите идентификатор брони' }, { status: 400 });
   }
 
   let body: unknown;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: 'Некорректное тело запроса (JSON)' }, { status: 400 });
   }
 
   const action = parseAction(body);
   if (!action) {
     return NextResponse.json(
-      { error: 'Invalid action. Expected one of: check_in, complete, cancel, no_show.' },
+      { error: 'Недопустимое действие. Ожидается: check_in, complete, cancel, no_show.' },
       { status: 400 },
     );
   }
@@ -53,9 +53,9 @@ export async function POST(
     });
     return NextResponse.json({ status: result.status }, { status: 200 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to update reservation';
+    const message = error instanceof Error ? error.message : 'Не удалось обновить бронь';
     const status =
-      message === 'Reservation not found' ? 404 : message.startsWith('Cannot ') ? 400 : 400;
+      message === 'Бронь не найдена' ? 404 : message.startsWith('Нельзя') ? 400 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }

@@ -26,7 +26,8 @@ export function RestaurantCard({ restaurant }: { restaurant: RestaurantListItem 
     [restaurant.address, restaurant.city],
   );
   const description =
-    restaurant.description ?? 'Explore tables, floor plans, and reserve your preferred time.';
+    restaurant.description ??
+    'План зала, свободные столики и бронирование на удобное время.';
 
   return (
     <Link href={`/restaurants/${restaurant.slug}`} className="group block h-full">
@@ -78,7 +79,7 @@ export function RestaurantCard({ restaurant }: { restaurant: RestaurantListItem 
           </div>
 
           <div className="rounded-xl border border-border/65 bg-surface-soft px-4 py-2.5 text-center text-sm font-medium text-foreground transition-colors group-hover:border-primary group-hover:bg-primary group-hover:text-white">
-            View details
+            Подробнее
           </div>
         </div>
       </div>

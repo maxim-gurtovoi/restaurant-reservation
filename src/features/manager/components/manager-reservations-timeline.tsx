@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ManagerReservationListItem } from '@/features/manager/server/manager.service';
 import { managerReservationStatusBadgeClass } from '@/features/manager/lib/manager-reservation-status';
 import { formatReservationStatus } from '@/lib/reservation-status';
+import { UI_LOCALE } from '@/lib/constants';
 
 function formatTimeRange(startIso: string, endIso: string) {
   const start = new Date(startIso);
@@ -11,11 +12,11 @@ function formatTimeRange(startIso: string, endIso: string) {
     minute: '2-digit',
     hour12: false,
   };
-  return `${start.toLocaleTimeString('en-US', opts)}–${end.toLocaleTimeString('en-US', opts)}`;
+  return `${start.toLocaleTimeString(UI_LOCALE, opts)}–${end.toLocaleTimeString(UI_LOCALE, opts)}`;
 }
 
 function formatHourBlockLabel(bucketDate: Date) {
-  return bucketDate.toLocaleString('en-US', {
+  return bucketDate.toLocaleString(UI_LOCALE, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -60,7 +61,7 @@ export function ManagerReservationsTimeline({
     if (emptyFiltered) {
       return (
         <div className="rounded-xl border border-dashed border-border/50 bg-surface-soft/60 px-4 py-6 text-center text-sm text-muted">
-          No reservations match the current filters. Adjust filters or switch to list view.
+          Нет броней по фильтрам. Измените фильтры или переключитесь на список.
         </div>
       );
     }
@@ -83,7 +84,7 @@ export function ManagerReservationsTimeline({
           <ul className="space-y-2">
             {rows.map((r) => {
               const canOpenCheckIn = r.status === 'CONFIRMED' && !!r.qrToken;
-              const guestLabel = r.contactName?.trim() || 'Guest';
+              const guestLabel = r.contactName?.trim() || 'Гость';
 
               return (
                 <li key={r.id}>
@@ -94,7 +95,7 @@ export function ManagerReservationsTimeline({
                       </span>
                       <span className="text-sm font-medium text-foreground">{guestLabel}</span>
                       <span className="text-xs text-muted">
-                        Table {r.table.label} · {r.guestCount} guests · {r.restaurant.name}
+                        Стол {r.table.label} · гостей: {r.guestCount} · {r.restaurant.name}
                       </span>
                     </div>
 
@@ -108,13 +109,13 @@ export function ManagerReservationsTimeline({
                         href={`/manager/reservations/${r.id}`}
                         className="text-[11px] font-medium text-primary hover:underline"
                       >
-                        Details
+                        Детали
                       </Link>
                       {canOpenCheckIn ? (
                         <Link
                           href={`/manager/check-in/${encodeURIComponent(r.qrToken)}`}
                           className="text-[11px] font-medium text-muted hover:text-primary hover:underline"
-                          title="QR shortcut"
+                          title="По QR"
                         >
                           QR
                         </Link>

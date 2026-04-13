@@ -24,12 +24,12 @@ export async function cancelReservation(input: {
   });
 
   if (!existing) {
-    throw new Error('Reservation not found');
+    throw new Error('Бронь не найдена');
   }
 
   // MVP: only CONFIRMED reservations can be cancelled by the user.
   if (existing.status !== 'CONFIRMED') {
-    throw new Error(`Reservation cannot be cancelled from status ${existing.status}`);
+    throw new Error(`Нельзя отменить бронь со статусом ${existing.status}`);
   }
 
   const updated = await prisma.reservation.update({
@@ -47,7 +47,7 @@ export async function cancelReservation(input: {
 
   // Prisma schema defines cancelledAt as nullable, but update sets it.
   if (!updated.cancelledAt) {
-    throw new Error('Failed to cancel reservation');
+    throw new Error('Не удалось отменить бронь');
   }
 
   return updated as CancelReservationResult;

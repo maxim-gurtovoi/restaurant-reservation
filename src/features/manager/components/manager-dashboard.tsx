@@ -3,10 +3,10 @@ import type { ManagerDashboardStats } from '@/features/manager/server/manager.se
 export function ManagerDashboard({ stats }: { stats: ManagerDashboardStats }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <Stat label="Today's reservations" value={String(stats.todayReservations)} icon="📅" />
-      <Stat label="Guests checked in today" value={String(stats.checkedInToday)} icon="✅" />
-      <Stat label="Upcoming reservations" value={String(stats.upcomingReservations)} icon="⏳" />
-      <Stat label="Managed restaurants" value={String(stats.managedRestaurants)} icon="🍽️" />
+      <Stat label="Брони сегодня" value={String(stats.todayReservations)} icon="📅" />
+      <Stat label="Заселено сегодня" value={String(stats.checkedInToday)} icon="✅" />
+      <Stat label="Предстоящие брони" value={String(stats.upcomingReservations)} icon="⏳" />
+      <Stat label="Рестораны под управлением" value={String(stats.managedRestaurants)} icon="🍽️" />
     </div>
   );
 }

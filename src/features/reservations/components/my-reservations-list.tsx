@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import type { UserReservationListItem } from '@/features/reservations/server/reservations.service';
 import { formatReservationStatus } from '@/lib/reservation-status';
+import { UI_LOCALE } from '@/lib/constants';
 
 function listStatusBadgeClass(status: string) {
   if (status === 'CANCELLED') return 'border-error/30 bg-error/8 text-error';
@@ -18,9 +19,9 @@ export function MyReservationsList({
   if (!reservations.length) {
     return (
       <Card className="border-dashed border-border/50 bg-surface">
-        <p className="text-sm text-foreground">You don&apos;t have any reservations yet.</p>
+        <p className="text-sm text-foreground">У вас пока нет бронирований.</p>
         <p className="mt-1 text-xs text-muted">
-          Book a table on a restaurant page to see it here.
+          Забронируйте столик на странице ресторана — бронь появится здесь.
         </p>
       </Card>
     );
@@ -32,16 +33,16 @@ export function MyReservationsList({
         const start = new Date(r.startAt);
         const end = new Date(r.endAt);
 
-        const dateStr = start.toLocaleDateString('en-US', {
+        const dateStr = start.toLocaleDateString(UI_LOCALE, {
           weekday: 'short',
           year: 'numeric',
           month: 'short',
           day: 'numeric',
         });
-        const startTimeStr = start.toLocaleTimeString('en-US', {
+        const startTimeStr = start.toLocaleTimeString(UI_LOCALE, {
           hour: '2-digit', minute: '2-digit', hour12: false,
         });
-        const endTimeStr = end.toLocaleTimeString('en-US', {
+        const endTimeStr = end.toLocaleTimeString(UI_LOCALE, {
           hour: '2-digit', minute: '2-digit', hour12: false,
         });
 
@@ -57,7 +58,7 @@ export function MyReservationsList({
                     {dateStr} · {startTimeStr}–{endTimeStr}
                   </p>
                   <p className="text-xs text-muted">
-                    Table {r.table.label} · {r.guestCount} guests
+                    Стол {r.table.label} · гостей: {r.guestCount}
                   </p>
                 </div>
                 <span

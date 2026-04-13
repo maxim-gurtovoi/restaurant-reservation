@@ -20,8 +20,8 @@ export function RestaurantPhotoGallery({ restaurantName, imageUrls }: Restaurant
   const tiles = buildTiles(imageUrls);
 
   return (
-    <section aria-label="Restaurant photos" className="space-y-3">
-      <h2 className="text-base font-semibold text-foreground">Photos</h2>
+    <section aria-label="Фотографии ресторана" className="space-y-3">
+      <h2 className="text-base font-semibold text-foreground">Фото</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         {tiles.map((tile, index) => (
           <div
@@ -43,7 +43,7 @@ export function RestaurantPhotoGallery({ restaurantName, imageUrls }: Restaurant
                 <div className="relative flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#F8F8F8_0%,#F3EAFF_100%)]">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(123,47,155,0.07)_1px,transparent_0)] bg-size-[16px_16px]" />
                   <span className="relative rounded-xl border border-accent-border/50 bg-surface/95 px-3 py-1.5 text-xs text-muted shadow-card-soft">
-                    Photo placeholder
+                    Заглушка фото
                   </span>
                 </div>
               )}

@@ -14,8 +14,8 @@ const HOW_IT_WORKS = [
       </svg>
     ),
     step: '01',
-    title: 'Choose a restaurant',
-    desc: 'Browse our list of restaurants, view photos, menus, and available tables.',
+    title: 'Выберите ресторан',
+    desc: 'Просматривайте список заведений, фото, описания и доступные столики.',
   },
   {
     icon: (
@@ -27,8 +27,8 @@ const HOW_IT_WORKS = [
       </svg>
     ),
     step: '02',
-    title: 'Pick your table',
-    desc: 'See the real floor plan, tap a free table, and pick a date and time.',
+    title: 'Выберите столик',
+    desc: 'Откройте план зала, нажмите на свободный стол и укажите дату и время.',
   },
   {
     icon: (
@@ -40,36 +40,36 @@ const HOW_IT_WORKS = [
       </svg>
     ),
     step: '03',
-    title: 'Confirm with QR code',
-    desc: 'Get instant confirmation and a personal QR code for quick check-in at the door.',
+    title: 'Подтвердите по QR',
+    desc: 'Получите мгновенное подтверждение и личный QR-код для быстрого заселения.',
   },
 ];
 
 const CATEGORIES = [
-  { label: '🌇 Rooftop' },
-  { label: '🍔 Casual dining' },
-  { label: '🍷 Fine dining' },
-  { label: '👨‍👩‍👧 Family friendly' },
-  { label: '🌿 Garden terrace' },
-  { label: '🎶 Live music' },
+  { label: '🌇 Панорама / крыша' },
+  { label: '🍔 Непринуждённо' },
+  { label: '🍷 Изысканно' },
+  { label: '👨‍👩‍👧 С детьми' },
+  { label: '🌿 Терраса / сад' },
+  { label: '🎶 Живая музыка' },
 ];
 
 const PLATFORM_HIGHLIGHTS = [
   {
-    title: 'Visual floor plan',
-    desc: 'Guests pick specific tables directly on interactive restaurant layouts.',
+    title: 'Наглядный план зала',
+    desc: 'Гости выбирают конкретные столики на интерактивной схеме зала.',
   },
   {
-    title: 'QR check-in',
-    desc: 'Every reservation includes a QR code for faster on-site confirmation.',
+    title: 'Вход по QR',
+    desc: 'У каждой брони есть QR-код для быстрого подтверждения на месте.',
   },
   {
-    title: 'Real-time availability',
-    desc: 'Only available active tables are offered for the selected date and time.',
+    title: 'Актуальная занятость',
+    desc: 'Предлагаются только свободные активные столики на выбранное время.',
   },
   {
-    title: 'Multi-restaurant platform',
-    desc: 'One account can browse and book across multiple restaurant concepts.',
+    title: 'Несколько ресторанов',
+    desc: 'Один аккаунт — бронирование в разных заведениях платформы.',
   },
 ];
 
@@ -83,25 +83,25 @@ export default async function HomePage() {
       <section className="space-y-6 sm:space-y-7">
         <div className="max-w-3xl space-y-4 sm:space-y-5">
           <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Book a table at<br className="hidden sm:block" /> your favorite restaurant
+            Забронируйте столик<br className="hidden sm:block" /> в любимом ресторане
           </h1>
           <p className="max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
-            Browse restaurants, pick a table on the interactive floor plan, and confirm your reservation instantly with a QR code.
+            Выбирайте заведение, стол на плане зала и мгновенно подтверждайте бронь с QR-кодом.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Button asChild variant="primary">
-            <Link href="/restaurants">Browse restaurants</Link>
+            <Link href="/restaurants">Смотреть рестораны</Link>
           </Button>
           <Button asChild variant="outline">
-            <Link href="/auth/register">Create free account</Link>
+            <Link href="/auth/register">Бесплатная регистрация</Link>
           </Button>
         </div>
       </section>
 
       {/* ── Categories (supporting — lighter than featured) ───────── */}
       <section className="space-y-3 rounded-2xl border border-border/35 bg-surface-soft/55 p-3.5 sm:space-y-3.5 sm:p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">Browse by type</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">По типу</p>
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map(({ label }) => (
             <Link
@@ -121,19 +121,19 @@ export default async function HomePage() {
           <div className="rounded-3xl border border-border-strong/35 bg-surface-soft/60 p-5 shadow-card-soft sm:p-6 md:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
               <div className="min-w-0 space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted">Top picks</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted">Подборка</p>
                 <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-[1.875rem]">
-                  Featured restaurants
+                  Рекомендуемые рестораны
                 </h2>
                 <p className="max-w-xl text-sm leading-relaxed text-muted">
-                  Popular places guests book most often.
+                  Заведения, которые чаще всего бронируют гости.
                 </p>
               </div>
               <Link
                 href="/restaurants"
                 className="inline-flex shrink-0 items-center gap-1 self-start rounded-lg px-1 py-1 text-sm font-semibold text-accent-text underline-offset-4 transition-colors hover:underline sm:self-auto"
               >
-                View all
+                Все рестораны
                 <span aria-hidden="true" className="text-base leading-none">
                   →
                 </span>
@@ -149,10 +149,10 @@ export default async function HomePage() {
       )}
 
       {/* ── How it works (secondary — calmer surfaces) ────────────── */}
-      <section className="space-y-4 sm:space-y-5">
+      <section id="how-it-works" className="scroll-mt-24 space-y-4 sm:space-y-5">
         <div className="max-w-2xl space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted">Simple process</p>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">How it works</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">Простой процесс</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Как это работает</h2>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
@@ -181,8 +181,8 @@ export default async function HomePage() {
       {/* ── Key advantages (tertiary — compact) ───────────────────── */}
       <section className="space-y-4 sm:space-y-4">
         <div className="max-w-2xl space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted">Platform strengths</p>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Why guests use TableFlow</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">Преимущества</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Почему гости выбирают TableFlow</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-4 lg:gap-4">
           {PLATFORM_HIGHLIGHTS.map((item) => (
@@ -202,18 +202,18 @@ export default async function HomePage() {
         <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center sm:gap-10">
           <div className="max-w-xl space-y-2 sm:space-y-2.5">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Ready to book your table?
+              Готовы забронировать столик?
             </h2>
             <p className="text-sm leading-relaxed text-muted sm:text-base">
-              Join guests already using the platform. Free to sign up, instant confirmation.
+              Регистрация бесплатна, подтверждение брони — сразу после оформления.
             </p>
           </div>
           <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
             <Button asChild variant="primary" className="w-full sm:w-auto">
-              <Link href="/restaurants">Browse restaurants</Link>
+              <Link href="/restaurants">Смотреть рестораны</Link>
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href="/auth/register">Sign up free</Link>
+              <Link href="/auth/register">Зарегистрироваться</Link>
             </Button>
           </div>
         </div>

@@ -27,14 +27,14 @@ export function CheckInConfirmButton({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof json?.error === 'string' ? json.error : 'Failed to check in');
+        throw new Error(typeof json?.error === 'string' ? json.error : 'Не удалось выполнить заселение');
       }
-      setSuccess('Guest check-in confirmed successfully.');
+      setSuccess('Заселение гостей подтверждено.');
       router.refresh();
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to check in';
-      if (message.includes('status CHECKED_IN')) {
-        setError('This reservation is already checked in.');
+      const message = e instanceof Error ? e.message : 'Не удалось выполнить заселение';
+      if (message.includes('CHECKED_IN')) {
+        setError('Эта бронь уже отмечена как заселение.');
       } else {
         setError(message);
       }
@@ -46,7 +46,7 @@ export function CheckInConfirmButton({
   return (
     <div className="space-y-2">
       <Button type="button" className="w-full" onClick={onConfirm} disabled={disabled || loading}>
-        {loading ? 'Confirming…' : 'Confirm check-in'}
+        {loading ? 'Подтверждение…' : 'Подтвердить заселение'}
       </Button>
       {error ? <p className="text-xs text-error">{error}</p> : null}
       {success ? <p className="text-xs text-accent-text">{success}</p> : null}

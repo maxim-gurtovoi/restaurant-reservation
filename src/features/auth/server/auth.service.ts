@@ -21,7 +21,7 @@ const registerSchema = z.object({
 export async function loginUser(input: unknown): Promise<ApiResult<{ token: string }>> {
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) {
-    return { status: 400, body: { error: 'Invalid credentials payload' } };
+    return { status: 400, body: { error: 'Некорректные данные для входа' } };
   }
 
   const { email, password } = parsed.data;
@@ -32,12 +32,12 @@ export async function loginUser(input: unknown): Promise<ApiResult<{ token: stri
   });
 
   if (!userRecord) {
-    return { status: 401, body: { error: 'Invalid email or password' } };
+    return { status: 401, body: { error: 'Неверный email или пароль' } };
   }
 
   const ok = await bcrypt.compare(password, userRecord.passwordHash);
   if (!ok) {
-    return { status: 401, body: { error: 'Invalid email or password' } };
+    return { status: 401, body: { error: 'Неверный email или пароль' } };
   }
 
   const payload: JwtPayloadUser = {
@@ -53,7 +53,7 @@ export async function loginUser(input: unknown): Promise<ApiResult<{ token: stri
 export async function registerUser(input: unknown): Promise<ApiResult<{ token: string }>> {
   const parsed = registerSchema.safeParse(input);
   if (!parsed.success) {
-    return { status: 400, body: { error: 'Invalid registration payload' } };
+    return { status: 400, body: { error: 'Некорректные данные регистрации' } };
   }
 
   const { name, email, password, phone } = parsed.data;
@@ -63,7 +63,7 @@ export async function registerUser(input: unknown): Promise<ApiResult<{ token: s
     select: { id: true },
   });
   if (existing) {
-    return { status: 409, body: { error: 'Email is already registered' } };
+    return { status: 409, body: { error: 'Этот email уже зарегистрирован' } };
   }
 
   const passwordHash = await bcrypt.hash(password, 10);

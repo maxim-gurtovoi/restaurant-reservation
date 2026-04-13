@@ -10,8 +10,8 @@ export default async function ManagerDashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Dashboard"
-        subtitle="Overview of today’s reservations and check-ins."
+        title="Обзор"
+        subtitle="Сводка по броням и заселениям за сегодня."
       />
       <ManagerDashboard stats={stats} />
     </div>

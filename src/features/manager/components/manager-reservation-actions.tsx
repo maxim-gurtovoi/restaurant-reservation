@@ -29,32 +29,32 @@ export function ManagerReservationActions({ reservationId, status, qrToken }: Pr
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof json?.error === 'string' ? json.error : 'Request failed');
+        throw new Error(typeof json?.error === 'string' ? json.error : 'Запрос не выполнен');
       }
       router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
+      setError(e instanceof Error ? e.message : 'Что-то пошло не так');
     } finally {
       setLoading(null);
     }
   };
 
   const onCancel = () => {
-    if (!confirm('Cancel this reservation?')) return;
+    if (!confirm('Отменить эту бронь?')) return;
     void postAction('cancel');
   };
 
   const onNoShow = () => {
-    if (!confirm('Mark this reservation as no-show?')) return;
+    if (!confirm('Отметить бронь как неявку?')) return;
     void postAction('no_show');
   };
 
   if (status === 'CONFIRMED') {
     return (
       <div className="space-y-3 border-t border-border pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Actions</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Действия</p>
         <p className="text-xs text-muted">
-          Check in guests here without scanning QR, or use the QR shortcut below for the same workflow.
+          Заселите гостей здесь без сканирования QR или воспользуйтесь QR-ссылкой ниже — тот же сценарий.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
@@ -63,7 +63,7 @@ export function ManagerReservationActions({ reservationId, status, qrToken }: Pr
             disabled={!!loading}
             onClick={() => void postAction('check_in')}
           >
-            {loading === 'check_in' ? 'Checking in…' : 'Check in guest'}
+            {loading === 'check_in' ? 'Заселение…' : 'Заселить гостей'}
           </Button>
           <Button
             type="button"
@@ -71,7 +71,7 @@ export function ManagerReservationActions({ reservationId, status, qrToken }: Pr
             disabled={!!loading}
             onClick={onCancel}
           >
-            {loading === 'cancel' ? 'Cancelling…' : 'Cancel reservation'}
+            {loading === 'cancel' ? 'Отмена…' : 'Отменить бронь'}
           </Button>
           <Button
             type="button"
@@ -79,18 +79,18 @@ export function ManagerReservationActions({ reservationId, status, qrToken }: Pr
             disabled={!!loading}
             onClick={onNoShow}
           >
-            {loading === 'no_show' ? 'Updating…' : 'Mark no-show'}
+            {loading === 'no_show' ? 'Обновление…' : 'Неявка'}
           </Button>
         </div>
         <div className="rounded-xl border border-border/60 bg-surface-soft/80 px-3 py-2 text-xs text-muted">
-          <span className="font-medium text-foreground/80">QR shortcut: </span>
+          <span className="font-medium text-foreground/80">QR-ссылка: </span>
           <Link
             href={`/manager/check-in/${encodeURIComponent(qrToken)}`}
             className="font-medium text-primary underline underline-offset-2 hover:text-primary/90"
           >
-            Open check-in via QR link
+            Открыть заселение по QR
           </Link>
-          <span className="text-muted"> — same reservation, optional faster access.</span>
+          <span className="text-muted"> — та же бронь, быстрый доступ.</span>
         </div>
         {error ? <p className="text-xs text-error">{error}</p> : null}
       </div>
@@ -100,14 +100,14 @@ export function ManagerReservationActions({ reservationId, status, qrToken }: Pr
   if (status === 'CHECKED_IN') {
     return (
       <div className="space-y-3 border-t border-border pt-4">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Actions</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted">Действия</p>
         <Button
           type="button"
           variant="primary"
           disabled={!!loading}
           onClick={() => void postAction('complete')}
         >
-          {loading === 'complete' ? 'Updating…' : 'Mark visit completed'}
+          {loading === 'complete' ? 'Обновление…' : 'Завершить визит'}
         </Button>
         {error ? <p className="text-xs text-error">{error}</p> : null}
       </div>
@@ -117,7 +117,7 @@ export function ManagerReservationActions({ reservationId, status, qrToken }: Pr
   return (
     <div className="border-t border-border pt-4">
       <p className="text-xs text-muted">
-        No further actions for this reservation ({status.replace(/_/g, ' ').toLowerCase()}).
+        Для этой брони действий больше нет ({status.replace(/_/g, ' ').toLowerCase()}).
       </p>
     </div>
   );

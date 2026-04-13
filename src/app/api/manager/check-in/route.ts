@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST() {
   return NextResponse.json(
-    { error: 'Use /api/manager/check-in/[token] for QR check-in.' },
+    { error: 'Для check-in по QR используйте /api/manager/check-in/[token].' },
     { status: 400 },
   );
 }

@@ -74,7 +74,7 @@ export function validateReservationAgainstWorkingHours(input: {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.INVALID_TIME_WINDOW,
-      message: 'Invalid reservation time window.',
+      message: 'Некорректный интервал бронирования.',
     };
   }
 
@@ -85,7 +85,7 @@ export function validateReservationAgainstWorkingHours(input: {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.NO_WORKING_HOURS_FOR_DAY,
-      message: 'No working hours are configured for this day; booking is not available.',
+      message: 'На этот день не задано время работы; бронирование недоступно.',
     };
   }
 
@@ -93,7 +93,7 @@ export function validateReservationAgainstWorkingHours(input: {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.RESTAURANT_CLOSED,
-      message: 'Restaurant is closed on this day.',
+      message: 'В этот день ресторан закрыт.',
     };
   }
 
@@ -103,7 +103,7 @@ export function validateReservationAgainstWorkingHours(input: {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.WORKING_HOURS_MISCONFIGURED,
-      message: 'Restaurant working hours are misconfigured.',
+      message: 'Время работы ресторана задано некорректно.',
     };
   }
 
@@ -111,7 +111,7 @@ export function validateReservationAgainstWorkingHours(input: {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.OVERNIGHT_NOT_SUPPORTED,
-      message: 'Overnight working hours are not supported for this restaurant.',
+      message: 'Сквозное время работы (через полночь) для этого ресторана не поддерживается.',
     };
   }
 
@@ -125,7 +125,7 @@ export function validateReservationAgainstWorkingHours(input: {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.OUTSIDE_WORKING_HOURS,
-      message: 'Requested reservation time is outside restaurant working hours.',
+      message: 'Выбранное время выходит за пределы часов работы ресторана.',
     };
   }
 

@@ -23,7 +23,7 @@ async function assertManagerOwnsReservation(input: {
     select: { id: true, status: true },
   });
   if (!row) {
-    throw new Error('Reservation not found');
+    throw new Error('Бронь не найдена');
   }
   return row;
 }
@@ -54,7 +54,7 @@ export async function applyManagerReservationAction(input: {
 
   if (action === 'complete') {
     if (current.status !== 'CHECKED_IN') {
-      throw new Error(`Cannot mark complete from status ${current.status}`);
+      throw new Error(`Нельзя отметить завершение при статусе ${current.status}`);
     }
     const updated = await prisma.reservation.update({
       where: { id: reservationId },
@@ -66,7 +66,7 @@ export async function applyManagerReservationAction(input: {
 
   if (action === 'cancel') {
     if (current.status !== 'CONFIRMED') {
-      throw new Error(`Cannot cancel from status ${current.status}`);
+      throw new Error(`Нельзя отменить при статусе ${current.status}`);
     }
     const now = new Date();
     const updated = await prisma.reservation.update({
@@ -82,7 +82,7 @@ export async function applyManagerReservationAction(input: {
 
   if (action === 'no_show') {
     if (current.status !== 'CONFIRMED') {
-      throw new Error(`Cannot mark no-show from status ${current.status}`);
+      throw new Error(`Нельзя отметить неявку при статусе ${current.status}`);
     }
     const updated = await prisma.reservation.update({
       where: { id: reservationId },
@@ -92,5 +92,5 @@ export async function applyManagerReservationAction(input: {
     return { status: updated.status };
   }
 
-  throw new Error('Invalid action');
+  throw new Error('Недопустимое действие');
 }

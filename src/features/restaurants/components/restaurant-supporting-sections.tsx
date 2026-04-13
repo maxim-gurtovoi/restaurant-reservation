@@ -8,7 +8,7 @@ function StarRow({ rating }: { rating: number }) {
         {'★'.repeat(clamped)}
       </span>
       <span className="sr-only">
-        {clamped} out of 5 stars
+        {clamped} из 5 звёзд
       </span>
     </span>
   );
@@ -21,7 +21,7 @@ export function RestaurantPracticalInfoBlock({
 }) {
   return (
     <section className="max-w-3xl space-y-4 rounded-2xl border border-border/40 bg-surface-soft/50 p-5 shadow-card-soft">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">At a glance</h2>
+      <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Кратко</h2>
       <div className="flex flex-wrap gap-2">
         {content.cuisineTags.map((tag) => (
           <span
@@ -58,8 +58,8 @@ export function RestaurantMenuPreviewBlock({
   return (
     <section className="max-w-3xl space-y-3 rounded-2xl border border-border/40 bg-surface-soft/40 p-5 shadow-card-soft">
       <div className="flex items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Menu preview</h2>
-        <span className="text-[11px] text-muted">Sample dishes — not live ordering</span>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Фрагмент меню</h2>
+        <span className="text-[11px] text-muted">Пример блюд — не онлайн-заказ</span>
       </div>
       <ul className="divide-y divide-border/40">
         {items.map((dish) => (
@@ -84,9 +84,9 @@ export function RestaurantReviewsPreviewBlock({
   return (
     <section className="max-w-3xl space-y-4 rounded-2xl border border-border/40 bg-surface-soft/35 p-5 shadow-card-soft">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Guest reviews</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">Отзывы гостей</h2>
         <span className="rounded-full border border-border/45 bg-surface px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
-          Demo
+          Демо
         </span>
       </div>
       <ul className="space-y-3">

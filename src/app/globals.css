@@ -85,7 +85,7 @@
   --shadow-card-soft:   var(--shadow-card-soft);
   --shadow-card-strong: var(--shadow-card-strong);
 
-  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
 }
 

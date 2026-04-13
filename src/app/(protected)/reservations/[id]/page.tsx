@@ -8,6 +8,7 @@ import { getReservationDetailsById } from '@/features/reservations/server/get-re
 import { CancelReservationButton } from '@/features/reservations/components/cancel-reservation-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { formatReservationStatus } from '@/lib/reservation-status';
+import { UI_LOCALE } from '@/lib/constants';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -37,20 +38,20 @@ export default async function ReservationDetailsPage({
   const startTime = new Date(reservation.startAt);
   const endTime = new Date(reservation.endAt);
 
-  const dateStr = startTime.toLocaleDateString('en-US', {
+  const dateStr = startTime.toLocaleDateString(UI_LOCALE, {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
   });
 
-  const startTimeStr = startTime.toLocaleTimeString('en-US', {
+  const startTimeStr = startTime.toLocaleTimeString(UI_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
   });
 
-  const endTimeStr = endTime.toLocaleTimeString('en-US', {
+  const endTimeStr = endTime.toLocaleTimeString(UI_LOCALE, {
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
@@ -71,20 +72,20 @@ export default async function ReservationDetailsPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Reservation Confirmed"
-        subtitle="Your reservation has been successfully created."
+        title="Бронирование"
+        subtitle="Детали вашей брони и QR для заселения."
       />
 
       <Card className="space-y-4">
         <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
           <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs font-medium text-muted">Reservation ID</p>
+            <p className="text-xs font-medium text-muted">Номер брони</p>
             <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted">Status</p>
+            <p className="text-xs font-medium text-muted">Статус</p>
             <p
               className={[
                 'text-sm font-semibold',
@@ -96,62 +97,62 @@ export default async function ReservationDetailsPage({
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted">Restaurant</p>
+            <p className="text-xs font-medium text-muted">Ресторан</p>
             <p className="text-sm text-foreground">{reservation.restaurant.name}</p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted">Table</p>
+            <p className="text-xs font-medium text-muted">Столик</p>
             <p className="text-sm text-foreground">
-              {reservation.table.label} ({reservation.table.capacity} seats)
+              {reservation.table.label} ({reservation.table.capacity} мест)
             </p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted">Date</p>
+            <p className="text-xs font-medium text-muted">Дата</p>
             <p className="text-sm text-foreground">{dateStr}</p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted">Time</p>
+            <p className="text-xs font-medium text-muted">Время</p>
             <p className="text-sm text-foreground">
               {startTimeStr} – {endTimeStr}
             </p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted">Guest Count</p>
-            <p className="text-sm text-foreground">{reservation.guestCount} guests</p>
+            <p className="text-xs font-medium text-muted">Гостей</p>
+            <p className="text-sm text-foreground">{reservation.guestCount}</p>
           </div>
 
           <div>
-            <p className="text-xs font-medium text-muted">Created</p>
+            <p className="text-xs font-medium text-muted">Создано</p>
             <p className="text-sm text-foreground">
-              {new Date(reservation.createdAt).toLocaleString('en-US', { hour12: false })}
+              {new Date(reservation.createdAt).toLocaleString(UI_LOCALE, { hour12: false })}
             </p>
           </div>
           {reservation.cancelledAt ? (
             <div>
-              <p className="text-xs font-medium text-muted">Cancelled</p>
+              <p className="text-xs font-medium text-muted">Отменено</p>
               <p className="text-sm text-foreground">
-                {new Date(reservation.cancelledAt).toLocaleString('en-US', { hour12: false })}
+                {new Date(reservation.cancelledAt).toLocaleString(UI_LOCALE, { hour12: false })}
               </p>
             </div>
           ) : null}
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted">Check-in QR</p>
+            <p className="text-xs font-medium text-muted">QR для заселения</p>
             <QrCode value={checkInUrl} />
             <div className="space-y-1">
               <p className="text-[11px] text-muted">
-                Scan this QR code to open the manager check-in page.
+                Отсканируйте QR, чтобы открыть страницу заселения для менеджера.
               </p>
               <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background p-2">
                 <p className="truncate font-mono text-[10px] text-muted">
                   {checkInUrl}
                 </p>
-                <CopyButton value={checkInUrl} label="Copy URL" small />
+                <CopyButton value={checkInUrl} label="Копировать ссылку" small />
               </div>
             </div>
             {isCancellable ? (
@@ -163,27 +164,27 @@ export default async function ReservationDetailsPage({
         </div>
 
         <div className="border-t border-border pt-4">
-          <p className="mb-2 text-xs font-medium text-muted">QR Token</p>
+          <p className="mb-2 text-xs font-medium text-muted">Токен QR</p>
           <div className="break-all rounded-xl border border-border/60 bg-background p-3">
             <p className="font-mono text-xs text-foreground/85">{reservation.qrToken}</p>
           </div>
           <p className="mt-2 text-xs text-muted">
-            This token is linked to the reservation and used for check-in.
+            Токен привязан к брони и используется при заселении.
           </p>
           <div className="mt-2">
-            <CopyButton value={reservation.qrToken} label="Copy token" small />
+            <CopyButton value={reservation.qrToken} label="Копировать токен" small />
           </div>
         </div>
 
         <div className="border-t border-border pt-4">
-          <p className="mb-2 text-xs font-medium text-muted">Contact Information</p>
+          <p className="mb-2 text-xs font-medium text-muted">Контакты</p>
           <div className="space-y-1">
             <p className="text-sm text-foreground">
-              <span className="text-muted">Name: </span>
+              <span className="text-muted">Имя: </span>
               {reservation.contactName || '—'}
             </p>
             <p className="text-sm text-foreground">
-              <span className="text-muted">Phone: </span>
+              <span className="text-muted">Телефон: </span>
               {reservation.contactPhone || '—'}
             </p>
             <p className="text-sm text-foreground">
@@ -196,7 +197,7 @@ export default async function ReservationDetailsPage({
 
       <Card className="border-primary/25 bg-primary/5">
         <p className="text-sm text-foreground">
-          Tip: keep this screen available. For check-in, the QR code is the fastest option.
+          Совет: оставьте эту страницу под рукой. Для заселения быстрее всего отсканировать QR.
         </p>
       </Card>
     </div>

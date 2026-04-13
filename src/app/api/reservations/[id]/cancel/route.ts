@@ -7,11 +7,11 @@ export async function POST(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
 
   const { id: reservationId } = await ctx.params;
   if (!reservationId) {
-    return NextResponse.json({ error: 'Reservation id is required' }, { status: 400 });
+    return NextResponse.json({ error: 'Укажите идентификатор брони' }, { status: 400 });
   }
 
   try {

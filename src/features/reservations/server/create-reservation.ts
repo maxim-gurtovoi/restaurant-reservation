@@ -54,12 +54,12 @@ export async function createReservation(input: {
   });
 
   if (!table) {
-    throw new Error('Table not found or inactive');
+    throw new Error('Столик не найден или неактивен');
   }
 
   // Validate guest count doesn't exceed capacity
   if (guestCount > table.capacity) {
-    throw new Error('Guest count exceeds table capacity');
+    throw new Error('Число гостей превышает вместимость столика');
   }
 
   // Re-check availability with same logic as availability check
@@ -83,7 +83,7 @@ export async function createReservation(input: {
   });
 
   if (blockingReservations.length > 0) {
-    throw new Error('Table is no longer available for the requested time');
+    throw new Error('Столик уже занят на выбранное время');
   }
 
   // Generate QR token

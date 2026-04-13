@@ -35,13 +35,13 @@ export default async function ManagerFloorPlanPage({
     return (
       <div className="space-y-6">
         <PageHeader
-          title="Floor plan"
-          subtitle="Monitor tables and layout for your venues."
+          title="План зала"
+          subtitle="Схема столов и зала для ваших заведений."
         />
         <div className="space-y-2 rounded-2xl border border-dashed border-border bg-surface p-6 text-sm text-muted shadow-sm">
           <p>
-            No restaurants are linked to your manager account. Use a seeded
-            manager user, or ask an administrator to assign you to a restaurant.
+            К вашему аккаунту менеджера не привязаны рестораны. Используйте тестового менеджера из сидов
+            или попросите администратора назначить вас на ресторан.
           </p>
         </div>
       </div>
@@ -51,14 +51,14 @@ export default async function ManagerFloorPlanPage({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Floor plan"
-        subtitle="Read-only layout of tables and capacities for the selected venue."
+        title="План зала"
+        subtitle="Только просмотр: столы и вместимость выбранного заведения."
       />
 
       {ctx.restaurants.length > 1 ? (
         <div className="flex flex-col gap-2">
           <p className="text-xs font-medium uppercase tracking-wide text-muted">
-            Venue
+            Заведение
           </p>
           <div className="flex flex-wrap gap-2">
             {ctx.restaurants.map((r) => {
@@ -85,7 +85,7 @@ export default async function ManagerFloorPlanPage({
         floorPlans={ctx.floorPlans}
         tables={ctx.tables}
         readOnly
-        headerEyebrow="Overview · Floor layout"
+        headerEyebrow="Обзор · план зала"
       />
     </div>
   );

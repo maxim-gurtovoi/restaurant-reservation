@@ -97,7 +97,7 @@ export async function createReservation(input: {
         body: { error: error.message, code: error.code },
       };
     }
-    const message = error instanceof Error ? error.message : 'Failed to create reservation';
+    const message = error instanceof Error ? error.message : 'Не удалось создать бронь';
     console.error('Error creating reservation:', error);
     const err: ApiError = { status: 400, body: { error: message } };
     return err;
@@ -125,7 +125,7 @@ export async function getAvailability(input: {
     console.error('Error checking availability:', error);
     const err: ApiError = {
       status: 500,
-      body: { error: 'Failed to check availability' },
+      body: { error: 'Не удалось проверить доступность' },
     };
     return err;
   }

@@ -14,7 +14,7 @@ export function ReservationsList() {
   if (!MOCK_RESERVATIONS.length) {
     return (
       <p className="text-sm text-muted">
-        You have no upcoming reservations yet.
+        У вас пока нет предстоящих бронирований.
       </p>
     );
   }
@@ -29,7 +29,7 @@ export function ReservationsList() {
           <div>
             <p className="font-medium text-foreground">{r.restaurantName}</p>
             <p className="text-xs text-muted">
-              {r.date} at {r.time} · {r.guests} guests
+              {r.date} в {r.time} · гостей: {r.guests}
             </p>
           </div>
           <span className="text-xs font-medium text-accent-text">

@@ -6,9 +6,9 @@ import { ROUTES } from '@/lib/constants';
 import { cn } from '@/lib/utils';
 
 const items = [
-  { href: ROUTES.managerDashboard, label: 'Dashboard' },
-  { href: ROUTES.managerReservations, label: 'Reservations' },
-  { href: ROUTES.managerFloorPlan, label: 'Floor plan' },
+  { href: ROUTES.managerDashboard, label: 'Обзор' },
+  { href: ROUTES.managerReservations, label: 'Брони' },
+  { href: ROUTES.managerFloorPlan, label: 'План зала' },
 ] as const;
 
 export function ManagerNav() {
@@ -17,7 +17,7 @@ export function ManagerNav() {
   return (
     <nav
       className="flex flex-wrap gap-1 rounded-xl border border-border/55 bg-surface p-1 text-sm shadow-card-soft"
-      aria-label="Manager console">
+      aria-label="Панель менеджера">
       {items.map(({ href, label }) => {
         const active =
           href === ROUTES.managerDashboard

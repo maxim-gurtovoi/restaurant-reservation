@@ -39,7 +39,7 @@ export default async function RestaurantDetailsPage({
               <span className="rounded-full border border-accent-border/70 bg-accent-bg px-2.5 py-1 text-xs font-medium text-accent-text">
                 ★ {supporting.ratingSummary}
               </span>
-              <span>Based on guest feedback</span>
+              <span>По отзывам гостей</span>
               <span className="text-muted/60">·</span>
               <span className="rounded-full border border-border/60 bg-surface-soft px-2.5 py-1 text-xs font-medium text-foreground/70">
                 {restaurant.city}
@@ -50,20 +50,20 @@ export default async function RestaurantDetailsPage({
           <RestaurantPhotoGallery restaurantName={restaurant.name} imageUrls={galleryImages} />
 
           <section className="max-w-3xl space-y-3 rounded-2xl border border-border/50 bg-surface p-5 shadow-card">
-            <h2 className="text-base font-semibold text-foreground">About</h2>
+            <h2 className="text-base font-semibold text-foreground">О заведении</h2>
             <p className="text-sm leading-relaxed text-foreground/90">
               {restaurant.description ??
-                'A welcoming place for dining with friends and family. Explore available tables and reserve your preferred time.'}
+                'Уютное место для встреч с близкими. Выберите столик и удобное время.'}
             </p>
             <div className="flex flex-wrap gap-2 pt-1">
               <span className="rounded-full border border-accent-border/70 bg-accent-bg px-2.5 py-1 text-[11px] font-medium text-accent-text">
-                Reservations
+                Бронирование
               </span>
               <span className="rounded-full border border-accent-border/70 bg-accent-bg px-2.5 py-1 text-[11px] font-medium text-accent-text">
-                Floor plan
+                План зала
               </span>
               <span className="rounded-full border border-accent-border/70 bg-accent-bg px-2.5 py-1 text-[11px] font-medium text-accent-text">
-                QR check-in
+                Вход по QR
               </span>
             </div>
           </section>
@@ -85,12 +85,12 @@ export default async function RestaurantDetailsPage({
 
       <div className="min-w-0 space-y-4 border-t border-border/60 pt-8">
         <header className="space-y-1">
-          <h2 className="text-xl font-semibold text-foreground">Book a table</h2>
+          <h2 className="text-xl font-semibold text-foreground">Забронировать столик</h2>
           <p className="text-sm text-muted">
-            Choose time, party size, and table on the floor plan.
+            Выберите время, число гостей и столик на плане зала.
           </p>
         </header>
-        <section aria-label="Reservation flow" className="min-w-0 space-y-4">
+        <section aria-label="Оформление брони" className="min-w-0 space-y-4">
           <ReservationSection
             restaurantId={restaurant.id}
             floorPlans={restaurant.floorPlans}

@@ -27,7 +27,7 @@ async function assertManagerLinkedToRestaurant(input: {
   });
 
   if (!link) {
-    throw new Error('Forbidden');
+    throw new Error('Нет доступа');
   }
 }
 
@@ -91,7 +91,7 @@ export async function performManagerCheckIn(input: {
   });
 
   if (!reservation) {
-    throw new Error('Reservation not found');
+    throw new Error('Бронь не найдена');
   }
 
   await assertManagerLinkedToRestaurant({
@@ -100,7 +100,7 @@ export async function performManagerCheckIn(input: {
   });
 
   if (reservation.status !== 'CONFIRMED') {
-    throw new Error(`Cannot check in reservation from status ${reservation.status}`);
+    throw new Error(`Невозможно выполнить заселение при статусе ${reservation.status}`);
   }
 
   const checkedInAt = new Date();
@@ -129,7 +129,7 @@ export async function performManagerCheckIn(input: {
   });
 
   if (!updated.checkedInAt) {
-    throw new Error('Failed to check in reservation');
+    throw new Error('Не удалось выполнить заселение');
   }
 
   return {
@@ -152,7 +152,7 @@ export async function confirmCheckInByQrToken(input: {
   });
 
   if (!reservation) {
-    throw new Error('Reservation not found');
+    throw new Error('Бронь не найдена');
   }
 
   return performManagerCheckIn({

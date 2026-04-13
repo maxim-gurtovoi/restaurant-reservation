@@ -5,8 +5,8 @@ export default function LoginPage() {
   return (
     <div className="max-w-md space-y-6">
       <PageHeader
-        title="Sign in"
-        subtitle="Access your reservations or manage your restaurant."
+        title="Вход"
+        subtitle="Управляйте бронями или работайте с рестораном."
       />
       <LoginForm />
     </div>

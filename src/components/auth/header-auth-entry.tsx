@@ -48,7 +48,7 @@ export function HeaderAuthEntry() {
       <button
         type="button"
         className="absolute inset-0 bg-foreground/20 backdrop-blur-[2px]"
-        aria-label="Close dialog"
+        aria-label="Закрыть окно"
         onClick={() => setModalOpen(false)}
       />
       <div
@@ -60,18 +60,18 @@ export function HeaderAuthEntry() {
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/50 px-5 py-4">
           <div className="min-w-0 space-y-0.5">
             <h2 id="auth-modal-title" className="text-lg font-semibold tracking-tight text-foreground">
-              {mode === 'login' ? 'Sign in' : 'Create account'}
+              {mode === 'login' ? 'Вход' : 'Регистрация'}
             </h2>
             <p className="text-xs text-muted">
               {mode === 'login'
-                ? 'Stay on this page — you can switch to registration below.'
-                : 'Create an account, then continue where you left off.'}
+                ? 'Оставайтесь на странице — ниже можно перейти к регистрации.'
+                : 'Создайте аккаунт и продолжите с того же места.'}
             </p>
           </div>
           <button
             type="button"
             className="shrink-0 rounded-lg p-1.5 text-muted transition-colors hover:bg-surface-soft hover:text-foreground"
-            aria-label="Close"
+            aria-label="Закрыть"
             onClick={() => setModalOpen(false)}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
@@ -94,13 +94,13 @@ export function HeaderAuthEntry() {
                 onAuthenticated={() => setModalOpen(false)}
               />
               <p className="mt-4 text-center text-sm text-muted">
-                No account?{' '}
+                Нет аккаунта?{' '}
                 <button
                   type="button"
                   className="cursor-pointer font-medium text-accent-text underline underline-offset-2 hover:text-primary"
                   onClick={() => setMode('register')}
                 >
-                  Create account
+                  Зарегистрироваться
                 </button>
               </p>
             </>
@@ -112,13 +112,13 @@ export function HeaderAuthEntry() {
                 onAuthenticated={() => setModalOpen(false)}
               />
               <p className="mt-4 text-center text-sm text-muted">
-                Already registered?{' '}
+                Уже есть аккаунт?{' '}
                 <button
                   type="button"
                   className="cursor-pointer font-medium text-accent-text underline underline-offset-2 hover:text-primary"
                   onClick={() => setMode('login')}
                 >
-                  Sign in
+                  Войти
                 </button>
               </p>
             </>
@@ -139,7 +139,7 @@ export function HeaderAuthEntry() {
           className="shrink-0"
           onClick={() => setModalOpen(true)}
         >
-          Sign in
+          Войти
         </Button>
         <GuestAvatarMenu onOpenSignIn={() => setModalOpen(true)} />
       </div>

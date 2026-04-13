@@ -8,8 +8,8 @@ export default async function RestaurantsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Restaurants"
-        subtitle="Select a restaurant to see available tables and floor plans."
+        title="Рестораны"
+        subtitle="Выберите заведение, чтобы увидеть столики и план зала."
       />
       {'error' in result.body ? (
         <p className="text-sm text-error">{result.body.error}</p>

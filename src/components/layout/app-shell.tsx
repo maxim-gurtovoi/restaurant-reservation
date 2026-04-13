@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
 import { UserAvatarMenu } from '@/components/auth/user-avatar-menu';
 import { HeaderAuthEntry } from '@/components/auth/header-auth-entry';
+import { SiteFooter } from '@/components/layout/site-footer';
 import { getCurrentUser } from '@/server/auth';
 
 export async function AppShell({ children }: { children: ReactNode }) {
@@ -31,14 +32,14 @@ export async function AppShell({ children }: { children: ReactNode }) {
                 href={ROUTES.restaurants}
                 className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
               >
-                Restaurants
+                Рестораны
               </Link>
               {user ? (
                 <Link
                   href={ROUTES.myReservations}
                   className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
                 >
-                  My reservations
+                  Мои брони
                 </Link>
               ) : null}
               {canSeeManager ? (
@@ -46,7 +47,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
                   href={ROUTES.managerDashboard}
                   className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
                 >
-                  Manager
+                  Менеджер
                 </Link>
               ) : null}
               {canSeeAdmin ? (
@@ -54,7 +55,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
                   href={ROUTES.admin}
                   className="cursor-pointer font-medium transition-colors duration-200 ease-in-out hover:text-foreground hover:font-semibold"
                 >
-                  Admin
+                  Админ
                 </Link>
               ) : null}
             </nav>
@@ -69,11 +70,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
       <main className="flex-1 bg-background">
         <div className="container mx-auto px-4 py-8">{children}</div>
       </main>
-      <footer className="border-t border-border bg-background">
-        <div className="container mx-auto px-4 py-3 text-xs text-muted">
-          &copy; {new Date().getFullYear()} TableFlow
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

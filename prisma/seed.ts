@@ -64,7 +64,7 @@ async function main() {
       name: 'Gastrobar',
       slug: 'gastrobar',
       description:
-        'House-made cocktails and seasonal small plates in a warm, lively Chișinău bar. A great choice for an unhurried dinner with friends.',
+        'Авторские коктейли и сезонные закуски в тёплом оживлённом баре Кишинёва. Подойдёт для неспешного ужина с друзьями.',
       address: 'Str. Alexandru Bernardazzi 66, Chișinău',
       imageUrl: '/images/restaurants/gastrobar.png',
       isActive: true,
@@ -76,7 +76,7 @@ async function main() {
       name: 'Pegas Terrace & Restaurant',
       slug: 'pegas-terrace-restaurant',
       description:
-        'A bright terrace with attentive service and shareable plates. Designed for long lunches, calm conversations, and warm Chișinău evenings.',
+        'Светлая терраса, внимательный сервис и блюда на компанию. Для долгих ланчей, спокойных разговоров и тёплых кишинёвских вечеров.',
       address: 'Str. Albișoara 20/1, Chișinău',
       imageUrl: '/images/restaurants/pegas.png',
       isActive: true,
@@ -88,7 +88,7 @@ async function main() {
       name: 'Smokehouse',
       slug: 'smokehouse',
       description:
-        'Slow-smoked meats, signature barbecue sauces, and hearty sides. For guests who like bold, smoky flavors and generous portions.',
+        'Мясо низкой коптильни, фирменные соусы BBQ и сытные гарниры. Для любителей насыщенного дымного вкуса и больших порций.',
       address: 'Bd. Ștefan cel Mare și Sfînt 128, Chișinău',
       imageUrl: '/images/restaurants/smokehouse.png',
       isActive: true,
@@ -100,7 +100,7 @@ async function main() {
       name: 'Àttico Terrace & Restaurant',
       slug: 'attico-terrace-restaurant',
       description:
-        'Rooftop terrace dining with modern Mediterranean plates and elegant cocktails. Ideal for date nights and memorable celebrations.',
+        'Ужин на террасе на крыше: современные средиземноморские блюда и изящные коктейли. Для свиданий и особых случаев.',
       address: 'Str. Nicolae Dimo 32, Chișinău',
       imageUrl: '/images/restaurants/attico.png',
       isActive: true,
@@ -112,7 +112,7 @@ async function main() {
       name: 'Garden Restaurant & Terrace',
       slug: 'garden-restaurant-terrace',
       description:
-        'Garden-inspired cuisine built around fresh, seasonal ingredients. Bright, comfortable seating for family dinners and relaxed gatherings.',
+        'Кухня в духе сада на основе свежих сезонных продуктов. Светлый уютный зал для семейных ужинов и неспешных встреч.',
       address: 'Strada Vasile Alecsandri 8, Chișinău',
       imageUrl: '/images/restaurants/garden.png',
       isActive: true,
@@ -124,7 +124,7 @@ async function main() {
       name: 'La Plăcinte',
       slug: 'la-placinte-stefan-cel-mare',
       description:
-        'Traditional Moldovan cuisine with a modern touch. Famous for homemade pies, local dishes, and a cozy atmosphere.',
+        'Традиционная молдавская кухня с современным акцентом. Известны домашние пироги, местные блюда и уютная атмосфера.',
       address: 'Chișinău, Bulevardul Ștefan cel Mare și Sfânt 182',
       imageUrl: '/images/restaurants/la-placinte.png',
       isActive: true,
@@ -149,12 +149,12 @@ async function main() {
   };
 
   // Floor plans
-  const gastroFloor = await createFloorPlan(gastrobar.id, 'Main hall', 900, 620);
-  const pegasFloor = await createFloorPlan(pegasTerrace.id, 'Terrace', 820, 560);
-  const smokeFloor = await createFloorPlan(smokehouse.id, 'Dining room', 880, 640);
-  const atticoFloor = await createFloorPlan(atticoTerrace.id, 'Terrace', 860, 600);
-  const gardenFloor = await createFloorPlan(gardenTerrace.id, 'Garden room', 780, 560);
-  const laPlacinteFloor = await createFloorPlan(laPlacinte.id, 'Main hall', 840, 580);
+  const gastroFloor = await createFloorPlan(gastrobar.id, 'Основной зал', 900, 620);
+  const pegasFloor = await createFloorPlan(pegasTerrace.id, 'Терраса', 820, 560);
+  const smokeFloor = await createFloorPlan(smokehouse.id, 'Обеденный зал', 880, 640);
+  const atticoFloor = await createFloorPlan(atticoTerrace.id, 'Терраса', 860, 600);
+  const gardenFloor = await createFloorPlan(gardenTerrace.id, 'Садовый зал', 780, 560);
+  const laPlacinteFloor = await createFloorPlan(laPlacinte.id, 'Основной зал', 840, 580);
 
   const createTablesForFloor = async (args: {
     restaurantId: string;

@@ -58,11 +58,11 @@ const GALLERY_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
 
 function deriveCity(address: string | null | undefined): string {
   if (!address) {
-    return 'Unknown city';
+    return 'Город не указан';
   }
 
   const parts = address.split(',').map((part) => part.trim()).filter(Boolean);
-  if (!parts.length) return 'Unknown city';
+  if (!parts.length) return 'Город не указан';
   if (parts.length === 1) return parts[0];
 
   const streetLikePattern =
@@ -74,7 +74,7 @@ function deriveCity(address: string | null | undefined): string {
 
   const candidate =
     lastLooksStreet && !firstLooksStreet ? first : firstLooksStreet && !lastLooksStreet ? last : last;
-  return candidate.length > 0 ? candidate : 'Unknown city';
+  return candidate.length > 0 ? candidate : 'Город не указан';
 }
 
 async function resolveRestaurantGalleryImages(input: {

@@ -10,10 +10,10 @@ export async function GET(
   ctx: { params: Promise<{ token: string }> },
 ) {
   const manager = await getCurrentUser();
-  if (!manager) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!manager) return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
 
   const { token } = await ctx.params;
-  if (!token) return NextResponse.json({ error: 'Token is required' }, { status: 400 });
+  if (!token) return NextResponse.json({ error: 'Требуется токен' }, { status: 400 });
 
   try {
     const reservation = await getReservationByQrTokenForManager({
@@ -22,7 +22,7 @@ export async function GET(
     });
 
     if (!reservation) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Не найдено' }, { status: 404 });
     }
 
     return NextResponse.json(
@@ -40,8 +40,8 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to load reservation';
-    const status = message === 'Forbidden' ? 403 : 400;
+    const message = error instanceof Error ? error.message : 'Не удалось загрузить бронь';
+    const status = message === 'Нет доступа' ? 403 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }
@@ -51,10 +51,10 @@ export async function POST(
   ctx: { params: Promise<{ token: string }> },
 ) {
   const manager = await getCurrentUser();
-  if (!manager) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!manager) return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
 
   const { token } = await ctx.params;
-  if (!token) return NextResponse.json({ error: 'Token is required' }, { status: 400 });
+  if (!token) return NextResponse.json({ error: 'Требуется токен' }, { status: 400 });
 
   try {
     const result = await confirmCheckInByQrToken({
@@ -72,9 +72,9 @@ export async function POST(
       { status: 200 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to check in reservation';
+    const message = error instanceof Error ? error.message : 'Не удалось выполнить заселение';
     const status =
-      message === 'Reservation not found' ? 404 : message === 'Forbidden' ? 403 : 400;
+      message === 'Бронь не найдена' ? 404 : message === 'Нет доступа' ? 403 : 400;
     return NextResponse.json({ error: message }, { status });
   }
 }

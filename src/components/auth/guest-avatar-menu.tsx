@@ -46,7 +46,7 @@ export function GuestAvatarMenu({ onOpenSignIn }: GuestAvatarMenuProps) {
         variant="ghost"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label="Меню аккаунта"
         className="h-9 w-9 shrink-0 cursor-pointer rounded-full p-0 transition-all duration-150 ease-in-out hover:scale-[1.03] hover:shadow-sm"
         onClick={() => setOpen((v) => !v)}
       >
@@ -79,7 +79,7 @@ export function GuestAvatarMenu({ onOpenSignIn }: GuestAvatarMenuProps) {
             className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
             onClick={() => setOpen(false)}
           >
-            Profile
+            Профиль
           </button>
           <button
             type="button"
@@ -87,7 +87,7 @@ export function GuestAvatarMenu({ onOpenSignIn }: GuestAvatarMenuProps) {
             className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
             onClick={() => setOpen(false)}
           >
-            Settings
+            Настройки
           </button>
           <div className="my-1 h-px bg-border" />
           <button
@@ -96,7 +96,7 @@ export function GuestAvatarMenu({ onOpenSignIn }: GuestAvatarMenuProps) {
             className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
             onClick={handleSignIn}
           >
-            Sign in
+            Войти
           </button>
         </div>
       ) : null}

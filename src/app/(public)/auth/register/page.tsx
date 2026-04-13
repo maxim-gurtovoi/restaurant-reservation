@@ -5,8 +5,8 @@ export default function RegisterPage() {
   return (
     <div className="max-w-md space-y-6">
       <PageHeader
-        title="Create an account"
-        subtitle="Register to start booking tables."
+        title="Регистрация"
+        subtitle="Создайте аккаунт, чтобы бронировать столики."
       />
       <RegisterForm />
     </div>

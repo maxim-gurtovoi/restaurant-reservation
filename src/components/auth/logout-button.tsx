@@ -22,7 +22,7 @@ export function LogoutButton() {
 
   return (
     <Button type="button" variant="outline" onClick={onLogout} disabled={loading}>
-      {loading ? 'Signing out…' : 'Sign out'}
+      {loading ? 'Выход…' : 'Выйти'}
     </Button>
   );
 }
