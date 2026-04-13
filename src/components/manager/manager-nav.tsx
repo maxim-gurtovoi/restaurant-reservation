@@ -30,7 +30,7 @@ export function ManagerNav() {
             key={href}
             href={href}
             className={cn(
-              'rounded-md px-3 py-1.5 font-medium transition-colors',
+              'cursor-pointer rounded-md px-3 py-1.5 font-medium transition-colors',
               active
                 ? 'bg-primary text-white shadow-sm'
                 : 'text-muted hover:bg-surface-soft hover:text-foreground',

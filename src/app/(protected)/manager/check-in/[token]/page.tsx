@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import { PageHeader } from '@/components/ui/page-header';
 import { getCurrentUser } from '@/server/auth';
@@ -7,14 +8,14 @@ import { CheckInConfirmButton } from '@/features/manager/components/check-in-con
 import { formatReservationStatus } from '@/lib/reservation-status';
 
 type Props = {
-  params: { token: string };
+  params: Promise<{ token: string }>;
 };
 
 export default async function ManagerCheckInPage({ params }: Props) {
   const manager = await getCurrentUser();
   if (!manager) notFound();
 
-  const token = params.token;
+  const { token } = await params;
   const reservation = await getReservationByQrTokenForManager({
     managerUserId: manager.id,
     qrToken: token,
@@ -49,7 +50,7 @@ export default async function ManagerCheckInPage({ params }: Props) {
     <div className="space-y-6">
       <PageHeader
         title="Guest check-in"
-        subtitle="Scan a QR code and confirm the guest&apos;s arrival."
+        subtitle="QR shortcut to this reservation — you can also check in from the reservation detail page without QR."
       />
 
       <Card className="space-y-4">
@@ -94,6 +95,15 @@ export default async function ManagerCheckInPage({ params }: Props) {
             <span className="font-mono">{statusLabel}</span>.
           </div>
         )}
+
+        <div className="border-t border-border pt-4">
+          <Link
+            href={`/manager/reservations/${reservation.id}`}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Open full reservation details (manage status, manual check-in)
+          </Link>
+        </div>
       </Card>
 
       <Card className="space-y-2">
@@ -101,7 +111,7 @@ export default async function ManagerCheckInPage({ params }: Props) {
         <ul className="space-y-1 text-xs text-muted">
           <li>• Verify reservation id and guest name before confirming.</li>
           <li>• If already checked in, no second confirmation is needed.</li>
-          <li>• Use reservations list for manual follow-up and status tracking.</li>
+          <li>• Use the reservations list to manage bookings without QR — QR is a shortcut only.</li>
         </ul>
       </Card>
     </div>

@@ -1,8 +1,8 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
-import { Button } from '@/components/ui/button';
 import { UserAvatarMenu } from '@/components/auth/user-avatar-menu';
+import { HeaderAuthEntry } from '@/components/auth/header-auth-entry';
 import { getCurrentUser } from '@/server/auth';
 
 export async function AppShell({ children }: { children: ReactNode }) {
@@ -61,14 +61,7 @@ export async function AppShell({ children }: { children: ReactNode }) {
             {user ? (
               <UserAvatarMenu user={user} />
             ) : (
-              <div className="flex items-center gap-3">
-                <Button asChild variant="outline">
-                  <Link href={ROUTES.login}>Sign in</Link>
-                </Button>
-                <Button asChild variant="primary">
-                  <Link href={ROUTES.register}>Create account</Link>
-                </Button>
-              </div>
+              <HeaderAuthEntry />
             )}
           </div>
         </div>

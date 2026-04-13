@@ -6,10 +6,23 @@ import { Button } from '@/components/ui/button';
 import { formInputClass, formLabelClass } from '@/lib/form-field-classes';
 import { useRouter } from 'next/navigation';
 
-export function RegisterForm() {
+export type RegisterFormProps = {
+  idPrefix?: string;
+  embedInModal?: boolean;
+  onAuthenticated?: () => void;
+};
+
+export function RegisterForm({
+  idPrefix = '',
+  embedInModal = false,
+  onAuthenticated,
+}: RegisterFormProps = {}) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const nameId = `${idPrefix}register-name`;
+  const emailId = `${idPrefix}register-email`;
+  const passwordId = `${idPrefix}register-password`;
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -33,8 +46,14 @@ export function RegisterForm() {
         throw new Error(typeof json?.error === 'string' ? json.error : 'Failed to create account');
       }
 
-      router.replace('/restaurants');
-      router.refresh();
+      if (embedInModal) {
+        router.refresh();
+        onAuthenticated?.();
+      } else {
+        router.replace('/restaurants');
+        router.refresh();
+        onAuthenticated?.();
+      }
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Failed to create account';
       setError(message);
@@ -46,38 +65,41 @@ export function RegisterForm() {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-1">
-        <label className={formLabelClass} htmlFor="name">
+        <label className={formLabelClass} htmlFor={nameId}>
           Name
         </label>
         <input
-          id="name"
+          id={nameId}
           name="name"
           type="text"
           required
+          autoComplete="name"
           className={formInputClass}
         />
       </div>
       <div className="space-y-1">
-        <label className={formLabelClass} htmlFor="email">
+        <label className={formLabelClass} htmlFor={emailId}>
           Email
         </label>
         <input
-          id="email"
+          id={emailId}
           name="email"
           type="email"
           required
+          autoComplete="email"
           className={formInputClass}
         />
       </div>
       <div className="space-y-1">
-        <label className={formLabelClass} htmlFor="password">
+        <label className={formLabelClass} htmlFor={passwordId}>
           Password
         </label>
         <input
-          id="password"
+          id={passwordId}
           name="password"
           type="password"
           required
+          autoComplete="new-password"
           className={formInputClass}
         />
       </div>

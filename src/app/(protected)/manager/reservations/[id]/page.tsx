@@ -2,20 +2,20 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { getCurrentUser } from '@/server/auth';
 import { getReservationDetailsForManager } from '@/features/manager/server/manager.service';
 import { formatReservationStatus } from '@/lib/reservation-status';
+import { ManagerReservationActions } from '@/features/manager/components/manager-reservation-actions';
 
 type Props = {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 };
 
 export default async function ManagerReservationDetailsPage({ params }: Props) {
   const user = await getCurrentUser();
   if (!user) notFound();
 
-  const reservationId = params.id;
+  const { id: reservationId } = await params;
   const reservation = await getReservationDetailsForManager({
     reservationId,
     managerUserId: user.id,
@@ -42,17 +42,30 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
     hour12: false,
   });
   const statusLabel = formatReservationStatus(reservation.status);
-  const canOpenCheckIn = reservation.status === 'CONFIRMED' && !!reservation.qrToken;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Reservation details"
-        subtitle="View reservation information for your restaurant."
-      />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <PageHeader
+          title="Reservation details"
+          subtitle="Operational view — update status or check in without QR."
+        />
+        <Link
+          href="/manager/reservations"
+          className="shrink-0 text-sm font-medium text-primary hover:underline"
+        >
+          ← Back to list
+        </Link>
+      </div>
 
       <Card className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <p className="text-xs font-medium text-muted">Guest</p>
+            <p className="text-lg font-semibold text-foreground">
+              {reservation.contactName || '—'}
+            </p>
+          </div>
           <div>
             <p className="text-xs font-medium text-muted">Reservation ID</p>
             <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
@@ -124,22 +137,11 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
           </div>
         </div>
 
-        {reservation.qrToken ? (
-          <div className="border-t border-border pt-4">
-            <p className="mb-2 text-xs font-medium text-muted">QR token</p>
-            <p className="break-all font-mono text-xs text-foreground/85">{reservation.qrToken}</p>
-          </div>
-        ) : null}
-
-        {canOpenCheckIn ? (
-          <div className="border-t border-border pt-4">
-            <Button asChild variant="primary">
-              <Link href={`/manager/check-in/${encodeURIComponent(reservation.qrToken)}`}>
-                Open check-in
-              </Link>
-            </Button>
-          </div>
-        ) : null}
+        <ManagerReservationActions
+          reservationId={reservation.id}
+          status={reservation.status}
+          qrToken={reservation.qrToken}
+        />
       </Card>
     </div>
   );

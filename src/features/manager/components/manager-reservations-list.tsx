@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Card } from '@/components/ui/card';
 import type { ManagerReservationListItem } from '@/features/manager/server/manager.service';
 import { formatReservationStatus } from '@/lib/reservation-status';
+import { managerReservationStatusBadgeClass } from '@/features/manager/lib/manager-reservation-status';
 
 function formatDateRange(startIso: string, endIso: string) {
   const start = new Date(startIso);
@@ -27,25 +28,30 @@ function formatDateRange(startIso: string, endIso: string) {
   return { dateStr, startTimeStr, endTimeStr };
 }
 
-function statusBadgeClass(status: string) {
-  if (status === 'CANCELLED') return 'border-error/30 bg-error/8 text-error';
-  if (status === 'CHECKED_IN') return 'border-sky-200 bg-sky-50 text-sky-700';
-  if (status === 'CONFIRMED') return 'border-accent-border/70 bg-accent-bg text-accent-text';
-  return 'border-border/60 bg-surface-soft text-muted';
-}
-
 export function ManagerReservationsList({
   reservations,
+  emptyFiltered,
 }: {
   reservations: ManagerReservationListItem[];
+  /** True when the full dataset has items but filters exclude everything. */
+  emptyFiltered?: boolean;
 }) {
   if (!reservations.length) {
     return (
       <Card className="border-dashed border-border/50 bg-surface">
-        <p className="text-sm text-foreground">No reservations for your restaurants yet.</p>
-        <p className="mt-1 text-xs text-muted">
-          Once guests start booking, their reservations will appear here.
-        </p>
+        {emptyFiltered ? (
+          <>
+            <p className="text-sm text-foreground">No reservations match the current filters.</p>
+            <p className="mt-1 text-xs text-muted">Try changing status or date filters above.</p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-foreground">No reservations for your restaurants yet.</p>
+            <p className="mt-1 text-xs text-muted">
+              Once guests start booking, their reservations will appear here.
+            </p>
+          </>
+        )}
       </Card>
     );
   }
@@ -62,39 +68,36 @@ export function ManagerReservationsList({
             className="flex flex-col gap-3 border-border/50 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">{r.restaurant.name}</p>
+              <p className="text-sm font-semibold text-foreground">
+                {r.contactName?.trim() || 'Guest'}
+              </p>
               <p className="text-xs text-muted">
                 {dateStr} · {startTimeStr}–{endTimeStr}
               </p>
               <p className="text-xs text-muted">
-                Table {r.table.label} · {r.guestCount} guests
+                {r.restaurant.name} · Table {r.table.label} · {r.guestCount} guests
               </p>
-              {r.contactName ? (
-                <p className="text-xs text-muted/80">Contact: {r.contactName}</p>
-              ) : null}
             </div>
 
             <div className="flex flex-col items-start gap-2 sm:items-end">
               <span
-                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${statusBadgeClass(r.status)}`}
+                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium ${managerReservationStatusBadgeClass(r.status)}`}
               >
                 {formatReservationStatus(r.status)}
               </span>
-              <div className="flex gap-2 text-[11px] font-medium text-primary">
+              <div className="flex flex-wrap gap-x-2 gap-y-1 text-[11px] font-medium text-primary">
                 <Link href={`/manager/reservations/${r.id}`} className="hover:underline">
                   View details
                 </Link>
-                {canOpenCheckIn && (
-                  <>
-                    <span className="text-muted">·</span>
-                    <Link
-                      href={`/manager/check-in/${encodeURIComponent(r.qrToken)}`}
-                      className="hover:underline"
-                    >
-                      Open check-in
-                    </Link>
-                  </>
-                )}
+                {canOpenCheckIn ? (
+                  <Link
+                    href={`/manager/check-in/${encodeURIComponent(r.qrToken)}`}
+                    className="text-muted hover:text-primary hover:underline"
+                    title="Optional: open the same reservation via QR shortcut"
+                  >
+                    QR shortcut
+                  </Link>
+                ) : null}
               </div>
             </div>
           </Card>

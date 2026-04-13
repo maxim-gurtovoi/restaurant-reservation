@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { PageHeader } from '@/components/ui/page-header';
 import { getCurrentUser } from '@/server/auth';
 import { listManagerReservations } from '@/features/manager/server/manager.service';
-import { ManagerReservationsList } from '@/features/manager/components/manager-reservations-list';
+import { ManagerReservationsView } from '@/features/manager/components/manager-reservations-view';
 
 export default async function ManagerReservationsPage() {
   const user = await getCurrentUser();
@@ -19,7 +19,7 @@ export default async function ManagerReservationsPage() {
       {'error' in result.body ? (
         <p className="text-sm text-red-300">{result.body.error}</p>
       ) : (
-        <ManagerReservationsList reservations={result.body} />
+        <ManagerReservationsView reservations={result.body} />
       )}
     </div>
   );

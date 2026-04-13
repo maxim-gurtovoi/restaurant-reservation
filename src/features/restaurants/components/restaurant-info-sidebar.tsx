@@ -131,7 +131,7 @@ export function RestaurantInfoSidebar({
       <div className="space-y-2">
         <button
           type="button"
-          className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_2px_6px_rgba(123,47,155,0.25),0_8px_20px_rgba(123,47,155,0.15)] transition hover:bg-primary-hover"
+          className="w-full cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_2px_6px_rgba(123,47,155,0.25),0_8px_20px_rgba(123,47,155,0.15)] transition hover:bg-primary-hover"
         >
           {phone ? `Call ${phone}` : 'Call restaurant'}
         </button>

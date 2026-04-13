@@ -72,12 +72,17 @@ export type ConfirmCheckInResult = {
   method: CheckInMethod;
 };
 
-export async function confirmCheckInByQrToken(input: {
+/**
+ * Core check-in: CONFIRMED → CHECKED_IN, with audit log.
+ * Used by QR flow and manual check-in from the manager reservation detail page.
+ */
+export async function performManagerCheckIn(input: {
+  reservationId: string;
   managerUserId: string;
-  qrToken: string;
+  method: CheckInMethod;
 }): Promise<ConfirmCheckInResult> {
   const reservation = await prisma.reservation.findFirst({
-    where: { qrToken: input.qrToken },
+    where: { id: input.reservationId },
     select: {
       id: true,
       status: true,
@@ -94,7 +99,6 @@ export async function confirmCheckInByQrToken(input: {
     restaurantId: reservation.restaurantId,
   });
 
-  // MVP rule: only CONFIRMED can be checked in.
   if (reservation.status !== 'CONFIRMED') {
     throw new Error(`Cannot check in reservation from status ${reservation.status}`);
   }
@@ -119,7 +123,7 @@ export async function confirmCheckInByQrToken(input: {
       reservationId: updated.id,
       checkedInByUserId: input.managerUserId,
       checkedInAt,
-      method: 'QR',
+      method: input.method,
       notes: null,
     },
   });
@@ -132,7 +136,41 @@ export async function confirmCheckInByQrToken(input: {
     reservationId: updated.id,
     status: updated.status,
     checkedInAt: updated.checkedInAt,
-    method: 'QR',
+    method: input.method,
   };
+}
+
+export async function confirmCheckInByQrToken(input: {
+  managerUserId: string;
+  qrToken: string;
+}): Promise<ConfirmCheckInResult> {
+  const reservation = await prisma.reservation.findFirst({
+    where: { qrToken: input.qrToken },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!reservation) {
+    throw new Error('Reservation not found');
+  }
+
+  return performManagerCheckIn({
+    reservationId: reservation.id,
+    managerUserId: input.managerUserId,
+    method: 'QR',
+  });
+}
+
+/** Manual check-in from manager UI (no QR scan). */
+export async function confirmCheckInByReservationId(input: {
+  managerUserId: string;
+  reservationId: string;
+}): Promise<ConfirmCheckInResult> {
+  return performManagerCheckIn({
+    reservationId: input.reservationId,
+    managerUserId: input.managerUserId,
+    method: 'MANUAL',
+  });
 }
 
