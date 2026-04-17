@@ -166,6 +166,8 @@ model Reservation {
   @@index([userId, startAt])
   @@index([restaurantId, startAt])
   @@index([restaurantId, tableId, startAt])
+  @@index([tableId, status, startAt, endAt])
+  @@index([restaurantId, tableId, status, startAt, endAt])
   @@index([status])
 }
 

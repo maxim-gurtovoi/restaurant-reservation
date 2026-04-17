@@ -7,6 +7,7 @@ import { LanguageToggle } from '@/components/layout/language-toggle';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { getCurrentUser } from '@/server/auth';
 import { getServerLocale } from '@/lib/i18n';
+import { getMessages } from '@/lib/messages';
 
 export async function AppShell({
   children,
@@ -15,25 +16,9 @@ export async function AppShell({
 }) {
   const user = await getCurrentUser();
   const locale = await getServerLocale();
+  const t = getMessages(locale);
   const canSeeManager = user?.role === 'MANAGER';
   const canSeeAdmin = user?.role === 'ADMIN';
-  const copy = locale === 'ro'
-    ? {
-        restaurants: 'Restaurante',
-        myReservations: 'Rezervările mele',
-        manager: 'Manager',
-        admin: 'Admin',
-        search: 'Căutare',
-        searchAria: 'Căutare restaurante',
-      }
-    : {
-        restaurants: 'Рестораны',
-        myReservations: 'Мои брони',
-        manager: 'Менеджер',
-        admin: 'Админ',
-        search: 'Поиск',
-        searchAria: 'Поиск ресторанов',
-      };
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 bg-transparent">
@@ -62,7 +47,7 @@ export async function AppShell({
               </span>
             </Link>
             <div className="relative z-10 ml-auto flex items-center gap-2 sm:gap-3">
-              <LanguageToggle />
+              <LanguageToggle locale={locale} ariaLabel={t.appShell.localeToggleAria} />
               <nav className="hidden items-center gap-2 md:flex">
                 <Link
                   href={ROUTES.restaurants}
@@ -72,14 +57,14 @@ export async function AppShell({
                     <path d="M7 4v6M9 4v6M11 4v6M9 10v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                     <path d="M16 4v6c0 1.105-.895 2-2 2h0V4h2zM14 12v8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                   </svg>
-                  {copy.restaurants}
+                  {t.appShell.restaurants}
                 </Link>
                 {user ? (
                   <Link
                     href={ROUTES.myReservations}
                     className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
                   >
-                    {copy.myReservations}
+                    {t.appShell.myReservations}
                   </Link>
                 ) : null}
                 {canSeeManager ? (
@@ -87,7 +72,7 @@ export async function AppShell({
                     href={ROUTES.managerDashboard}
                     className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
                   >
-                    {copy.manager}
+                    {t.appShell.manager}
                   </Link>
                 ) : null}
                 {canSeeAdmin ? (
@@ -95,14 +80,14 @@ export async function AppShell({
                     href={ROUTES.admin}
                     className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
                   >
-                    {copy.admin}
+                    {t.appShell.admin}
                   </Link>
                 ) : null}
               </nav>
               {user ? (
                 <UserAvatarMenu user={user} />
               ) : (
-                <HeaderAuthEntry />
+                <HeaderAuthEntry locale={locale} />
               )}
             </div>
           </div>
@@ -121,8 +106,8 @@ export async function AppShell({
             </svg>
             <input
               type="search"
-              placeholder={copy.search}
-              aria-label={copy.searchAria}
+              placeholder={t.appShell.search}
+              aria-label={t.appShell.searchAria}
               className="h-11 w-full rounded-xl border border-border bg-surface pl-12 pr-4 text-sm text-foreground outline-none transition focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
             />
           </div>
@@ -131,7 +116,7 @@ export async function AppShell({
       <main className="flex-1">
         <div className="container mx-auto px-4 py-8">{children}</div>
       </main>
-      <SiteFooter />
+      <SiteFooter locale={locale} />
     </div>
   );
 }

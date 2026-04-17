@@ -32,12 +32,25 @@ export async function cancelReservation(input: {
     throw new Error(`Нельзя отменить бронь со статусом ${existing.status}`);
   }
 
-  const updated = await prisma.reservation.update({
-    where: { id: existing.id },
+  const cancelledAt = new Date();
+  const guarded = await prisma.reservation.updateMany({
+    where: {
+      id: existing.id,
+      userId: input.userId,
+      status: 'CONFIRMED',
+    },
     data: {
       status: 'CANCELLED',
-      cancelledAt: new Date(),
+      cancelledAt,
     },
+  });
+
+  if (guarded.count !== 1) {
+    throw new Error('Статус брони уже изменился. Обновите страницу.');
+  }
+
+  const updated = await prisma.reservation.findUnique({
+    where: { id: existing.id },
     select: {
       id: true,
       status: true,
@@ -46,7 +59,7 @@ export async function cancelReservation(input: {
   });
 
   // Prisma schema defines cancelledAt as nullable, but update sets it.
-  if (!updated.cancelledAt) {
+  if (!updated?.cancelledAt) {
     throw new Error('Не удалось отменить бронь');
   }
 

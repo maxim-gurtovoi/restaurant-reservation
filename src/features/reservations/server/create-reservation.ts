@@ -36,82 +36,95 @@ export async function createReservation(input: {
     endAt,
   });
 
-  // Validate table exists and belongs to restaurant
-  const table = await prisma.restaurantTable.findFirst({
-    where: {
-      id: tableId,
-      restaurantId,
-      isActive: true,
-    },
-    include: {
-      restaurant: {
-        select: {
-          id: true,
-          name: true,
+  const reservation = await prisma.$transaction(async (tx) => {
+    // Lock the table row to serialize concurrent bookings for the same table.
+    await tx.$executeRaw`
+      SELECT 1
+      FROM "RestaurantTable"
+      WHERE "id" = ${tableId}
+      FOR UPDATE
+    `;
+
+    const table = await tx.restaurantTable.findFirst({
+      where: {
+        id: tableId,
+        restaurantId,
+        isActive: true,
+      },
+      include: {
+        restaurant: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  if (!table) {
-    throw new Error('Столик не найден или неактивен');
-  }
+    if (!table) {
+      throw new Error('Столик не найден или неактивен');
+    }
 
-  // Validate guest count doesn't exceed capacity
-  if (guestCount > table.capacity) {
-    throw new Error('Число гостей превышает вместимость столика');
-  }
+    if (guestCount > table.capacity) {
+      throw new Error('Число гостей превышает вместимость столика');
+    }
 
-  // Re-check availability with same logic as availability check
-  const blockingReservations = await prisma.reservation.findMany({
-    where: {
-      restaurantId,
-      tableId,
-      status: {
-        in: ['CONFIRMED', 'CHECKED_IN'],
+    const blockingReservations = await tx.reservation.count({
+      where: {
+        restaurantId,
+        tableId,
+        status: {
+          in: ['CONFIRMED', 'CHECKED_IN'],
+        },
+        startAt: {
+          lt: endAt,
+        },
+        endAt: {
+          gt: startAt,
+        },
       },
-      startAt: {
-        lt: endAt,
+    });
+
+    if (blockingReservations > 0) {
+      throw new Error('Столик уже занят на выбранное время');
+    }
+
+    const qrToken = generateQRToken();
+    const created = await tx.reservation.create({
+      data: {
+        userId,
+        restaurantId,
+        tableId,
+        startAt,
+        endAt,
+        guestCount,
+        status: 'CONFIRMED',
+        qrToken,
+        contactName: input.contactName || '',
+        contactPhone: input.contactPhone || null,
+        contactEmail: input.contactEmail || null,
       },
-      endAt: {
-        gt: startAt,
+      select: {
+        id: true,
+        qrToken: true,
+        startAt: true,
+        endAt: true,
       },
-    },
-    select: {
-      id: true,
-    },
-  });
+    });
 
-  if (blockingReservations.length > 0) {
-    throw new Error('Столик уже занят на выбранное время');
-  }
-
-  // Generate QR token
-  const qrToken = generateQRToken();
-
-  // Create reservation
-  const reservation = await prisma.reservation.create({
-    data: {
-      userId,
-      restaurantId,
-      tableId,
-      startAt,
-      endAt,
-      guestCount,
-      status: 'CONFIRMED',
-      qrToken,
-      contactName: input.contactName || '',
-      contactPhone: input.contactPhone || null,
-      contactEmail: input.contactEmail || null,
-    },
+    return {
+      reservation: created,
+      tableLabel: table.label,
+      restaurantName: table.restaurant.name,
+    };
   });
 
   return {
-    id: reservation.id,
-    qrToken: reservation.qrToken,
-    startAt: reservation.startAt.toISOString(),
-    endAt: reservation.endAt.toISOString(),
-    tableLabel: table.label,
-    restaurantName: table.restaurant.name,
+    id: reservation.reservation.id,
+    qrToken: reservation.reservation.qrToken,
+    startAt: reservation.reservation.startAt.toISOString(),
+    endAt: reservation.reservation.endAt.toISOString(),
+    tableLabel: reservation.tableLabel,
+    restaurantName: reservation.restaurantName,
   };
 }

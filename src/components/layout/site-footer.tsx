@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
 import { SITE_FOOTER_META } from '@/lib/site-footer-meta';
+import type { Locale } from '@/lib/i18n';
+import { getMessages } from '@/lib/messages';
 
 const footerLinkClass =
   'text-sm text-muted transition-colors duration-150 hover:text-foreground';
@@ -8,10 +10,11 @@ const footerLinkClass =
 const sectionTitleClass =
   'text-[11px] font-semibold uppercase tracking-widest text-muted';
 
-export function SiteFooter() {
+export function SiteFooter({ locale = 'ru' }: { locale?: Locale }) {
   const year = new Date().getFullYear();
   const { authorName, university } = SITE_FOOTER_META;
   const showAuthorBlock = Boolean(authorName || university);
+  const t = getMessages(locale);
 
   return (
     <footer className="mt-auto border-t border-border/80 bg-surface-soft/60">
@@ -30,39 +33,39 @@ export function SiteFooter() {
               />
             </Link>
             <p className="text-sm leading-relaxed text-muted">
-              Система бронирования столиков с регистрацией по QR-коду.
+              {t.footer.description}
             </p>
           </div>
 
           {/* Navigation */}
-          <nav className="space-y-3" aria-label="Навигация в подвале">
-            <p className={sectionTitleClass}>Разделы</p>
+          <nav className="space-y-3" aria-label={t.footer.navTitle}>
+            <p className={sectionTitleClass}>{t.footer.navTitle}</p>
             <ul className="flex flex-col gap-2">
               <li>
                 <Link href={ROUTES.restaurants} className={footerLinkClass}>
-                  Рестораны
+                  {t.appShell.restaurants}
                 </Link>
               </li>
               <li>
                 <Link href={`${ROUTES.home}#how-it-works`} className={footerLinkClass}>
-                  Как это работает
+                  {t.footer.howItWorks}
                 </Link>
               </li>
             </ul>
           </nav>
 
           {/* Legal */}
-          <nav className="space-y-3" aria-label="Правовая информация">
-            <p className={sectionTitleClass}>Документы</p>
+          <nav className="space-y-3" aria-label={t.footer.docsTitle}>
+            <p className={sectionTitleClass}>{t.footer.docsTitle}</p>
             <ul className="flex flex-col gap-2">
               <li>
                 <Link href={ROUTES.privacy} className={footerLinkClass}>
-                  Политика конфиденциальности
+                  {t.footer.privacy}
                 </Link>
               </li>
               <li>
                 <Link href={ROUTES.terms} className={footerLinkClass}>
-                  Условия использования
+                  {t.footer.terms}
                 </Link>
               </li>
             </ul>
@@ -70,7 +73,7 @@ export function SiteFooter() {
 
           {/* Project / author */}
           <div className="space-y-3">
-            <p className={sectionTitleClass}>Проект</p>
+            <p className={sectionTitleClass}>{t.footer.projectTitle}</p>
             <div className="space-y-1.5 text-sm text-muted">
               <p>
                 <span className="text-foreground/90">TableFlow</span>
@@ -85,7 +88,7 @@ export function SiteFooter() {
                   {university ? <p className="leading-relaxed">{university}</p> : null}
                 </>
               ) : (
-                <p className="text-xs leading-relaxed">Учебный проект (диплом).</p>
+                <p className="text-xs leading-relaxed">{t.footer.educationalProject}</p>
               )}
             </div>
           </div>

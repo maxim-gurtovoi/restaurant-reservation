@@ -4,6 +4,7 @@ import { RegisterModalTrigger } from '@/components/auth/register-modal-trigger';
 import { RestaurantCard } from '@/features/restaurants/components/restaurant-card';
 import { listRestaurants } from '@/features/restaurants/server/restaurants.service';
 import { getServerLocale } from '@/lib/i18n';
+import { getMessages } from '@/lib/messages';
 
 const HOW_IT_WORKS_RU = [
   {
@@ -128,49 +129,11 @@ const PLATFORM_HIGHLIGHTS_RO = [
 
 export default async function HomePage() {
   const locale = await getServerLocale();
+  const t = getMessages(locale);
   const result = await listRestaurants({});
   const featured = 'error' in result.body ? [] : result.body.slice(0, 6);
   const howItWorks = locale === 'ro' ? HOW_IT_WORKS_RO : HOW_IT_WORKS_RU;
   const highlights = locale === 'ro' ? PLATFORM_HIGHLIGHTS_RO : PLATFORM_HIGHLIGHTS_RU;
-  const copy = locale === 'ro'
-    ? {
-        badge: 'Platformă de rezervări',
-        heroTitle: 'Rezervă o masă la restaurantul tău preferat',
-        heroDescription:
-          'Alege localul, masa din plan și confirmă rezervarea instant prin cod QR în TableFlow.',
-        restaurantsCta: 'Vezi restaurantele',
-        registerCta: 'Înregistrare gratuită',
-        featuredLabel: 'Selecție',
-        featuredTitle: 'Restaurante recomandate',
-        featuredDescription: 'Localurile rezervate cel mai des de clienți.',
-        allRestaurants: 'Toate restaurantele',
-        processLabel: 'Proces simplu',
-        processTitle: 'Cum funcționează',
-        advantagesLabel: 'Avantaje',
-        advantagesTitle: 'De ce aleg clienții TableFlow',
-        bottomTitle: 'Ești gata să rezervi o masă?',
-        bottomDescription: 'Înregistrarea este gratuită, iar confirmarea vine imediat după rezervare.',
-        bottomRegister: 'Înregistrează-te',
-      }
-    : {
-        badge: 'Сервис бронирования',
-        heroTitle: 'Забронируйте столик в любимом ресторане',
-        heroDescription:
-          'Выбирайте заведение, стол на плане зала и мгновенно подтверждайте бронь с QR-кодом в едином сервисе TableFlow.',
-        restaurantsCta: 'Смотреть рестораны',
-        registerCta: 'Бесплатная регистрация',
-        featuredLabel: 'Подборка',
-        featuredTitle: 'Рекомендуемые рестораны',
-        featuredDescription: 'Заведения, которые чаще всего бронируют гости.',
-        allRestaurants: 'Все рестораны',
-        processLabel: 'Простой процесс',
-        processTitle: 'Как это работает',
-        advantagesLabel: 'Преимущества',
-        advantagesTitle: 'Почему гости выбирают TableFlow',
-        bottomTitle: 'Готовы забронировать столик?',
-        bottomDescription: 'Регистрация бесплатна, подтверждение брони — сразу после оформления.',
-        bottomRegister: 'Зарегистрироваться',
-      };
 
   return (
     <div className="flex flex-col gap-12 pb-16 pt-1 sm:gap-16 sm:pb-20 md:gap-20">
@@ -191,21 +154,22 @@ export default async function HomePage() {
         <div className="relative max-w-4xl space-y-6 sm:space-y-7">
           <div className="space-y-4 sm:space-y-5">
             <p className="inline-flex rounded-full border border-border/60 bg-surface/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-              {copy.badge}
+              {t.home.badge}
             </p>
             <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.04] tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem]">
-              {copy.heroTitle}
+              {t.home.heroTitle}
             </h1>
             <p className="max-w-2xl text-sm leading-relaxed text-foreground/75 sm:text-base">
-              {copy.heroDescription}
+              {t.home.heroDescription}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild variant="hero" size="lg">
-              <Link href="/restaurants">{copy.restaurantsCta}</Link>
+              <Link href="/restaurants">{t.home.restaurantsCta}</Link>
             </Button>
             <RegisterModalTrigger
-              label={copy.registerCta}
+              locale={locale}
+              label={t.home.registerCta}
               className="border-white bg-white/20 font-semibold text-white hover:border-white hover:bg-white hover:text-foreground"
             />
           </div>
@@ -218,19 +182,19 @@ export default async function HomePage() {
           <div className="rounded-3xl border border-border-strong/35 bg-surface-soft/60 p-5 shadow-card-soft sm:p-6 md:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
               <div className="min-w-0 space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted">{copy.featuredLabel}</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.home.featuredLabel}</p>
                 <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-[1.875rem]">
-                  {copy.featuredTitle}
+                  {t.home.featuredTitle}
                 </h2>
                 <p className="max-w-xl text-sm leading-relaxed text-muted">
-                  {copy.featuredDescription}
+                  {t.home.featuredDescription}
                 </p>
               </div>
               <Link
                 href="/restaurants"
                 className="inline-flex shrink-0 items-center gap-1 self-start rounded-lg px-1 py-1 text-sm font-semibold text-accent-text underline-offset-4 transition-colors hover:underline sm:self-auto"
               >
-                {copy.allRestaurants}
+                {t.home.allRestaurants}
                 <span aria-hidden="true" className="text-base leading-none">
                   →
                 </span>
@@ -248,8 +212,8 @@ export default async function HomePage() {
       {/* ── How it works (secondary — calmer surfaces) ────────────── */}
       <section id="how-it-works" className="scroll-mt-24 space-y-4 sm:space-y-5">
         <div className="max-w-2xl space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted">{copy.processLabel}</p>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{copy.processTitle}</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.home.processLabel}</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{t.home.processTitle}</h2>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
@@ -278,8 +242,8 @@ export default async function HomePage() {
       {/* ── Key advantages (tertiary — compact) ───────────────────── */}
       <section className="space-y-4 sm:space-y-4">
         <div className="max-w-2xl space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted">{copy.advantagesLabel}</p>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{copy.advantagesTitle}</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.home.advantagesLabel}</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{t.home.advantagesTitle}</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-4 lg:gap-4">
           {highlights.map((item) => (
@@ -299,18 +263,18 @@ export default async function HomePage() {
         <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center sm:gap-10">
           <div className="max-w-xl space-y-2 sm:space-y-2.5">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              {copy.bottomTitle}
+              {t.home.bottomTitle}
             </h2>
             <p className="text-sm leading-relaxed text-muted sm:text-base">
-              {copy.bottomDescription}
+              {t.home.bottomDescription}
             </p>
           </div>
           <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
             <Button asChild variant="primary" className="w-full shadow-none hover:shadow-none sm:w-auto">
-              <Link href="/restaurants">{copy.restaurantsCta}</Link>
+              <Link href="/restaurants">{t.home.restaurantsCta}</Link>
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href="/auth/register">{copy.bottomRegister}</Link>
+              <Link href="/auth/register">{t.home.bottomRegister}</Link>
             </Button>
           </div>
         </div>

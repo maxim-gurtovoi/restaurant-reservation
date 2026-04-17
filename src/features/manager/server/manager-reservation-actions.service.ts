@@ -56,12 +56,14 @@ export async function applyManagerReservationAction(input: {
     if (current.status !== 'CHECKED_IN') {
       throw new Error(`Нельзя отметить завершение при статусе ${current.status}`);
     }
-    const updated = await prisma.reservation.update({
-      where: { id: reservationId },
+    const guarded = await prisma.reservation.updateMany({
+      where: { id: reservationId, status: 'CHECKED_IN' },
       data: { status: 'COMPLETED' },
-      select: { status: true },
     });
-    return { status: updated.status };
+    if (guarded.count !== 1) {
+      throw new Error('Статус брони уже изменился. Обновите страницу.');
+    }
+    return { status: 'COMPLETED' };
   }
 
   if (action === 'cancel') {
@@ -69,27 +71,31 @@ export async function applyManagerReservationAction(input: {
       throw new Error(`Нельзя отменить при статусе ${current.status}`);
     }
     const now = new Date();
-    const updated = await prisma.reservation.update({
-      where: { id: reservationId },
+    const guarded = await prisma.reservation.updateMany({
+      where: { id: reservationId, status: 'CONFIRMED' },
       data: {
         status: 'CANCELLED',
         cancelledAt: now,
       },
-      select: { status: true },
     });
-    return { status: updated.status };
+    if (guarded.count !== 1) {
+      throw new Error('Статус брони уже изменился. Обновите страницу.');
+    }
+    return { status: 'CANCELLED' };
   }
 
   if (action === 'no_show') {
     if (current.status !== 'CONFIRMED') {
       throw new Error(`Нельзя отметить неявку при статусе ${current.status}`);
     }
-    const updated = await prisma.reservation.update({
-      where: { id: reservationId },
+    const guarded = await prisma.reservation.updateMany({
+      where: { id: reservationId, status: 'CONFIRMED' },
       data: { status: 'NO_SHOW' },
-      select: { status: true },
     });
-    return { status: updated.status };
+    if (guarded.count !== 1) {
+      throw new Error('Статус брони уже изменился. Обновите страницу.');
+    }
+    return { status: 'NO_SHOW' };
   }
 
   throw new Error('Недопустимое действие');

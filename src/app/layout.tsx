@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AppShell } from '@/components/layout/app-shell';
+import { getServerLocale } from '@/lib/i18n';
 
 const inter = Inter({
   subsets: ['latin', 'latin-ext'],
@@ -15,13 +16,14 @@ export const metadata: Metadata = {
   description: 'Бронирование столиков с регистрацией по QR-коду.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getServerLocale();
   return (
-    <html lang="ru" className={inter.variable}>
+    <html lang={locale} className={inter.variable}>
       <body className="min-h-screen bg-background text-foreground antialiased font-sans">
         <AppShell>{children}</AppShell>
       </body>

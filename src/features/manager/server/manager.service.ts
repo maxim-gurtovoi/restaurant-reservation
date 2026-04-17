@@ -46,7 +46,95 @@ export type ManagerReservationListItem = {
   qrToken: string;
 };
 
+export type ManagerReservationsPage = {
+  items: ManagerReservationListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
 export async function listManagerReservations(input: {
+  managerUserId: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<ApiResult<ManagerReservationsPage>> {
+  const page = Math.max(1, Math.floor(input.page ?? 1));
+  const pageSize = Math.min(100, Math.max(5, Math.floor(input.pageSize ?? 30)));
+  const skip = (page - 1) * pageSize;
+  const where = {
+    restaurant: {
+      managers: {
+        some: {
+          userId: input.managerUserId,
+        },
+      },
+    },
+  } as const;
+
+  const [total, reservations] = await prisma.$transaction([
+    prisma.reservation.count({ where }),
+    prisma.reservation.findMany({
+      where,
+      orderBy: [
+        { startAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      skip,
+      take: pageSize,
+      select: {
+        id: true,
+        status: true,
+        guestCount: true,
+        startAt: true,
+        endAt: true,
+        checkedInAt: true,
+        cancelledAt: true,
+        createdAt: true,
+        qrToken: true,
+        contactName: true,
+        restaurant: {
+          select: {
+            name: true,
+          },
+        },
+        table: {
+          select: {
+            label: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  const dto: ManagerReservationListItem[] = reservations.map((r) => ({
+    id: r.id,
+    status: r.status,
+    guestCount: r.guestCount,
+    startAt: r.startAt.toISOString(),
+    endAt: r.endAt.toISOString(),
+    checkedInAt: r.checkedInAt ? r.checkedInAt.toISOString() : null,
+    cancelledAt: r.cancelledAt ? r.cancelledAt.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    restaurant: r.restaurant,
+    table: r.table,
+    contactName: r.contactName,
+    qrToken: r.qrToken,
+  }));
+
+  return {
+    status: 200,
+    body: {
+      items: dto,
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    },
+  };
+}
+
+export async function listManagerReservationsAll(input: {
   managerUserId: string;
 }): Promise<ApiResult<ManagerReservationListItem[]>> {
   const reservations = await prisma.reservation.findMany({

@@ -1,33 +1,37 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import type { Locale } from '@/lib/i18n';
 
 type Lang = 'ru' | 'ro';
 
-const STORAGE_KEY = 'tableflow-lang';
 const LANG_COOKIE_KEY = 'tableflow-lang';
 
-export function LanguageToggle() {
-  const [lang, setLang] = useState<Lang>('ru');
+export function LanguageToggle({
+  locale,
+  ariaLabel,
+}: {
+  locale: Locale;
+  ariaLabel: string;
+}) {
+  const [lang, setLang] = useState<Lang>(locale);
+  const router = useRouter();
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved === 'ru' || saved === 'ro') {
-      setLang(saved);
-    }
-  }, []);
+    setLang(locale);
+  }, [locale]);
 
   const setLanguage = (next: Lang) => {
     setLang(next);
-    window.localStorage.setItem(STORAGE_KEY, next);
     document.cookie = `${LANG_COOKIE_KEY}=${next}; path=/; max-age=31536000; samesite=lax`;
   };
 
   const toggleLanguage = () => {
     const next = lang === 'ru' ? 'ro' : 'ru';
     setLanguage(next);
-    window.location.reload();
+    router.refresh();
   };
 
   return (
@@ -35,7 +39,7 @@ export function LanguageToggle() {
       type="button"
       onClick={toggleLanguage}
       className="relative inline-flex h-10 items-center rounded-full border border-border/70 bg-surface/90 p-1 text-xs font-semibold"
-      aria-label={`Текущий язык: ${lang.toUpperCase()}. Нажмите, чтобы переключить язык`}
+      aria-label={ariaLabel}
     >
       <span
         aria-hidden="true"

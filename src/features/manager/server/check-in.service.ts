@@ -104,38 +104,52 @@ export async function performManagerCheckIn(input: {
   }
 
   const checkedInAt = new Date();
+  const updated = await prisma.$transaction(async (tx) => {
+    const guarded = await tx.reservation.updateMany({
+      where: {
+        id: reservation.id,
+        status: 'CONFIRMED',
+      },
+      data: {
+        status: 'CHECKED_IN',
+        checkedInAt,
+      },
+    });
 
-  const updated = await prisma.reservation.update({
-    where: { id: reservation.id },
-    data: {
-      status: 'CHECKED_IN',
-      checkedInAt,
-    },
-    select: {
-      id: true,
-      status: true,
-      checkedInAt: true,
-    },
+    if (guarded.count !== 1) {
+      throw new Error('Бронь уже была изменена другим действием. Обновите страницу.');
+    }
+
+    const nextState = await tx.reservation.findUnique({
+      where: { id: reservation.id },
+      select: {
+        id: true,
+        status: true,
+        checkedInAt: true,
+      },
+    });
+
+    if (!nextState?.checkedInAt) {
+      throw new Error('Не удалось выполнить заселение');
+    }
+
+    await tx.checkInLog.create({
+      data: {
+        reservationId: nextState.id,
+        checkedInByUserId: input.managerUserId,
+        checkedInAt,
+        method: input.method,
+        notes: null,
+      },
+    });
+
+    return nextState;
   });
-
-  await prisma.checkInLog.create({
-    data: {
-      reservationId: updated.id,
-      checkedInByUserId: input.managerUserId,
-      checkedInAt,
-      method: input.method,
-      notes: null,
-    },
-  });
-
-  if (!updated.checkedInAt) {
-    throw new Error('Не удалось выполнить заселение');
-  }
 
   return {
     reservationId: updated.id,
     status: updated.status,
-    checkedInAt: updated.checkedInAt,
+    checkedInAt: updated.checkedInAt!,
     method: input.method,
   };
 }

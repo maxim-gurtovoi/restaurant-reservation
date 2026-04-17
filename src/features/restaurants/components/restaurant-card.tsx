@@ -6,6 +6,7 @@ import type { RestaurantListItem } from '@/features/restaurants/server/restauran
 import { Button } from '@/components/ui/button';
 import type { Locale } from '@/lib/i18n';
 import { getRestaurantCardTranslation } from '@/features/restaurants/data/restaurant-card-translations';
+import { getMessages } from '@/lib/messages';
 
 function addressLine(address: string | null, city: string): string | null {
   if (!address) return null;
@@ -35,14 +36,12 @@ export function RestaurantCard({
     [restaurant.address, restaurant.city],
   );
   const translation = getRestaurantCardTranslation(restaurant.slug, locale);
-  const fallbackDescription =
-    locale === 'ro'
-      ? 'Planul sălii, mese libere și rezervare rapidă la ora dorită.'
-      : 'План зала, свободные столики и бронирование на удобное время.';
+  const t = getMessages(locale);
+  const fallbackDescription = t.restaurants.fallbackDescription;
   const displayName = translation?.name ?? restaurant.name;
   const description = translation?.description ?? restaurant.description ?? fallbackDescription;
-  const detailsLabel = locale === 'ro' ? 'Detalii' : 'Подробнее';
-  const reserveLabel = locale === 'ro' ? 'Rezervă' : 'Забронировать';
+  const detailsLabel = t.restaurants.details;
+  const reserveLabel = t.restaurants.reserve;
   const detailHref = `/restaurants/${restaurant.slug}`;
   const reserveHref = `/restaurants/${restaurant.slug}/reserve`;
 

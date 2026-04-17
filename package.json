@@ -9,6 +9,7 @@
     "start": "next start",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:repair-init-checksum": "node scripts/prisma-repair-init-checksum.mjs",
     "prisma:studio": "prisma studio",
     "lint": "next lint",
     "db:seed": "prisma db seed"
