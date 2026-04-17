@@ -16,6 +16,7 @@ export type MenuPreviewItem = {
 
 export type RestaurantDetailSupportingContent = {
   ratingSummary: string;
+  aboutDescription?: string;
   cuisineTags: string[];
   priceBand: string;
   amenities: string[];
@@ -25,6 +26,7 @@ export type RestaurantDetailSupportingContent = {
 
 export const DEFAULT_RESTAURANT_DETAIL_CONTENT: RestaurantDetailSupportingContent = {
   ratingSummary: '4.6',
+  aboutDescription: 'Уютное место для встреч с близкими. Выберите столик и удобное время.',
   cuisineTags: ['Локальные блюда', 'Непринуждённо'],
   priceBand: 'MDL 250–450 с человека',
   amenities: ['Бронирование', 'Зал в помещении', 'С детьми'],
@@ -42,6 +44,8 @@ export const DEFAULT_RESTAURANT_DETAIL_CONTENT: RestaurantDetailSupportingConten
 export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailSupportingContent> = {
   gastrobar: {
     ratingSummary: '4.8',
+    aboutDescription:
+      'Авторские коктейли и сезонные закуски в тёплом оживлённом баре Кишинёва. Подойдёт для неспешного ужина с друзьями.',
     cuisineTags: ['Коктейль-бар', 'Сезонное меню', 'Средиземноморское'],
     priceBand: 'MDL 300–550 с человека',
     amenities: ['Вечера с музыкой', 'Зал в помещении', 'Кухня до поздна'],
@@ -59,6 +63,8 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
   },
   'pegas-terrace-restaurant': {
     ratingSummary: '4.7',
+    aboutDescription:
+      'Светлая терраса, внимательный сервис и блюда на компанию. Для долгих ланчей, спокойных разговоров и тёплых кишинёвских вечеров.',
     cuisineTags: ['Терраса', 'Европейская кухня', 'Винная карта'],
     priceBand: 'MDL 280–500 с человека',
     amenities: ['Летняя терраса', 'Романтика', 'Вид на город'],
@@ -76,6 +82,8 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
   },
   smokehouse: {
     ratingSummary: '4.7',
+    aboutDescription:
+      'Мясо медленного копчения, фирменные BBQ-соусы и сытные гарниры. Для любителей насыщенного дымного вкуса и больших порций.',
     cuisineTags: ['BBQ', 'Копчёное мясо', 'Комфорт-фуд'],
     priceBand: 'MDL 260–480 с человека',
     amenities: ['Большие порции', 'Семейные столы', 'На вынос'],
@@ -93,6 +101,8 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
   },
   'attico-terrace-restaurant': {
     ratingSummary: '4.8',
+    aboutDescription:
+      'Ужин на террасе на крыше: современные средиземноморские блюда и изящные коктейли. Идеально для свиданий и особых случаев.',
     cuisineTags: ['Крыша', 'Средиземноморье', 'Коктейли'],
     priceBand: 'MDL 320–600 с человека',
     amenities: ['Закаты', 'Свидания', 'Мероприятия'],
@@ -110,6 +120,8 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
   },
   'garden-restaurant-terrace': {
     ratingSummary: '4.6',
+    aboutDescription:
+      'Кухня в духе сада на основе свежих сезонных продуктов. Светлый уютный зал для семейных ужинов и неспешных встреч.',
     cuisineTags: ['Сезонное', 'Садовая терраса', 'Европейское'],
     priceBand: 'MDL 270–490 с человека',
     amenities: ['Сад', 'Дети welcome', 'Неспешно'],
@@ -127,6 +139,8 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
   },
   'la-placinte-stefan-cel-mare': {
     ratingSummary: '4.9',
+    aboutDescription:
+      'Традиционная молдавская кухня с современным акцентом. Домашние плацинды, местные блюда и по-настоящему уютная атмосфера.',
     cuisineTags: ['Молдавская кухня', 'Домашние пироги', 'Традиции'],
     priceBand: 'MDL 200–380 с человека',
     amenities: ['Локальная классика', 'Уютный зал', 'Быстрый ланч'],

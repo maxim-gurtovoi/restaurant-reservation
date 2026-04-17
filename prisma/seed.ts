@@ -201,11 +201,11 @@ async function main() {
       TableShape.RECTANGLE,
     ],
     layout: [
-      { x: 120, y: 115, w: 72, h: 72 },
-      { x: 220, y: 105, w: 150, h: 72, r: -8 },
-      { x: 410, y: 130, w: 92, h: 92 },
-      { x: 525, y: 120, w: 74, h: 74, r: 6 },
-      { x: 170, y: 300, w: 330, h: 90 },
+      { x: 70, y: 72, w: 58, h: 58 },
+      { x: 150, y: 72, w: 168, h: 72 },
+      { x: 338, y: 72, w: 86, h: 86 },
+      { x: 444, y: 72, w: 72, h: 72 },
+      { x: 100, y: 360, w: 520, h: 84 },
     ],
   });
 
@@ -213,13 +213,13 @@ async function main() {
     restaurantId: pegasTerrace.id,
     floorPlanId: pegasFloor.id,
     labels: ['P1', 'P2', 'P3', 'P4'],
-    capacities: [2, 3, 4, 6],
+    capacities: [2, 4, 4, 6],
     shapes: [TableShape.RECTANGLE, TableShape.ROUND, TableShape.SQUARE, TableShape.RECTANGLE],
     layout: [
-      { x: 140, y: 120, w: 140, h: 72, r: 8 },
-      { x: 320, y: 135, w: 82, h: 82 },
-      { x: 430, y: 105, w: 140, h: 140, r: -4 },
-      { x: 190, y: 300, w: 300, h: 82, r: -6 },
+      { x: 56, y: 76, w: 125, h: 64 },
+      { x: 201, y: 76, w: 74, h: 74 },
+      { x: 283, y: 76, w: 88, h: 88 },
+      { x: 56, y: 340, w: 490, h: 78 },
     ],
   });
 
@@ -236,11 +236,11 @@ async function main() {
       TableShape.RECTANGLE,
     ],
     layout: [
-      { x: 115, y: 125, w: 74, h: 74 },
-      { x: 215, y: 110, w: 165, h: 72, r: 10 },
-      { x: 440, y: 130, w: 92, h: 92, r: -6 },
-      { x: 570, y: 115, w: 125, h: 125 },
-      { x: 150, y: 315, w: 380, h: 90, r: 4 },
+      { x: 52, y: 78, w: 60, h: 60 },
+      { x: 128, y: 76, w: 175, h: 72 },
+      { x: 323, y: 78, w: 72, h: 72 },
+      { x: 415, y: 76, w: 95, h: 95 },
+      { x: 72, y: 360, w: 510, h: 86 },
     ],
   });
 
@@ -251,10 +251,10 @@ async function main() {
     capacities: [2, 4, 4, 6],
     shapes: [TableShape.ROUND, TableShape.RECTANGLE, TableShape.SQUARE, TableShape.RECTANGLE],
     layout: [
-      { x: 145, y: 115, w: 78, h: 78 },
-      { x: 255, y: 95, w: 210, h: 78, r: -12 },
-      { x: 490, y: 135, w: 94, h: 94 },
-      { x: 255, y: 310, w: 320, h: 78 },
+      { x: 58, y: 78, w: 64, h: 64 },
+      { x: 138, y: 74, w: 228, h: 74 },
+      { x: 384, y: 76, w: 92, h: 92 },
+      { x: 58, y: 340, w: 530, h: 76 },
     ],
   });
 
@@ -263,11 +263,11 @@ async function main() {
     floorPlanId: gardenFloor.id,
     labels: ['D1', 'D2', 'D3'],
     capacities: [2, 4, 6],
-    shapes: [TableShape.ROUND, TableShape.RECTANGLE, TableShape.SQUARE],
+    shapes: [TableShape.ROUND, TableShape.RECTANGLE, TableShape.RECTANGLE],
     layout: [
-      { x: 140, y: 125, w: 82, h: 82 },
-      { x: 270, y: 110, w: 170, h: 78, r: 6 },
-      { x: 475, y: 140, w: 128, h: 128 },
+      { x: 58, y: 82, w: 62, h: 62 },
+      { x: 132, y: 76, w: 188, h: 72 },
+      { x: 58, y: 352, w: 470, h: 84 },
     ],
   });
 
@@ -278,10 +278,10 @@ async function main() {
     capacities: [2, 4, 4, 6],
     shapes: [TableShape.ROUND, TableShape.RECTANGLE, TableShape.SQUARE, TableShape.RECTANGLE],
     layout: [
-      { x: 130, y: 115, w: 78, h: 78 },
-      { x: 250, y: 105, w: 185, h: 78, r: -5 },
-      { x: 470, y: 130, w: 110, h: 110 },
-      { x: 220, y: 300, w: 310, h: 82, r: 4 },
+      { x: 64, y: 82, w: 58, h: 58 },
+      { x: 140, y: 76, w: 195, h: 72 },
+      { x: 355, y: 74, w: 100, h: 100 },
+      { x: 62, y: 360, w: 510, h: 82 },
     ],
   });
 

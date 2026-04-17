@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { RegisterModalTrigger } from '@/components/auth/register-modal-trigger';
 import { RestaurantCard } from '@/features/restaurants/components/restaurant-card';
 import { listRestaurants } from '@/features/restaurants/server/restaurants.service';
+import { getServerLocale } from '@/lib/i18n';
 
-const HOW_IT_WORKS = [
+const HOW_IT_WORKS_RU = [
   {
     icon: (
       <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
@@ -45,16 +47,49 @@ const HOW_IT_WORKS = [
   },
 ];
 
-const CATEGORIES = [
-  { label: '🌇 Панорама / крыша' },
-  { label: '🍔 Непринуждённо' },
-  { label: '🍷 Изысканно' },
-  { label: '👨‍👩‍👧 С детьми' },
-  { label: '🌿 Терраса / сад' },
-  { label: '🎶 Живая музыка' },
+const HOW_IT_WORKS_RO = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+        <path
+          d="M3 12h18M3 6h18M3 18h18"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+        />
+      </svg>
+    ),
+    step: '01',
+    title: 'Alege restaurantul',
+    desc: 'Explorează localuri, fotografii, descrieri și mesele disponibile.',
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+        <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.8" />
+        <path d="M14 14h2m0 0h5m-5 0v2m0 3v2m5-7v2m0 3v2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+    step: '02',
+    title: 'Alege masa',
+    desc: 'Deschide planul sălii, selectează masa liberă și ora dorită.',
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6" aria-hidden="true">
+        <path
+          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 0 0 1.946-.806 3.42 3.42 0 0 1 4.438 0 3.42 3.42 0 0 0 1.946.806 3.42 3.42 0 0 1 3.138 3.138 3.42 3.42 0 0 0 .806 1.946 3.42 3.42 0 0 1 0 4.438 3.42 3.42 0 0 0-.806 1.946 3.42 3.42 0 0 1-3.138 3.138 3.42 3.42 0 0 0-1.946.806 3.42 3.42 0 0 1-4.438 0 3.42 3.42 0 0 0-1.946-.806 3.42 3.42 0 0 1-3.138-3.138 3.42 3.42 0 0 0-.806-1.946 3.42 3.42 0 0 1 0-4.438 3.42 3.42 0 0 0 .806-1.946 3.42 3.42 0 0 1 3.138-3.138Z"
+          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        />
+      </svg>
+    ),
+    step: '03',
+    title: 'Confirmă cu QR',
+    desc: 'Primești confirmarea instant și codul QR pentru check-in rapid.',
+  },
 ];
 
-const PLATFORM_HIGHLIGHTS = [
+const PLATFORM_HIGHLIGHTS_RU = [
   {
     title: 'Наглядный план зала',
     desc: 'Гости выбирают конкретные столики на интерактивной схеме зала.',
@@ -72,46 +107,108 @@ const PLATFORM_HIGHLIGHTS = [
     desc: 'Один аккаунт — бронирование в разных заведениях платформы.',
   },
 ];
+const PLATFORM_HIGHLIGHTS_RO = [
+  {
+    title: 'Plan interactiv al sălii',
+    desc: 'Clienții aleg masa exactă direct din schema restaurantului.',
+  },
+  {
+    title: 'Intrare cu QR',
+    desc: 'Fiecare rezervare are cod QR pentru confirmare rapidă la sosire.',
+  },
+  {
+    title: 'Disponibilitate actuală',
+    desc: 'Sunt afișate doar mesele active și libere pentru intervalul selectat.',
+  },
+  {
+    title: 'Mai multe restaurante',
+    desc: 'Un singur cont pentru rezervări în restaurante diferite de pe platformă.',
+  },
+];
 
 export default async function HomePage() {
+  const locale = await getServerLocale();
   const result = await listRestaurants({});
   const featured = 'error' in result.body ? [] : result.body.slice(0, 6);
+  const howItWorks = locale === 'ro' ? HOW_IT_WORKS_RO : HOW_IT_WORKS_RU;
+  const highlights = locale === 'ro' ? PLATFORM_HIGHLIGHTS_RO : PLATFORM_HIGHLIGHTS_RU;
+  const copy = locale === 'ro'
+    ? {
+        badge: 'Platformă de rezervări',
+        heroTitle: 'Rezervă o masă la restaurantul tău preferat',
+        heroDescription:
+          'Alege localul, masa din plan și confirmă rezervarea instant prin cod QR în TableFlow.',
+        restaurantsCta: 'Vezi restaurantele',
+        registerCta: 'Înregistrare gratuită',
+        featuredLabel: 'Selecție',
+        featuredTitle: 'Restaurante recomandate',
+        featuredDescription: 'Localurile rezervate cel mai des de clienți.',
+        allRestaurants: 'Toate restaurantele',
+        processLabel: 'Proces simplu',
+        processTitle: 'Cum funcționează',
+        advantagesLabel: 'Avantaje',
+        advantagesTitle: 'De ce aleg clienții TableFlow',
+        bottomTitle: 'Ești gata să rezervi o masă?',
+        bottomDescription: 'Înregistrarea este gratuită, iar confirmarea vine imediat după rezervare.',
+        bottomRegister: 'Înregistrează-te',
+      }
+    : {
+        badge: 'Сервис бронирования',
+        heroTitle: 'Забронируйте столик в любимом ресторане',
+        heroDescription:
+          'Выбирайте заведение, стол на плане зала и мгновенно подтверждайте бронь с QR-кодом в едином сервисе TableFlow.',
+        restaurantsCta: 'Смотреть рестораны',
+        registerCta: 'Бесплатная регистрация',
+        featuredLabel: 'Подборка',
+        featuredTitle: 'Рекомендуемые рестораны',
+        featuredDescription: 'Заведения, которые чаще всего бронируют гости.',
+        allRestaurants: 'Все рестораны',
+        processLabel: 'Простой процесс',
+        processTitle: 'Как это работает',
+        advantagesLabel: 'Преимущества',
+        advantagesTitle: 'Почему гости выбирают TableFlow',
+        bottomTitle: 'Готовы забронировать столик?',
+        bottomDescription: 'Регистрация бесплатна, подтверждение брони — сразу после оформления.',
+        bottomRegister: 'Зарегистрироваться',
+      };
 
   return (
     <div className="flex flex-col gap-12 pb-16 pt-1 sm:gap-16 sm:pb-20 md:gap-20">
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="space-y-6 sm:space-y-7">
-        <div className="max-w-3xl space-y-4 sm:space-y-5">
-          <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Забронируйте столик<br className="hidden sm:block" /> в любимом ресторане
-          </h1>
-          <p className="max-w-2xl text-base leading-relaxed text-muted sm:text-lg">
-            Выбирайте заведение, стол на плане зала и мгновенно подтверждайте бронь с QR-кодом.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          <Button asChild variant="primary">
-            <Link href="/restaurants">Смотреть рестораны</Link>
-          </Button>
-          <Button asChild variant="outline">
-            <Link href="/auth/register">Бесплатная регистрация</Link>
-          </Button>
-        </div>
-      </section>
+      <section className="relative isolate overflow-hidden rounded-2xl border border-white/45 bg-surface/58 p-7 shadow-elev-2 backdrop-blur-xl sm:p-10 lg:p-14">
+        <div
+          className="pointer-events-none absolute inset-0 -z-10 opacity-58"
+          aria-hidden="true"
+          style={{
+            background:
+              'radial-gradient(circle at 12% 18%, var(--hero-glow) 0%, transparent 54%), radial-gradient(circle at 88% 82%, color-mix(in srgb, var(--hero-to) 24%, transparent) 0%, transparent 62%), linear-gradient(130deg, color-mix(in srgb, var(--hero-from) 28%, transparent), color-mix(in srgb, var(--hero-via) 24%, transparent), color-mix(in srgb, var(--hero-to) 20%, transparent))',
+            filter: 'blur(54px)',
+            transform: 'scale(1.12)',
+          }}
+        />
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-white/24" aria-hidden="true" />
 
-      {/* ── Categories (supporting — lighter than featured) ───────── */}
-      <section className="space-y-3 rounded-2xl border border-border/35 bg-surface-soft/55 p-3.5 sm:space-y-3.5 sm:p-4">
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-muted">По типу</p>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(({ label }) => (
-            <Link
-              key={label}
-              href="/restaurants"
-              className="rounded-full border border-border/50 bg-surface px-3.5 py-1.5 text-sm font-medium text-foreground/90 transition-colors hover:border-accent-border/70 hover:bg-accent-bg hover:text-accent-text"
-            >
-              {label}
-            </Link>
-          ))}
+        <div className="relative max-w-4xl space-y-6 sm:space-y-7">
+          <div className="space-y-4 sm:space-y-5">
+            <p className="inline-flex rounded-full border border-border/60 bg-surface/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
+              {copy.badge}
+            </p>
+            <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.04] tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem]">
+              {copy.heroTitle}
+            </h1>
+            <p className="max-w-2xl text-sm leading-relaxed text-foreground/75 sm:text-base">
+              {copy.heroDescription}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild variant="hero" size="lg">
+              <Link href="/restaurants">{copy.restaurantsCta}</Link>
+            </Button>
+            <RegisterModalTrigger
+              label={copy.registerCta}
+              className="border-white bg-white/20 font-semibold text-white hover:border-white hover:bg-white hover:text-foreground"
+            />
+          </div>
         </div>
       </section>
 
@@ -121,19 +218,19 @@ export default async function HomePage() {
           <div className="rounded-3xl border border-border-strong/35 bg-surface-soft/60 p-5 shadow-card-soft sm:p-6 md:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
               <div className="min-w-0 space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted">Подборка</p>
+                <p className="text-xs font-semibold uppercase tracking-widest text-muted">{copy.featuredLabel}</p>
                 <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-[1.875rem]">
-                  Рекомендуемые рестораны
+                  {copy.featuredTitle}
                 </h2>
                 <p className="max-w-xl text-sm leading-relaxed text-muted">
-                  Заведения, которые чаще всего бронируют гости.
+                  {copy.featuredDescription}
                 </p>
               </div>
               <Link
                 href="/restaurants"
                 className="inline-flex shrink-0 items-center gap-1 self-start rounded-lg px-1 py-1 text-sm font-semibold text-accent-text underline-offset-4 transition-colors hover:underline sm:self-auto"
               >
-                Все рестораны
+                {copy.allRestaurants}
                 <span aria-hidden="true" className="text-base leading-none">
                   →
                 </span>
@@ -141,7 +238,7 @@ export default async function HomePage() {
             </div>
             <div className="mt-6 grid gap-5 sm:mt-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
               {featured.map((r) => (
-                <RestaurantCard key={r.id} restaurant={r} />
+                <RestaurantCard key={r.id} restaurant={r} locale={locale} />
               ))}
             </div>
           </div>
@@ -151,12 +248,12 @@ export default async function HomePage() {
       {/* ── How it works (secondary — calmer surfaces) ────────────── */}
       <section id="how-it-works" className="scroll-mt-24 space-y-4 sm:space-y-5">
         <div className="max-w-2xl space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted">Простой процесс</p>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Как это работает</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">{copy.processLabel}</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{copy.processTitle}</h2>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3 sm:gap-4">
-          {HOW_IT_WORKS.map(({ icon, step, title, desc }) => (
+          {howItWorks.map(({ icon, step, title, desc }) => (
             <div
               key={step}
               className="relative space-y-3 rounded-2xl border border-border/30 bg-surface-soft/70 p-4 sm:p-5"
@@ -181,11 +278,11 @@ export default async function HomePage() {
       {/* ── Key advantages (tertiary — compact) ───────────────────── */}
       <section className="space-y-4 sm:space-y-4">
         <div className="max-w-2xl space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted">Преимущества</p>
-          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Почему гости выбирают TableFlow</h2>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted">{copy.advantagesLabel}</p>
+          <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{copy.advantagesTitle}</h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-4 lg:gap-4">
-          {PLATFORM_HIGHLIGHTS.map((item) => (
+          {highlights.map((item) => (
             <article
               key={item.title}
               className="rounded-2xl border border-border/30 bg-surface-soft/60 p-3.5 sm:p-4"
@@ -198,22 +295,22 @@ export default async function HomePage() {
       </section>
 
       {/* ── Bottom CTA (closing block — stronger emphasis) ────────── */}
-      <section className="overflow-hidden rounded-3xl border border-accent-border/60 bg-booking p-8 shadow-card-strong ring-1 ring-accent-border/25 sm:p-10 md:p-12">
+      <section className="overflow-hidden rounded-3xl border border-white/45 bg-surface/55 p-8 backdrop-blur-xl ring-1 ring-white/30 sm:p-10 md:p-12">
         <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center sm:gap-10">
           <div className="max-w-xl space-y-2 sm:space-y-2.5">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              Готовы забронировать столик?
+              {copy.bottomTitle}
             </h2>
             <p className="text-sm leading-relaxed text-muted sm:text-base">
-              Регистрация бесплатна, подтверждение брони — сразу после оформления.
+              {copy.bottomDescription}
             </p>
           </div>
           <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
-            <Button asChild variant="primary" className="w-full sm:w-auto">
-              <Link href="/restaurants">Смотреть рестораны</Link>
+            <Button asChild variant="primary" className="w-full shadow-none hover:shadow-none sm:w-auto">
+              <Link href="/restaurants">{copy.restaurantsCta}</Link>
             </Button>
             <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href="/auth/register">Зарегистрироваться</Link>
+              <Link href="/auth/register">{copy.bottomRegister}</Link>
             </Button>
           </div>
         </div>

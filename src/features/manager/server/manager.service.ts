@@ -213,6 +213,7 @@ export async function getReservationDetailsForManager(input: {
 export type ManagerFloorPlanRestaurantOption = {
   id: string;
   name: string;
+  slug: string;
 };
 
 export type ManagerFloorPlanContext = {
@@ -250,6 +251,7 @@ export async function getManagerFloorPlanContext(input: {
         select: {
           id: true,
           name: true,
+          slug: true,
           floorPlans: { orderBy: { name: 'asc' } },
           tables: true,
         },
@@ -261,6 +263,7 @@ export async function getManagerFloorPlanContext(input: {
   const restaurants: ManagerFloorPlanRestaurantOption[] = links.map((l) => ({
     id: l.restaurant.id,
     name: l.restaurant.name,
+    slug: l.restaurant.slug,
   }));
 
   if (!restaurants.length) {
@@ -277,7 +280,7 @@ export async function getManagerFloorPlanContext(input: {
   const r = row.restaurant;
 
   return {
-    restaurant: { id: r.id, name: r.name },
+    restaurant: { id: r.id, name: r.name, slug: r.slug },
     restaurants,
     floorPlans: r.floorPlans.map((fp) => ({
       id: fp.id,

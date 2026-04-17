@@ -86,6 +86,7 @@ export default async function ManagerFloorPlanPage({
         tables={ctx.tables}
         readOnly
         headerEyebrow="Обзор · план зала"
+        restaurantSlug={ctx.restaurant?.slug}
       />
     </div>
   );

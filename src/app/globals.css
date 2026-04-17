@@ -2,8 +2,8 @@
 
 /*
  * TableFlow — visual system v3
- * Page: #F3F3F3 neutral gray | Cards: #FEFEFE clean white | CTA: herb green
- * Accent: #EEC0FF / #F9E7FF soft purple — selective, not dominant.
+ * Page: #F3F3F3 neutral gray | Cards: #FEFEFE clean white | CTA: warm orange
+ * Accent: warm amber tones based on logo palette.
  *
  * Token rule: bg-background | bg-surface | bg-surface-soft | bg-booking,
  * text-foreground | text-muted, border-border | border-border-strong,
@@ -20,9 +20,10 @@
   --border:           #E4E4E4;
   --border-strong:    #CECECE;
 
-  /* ── Primary CTA (purple) ────────────────────────────────────── */
-  --primary:          #7B2F9B;
-  --primary-hover:    #6B21A8;
+  /* ── Primary CTA (logo orange) ───────────────────────────────── */
+  --primary:          #EC7A04;
+  --primary-hover:    #D86B00;
+  --primary-active:   #BC5B00;
   --primary-foreground: #ffffff;
 
   /* ── Card surfaces ────────────────────────────────────────────── */
@@ -31,18 +32,22 @@
   --surface-strong:   #FEFEFE;
 
   /* ── Booking / hero accent panel ──────────────────────────────── */
-  --booking-surface:  #F9E7FF;
+  --booking-surface:  #FFF3E8;
+  --hero-from:        #F4B32A;
+  --hero-via:         #F1932F;
+  --hero-to:          #EA7C49;
+  --hero-glow:        rgba(255, 190, 92, 0.42);
 
-  /* ── Soft purple accent ───────────────────────────────────────── */
-  --accent:           #EEC0FF;
-  --accent-bg:        #F9E7FF;
-  --accent-text:      #7B2F9B;
-  --accent-border:    #E0ACFE;
+  /* ── Soft warm accent ─────────────────────────────────────────── */
+  --accent:           #FFD4AD;
+  --accent-bg:        #FFF3E8;
+  --accent-text:      #C76400;
+  --accent-border:    #F6BE86;
 
-  /* ── Backwards-compat: warm-accent aliases → purple ──────────── */
-  --accent-warm:        #7B2F9B;
-  --accent-warm-bg:     #F9E7FF;
-  --accent-warm-border: #E0ACFE;
+  /* ── Backwards-compat aliases ─────────────────────────────────── */
+  --accent-warm:        #EC7A04;
+  --accent-warm-bg:     #FFF3E8;
+  --accent-warm-border: #F6BE86;
 
   /* ── Error ────────────────────────────────────────────────────── */
   --error: #DC2626;
@@ -51,6 +56,18 @@
   --shadow-card:        0 1px 3px rgba(28,28,28,0.07), 0 10px 28px rgba(28,28,28,0.07);
   --shadow-card-soft:   0 1px 2px rgba(28,28,28,0.05), 0 6px 16px rgba(28,28,28,0.04);
   --shadow-card-strong: 0 2px 8px  rgba(28,28,28,0.12), 0 20px 44px rgba(28,28,28,0.09);
+  --shadow-elev-1:      0 1px 2px rgba(28,28,28,0.06), 0 8px 20px rgba(28,28,28,0.05);
+  --shadow-elev-2:      0 2px 6px rgba(28,28,28,0.08), 0 14px 32px rgba(28,28,28,0.08);
+  --shadow-elev-3:      0 4px 10px rgba(28,28,28,0.12), 0 24px 56px rgba(28,28,28,0.12);
+  --shadow-glow-primary: 0 2px 8px rgba(236,122,4,0.28), 0 12px 30px rgba(236,122,4,0.32);
+
+  /* ── Radius scale ──────────────────────────────────────────────── */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
+  --radius-pill: 9999px;
 }
 
 @theme inline {
@@ -67,7 +84,12 @@
 
   --color-primary:            var(--primary);
   --color-primary-hover:      var(--primary-hover);
+  --color-primary-active:     var(--primary-active);
   --color-primary-foreground: var(--primary-foreground);
+  --color-hero-from:          var(--hero-from);
+  --color-hero-via:           var(--hero-via);
+  --color-hero-to:            var(--hero-to);
+  --color-hero-glow:          var(--hero-glow);
 
   --color-accent:        var(--accent);
   --color-accent-bg:     var(--accent-bg);
@@ -84,6 +106,17 @@
   --shadow-card:        var(--shadow-card);
   --shadow-card-soft:   var(--shadow-card-soft);
   --shadow-card-strong: var(--shadow-card-strong);
+  --shadow-elev-1:      var(--shadow-elev-1);
+  --shadow-elev-2:      var(--shadow-elev-2);
+  --shadow-elev-3:      var(--shadow-elev-3);
+  --shadow-glow-primary: var(--shadow-glow-primary);
+
+  --radius-sm:   var(--radius-sm);
+  --radius-md:   var(--radius-md);
+  --radius-lg:   var(--radius-lg);
+  --radius-xl:   var(--radius-xl);
+  --radius-2xl:  var(--radius-2xl);
+  --radius-pill: var(--radius-pill);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
@@ -95,9 +128,14 @@ html {
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 12% 16%, color-mix(in srgb, var(--hero-from) 32%, transparent) 0%, transparent 48%),
+    radial-gradient(circle at 90% 14%, color-mix(in srgb, var(--hero-via) 28%, transparent) 0%, transparent 47%),
+    radial-gradient(circle at 82% 82%, color-mix(in srgb, var(--hero-to) 30%, transparent) 0%, transparent 52%),
+    var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  background-attachment: fixed;
 }
 
 /* Native controls: consistent pointer on hover (Tailwind preflight / browsers often use default arrow). */

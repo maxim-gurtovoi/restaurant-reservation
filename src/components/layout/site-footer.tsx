@@ -21,15 +21,13 @@ export function SiteFooter() {
           <div className="space-y-3 lg:max-w-xs">
             <Link
               href={ROUTES.home}
-              className="inline-flex items-center gap-2 text-base font-semibold text-primary"
+              className="inline-flex items-center"
             >
               <img
-                src="/fork-and-knife.svg"
-                alt=""
-                className="h-5 w-5"
-                aria-hidden="true"
+                src="/logo-mark.png"
+                alt="TableFlow"
+                className="h-10 w-auto object-contain"
               />
-              <span>TableFlow</span>
             </Link>
             <p className="text-sm leading-relaxed text-muted">
               Система бронирования столиков с регистрацией по QR-коду.

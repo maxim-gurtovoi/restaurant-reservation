@@ -8,16 +8,21 @@ import { RegisterForm } from '@/features/auth/components/register-form';
 
 type AuthMode = 'login' | 'register';
 
-export function HeaderAuthEntry() {
+type RegisterModalTriggerProps = {
+  className?: string;
+  label?: string;
+};
+
+export function RegisterModalTrigger({ className, label = 'Бесплатная регистрация' }: RegisterModalTriggerProps) {
   const [modalOpen, setModalOpen] = useState(false);
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [mode, setMode] = useState<AuthMode>('register');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!modalOpen) return;
-    setMode('login');
+    setMode('register');
   }, [modalOpen]);
 
   useEffect(() => {
@@ -53,17 +58,17 @@ export function HeaderAuthEntry() {
       <div
         role="dialog"
         aria-modal="true"
-        aria-labelledby="auth-modal-title"
+        aria-labelledby="register-modal-title"
         className="relative flex max-h-[min(92vh,720px)] w-full max-w-md flex-col rounded-t-2xl border border-border/60 bg-surface shadow-card-strong sm:max-h-[min(90vh,680px)] sm:rounded-2xl"
       >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-border/50 px-5 py-4">
           <div className="min-w-0 space-y-0.5">
-            <h2 id="auth-modal-title" className="text-lg font-semibold tracking-tight text-foreground">
+            <h2 id="register-modal-title" className="text-lg font-semibold tracking-tight text-foreground">
               {mode === 'login' ? 'Вход' : 'Регистрация'}
             </h2>
             <p className="text-xs text-muted">
               {mode === 'login'
-                ? 'Оставайтесь на странице — ниже можно перейти к регистрации.'
+                ? 'Уже есть аккаунт? Войдите и продолжите бронирование.'
                 : 'Создайте аккаунт и продолжите с того же места.'}
             </p>
           </div>
@@ -74,12 +79,7 @@ export function HeaderAuthEntry() {
             onClick={() => setModalOpen(false)}
           >
             <svg viewBox="0 0 24 24" fill="none" className="h-5 w-5" aria-hidden="true">
-              <path
-                d="M6 6l12 12M18 6L6 18"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-              />
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           </button>
         </div>
@@ -88,7 +88,7 @@ export function HeaderAuthEntry() {
           {mode === 'login' ? (
             <>
               <LoginForm
-                idPrefix="header-modal-"
+                idPrefix="hero-register-modal-"
                 embedInModal
                 onAuthenticated={() => setModalOpen(false)}
               />
@@ -106,7 +106,7 @@ export function HeaderAuthEntry() {
           ) : (
             <>
               <RegisterForm
-                idPrefix="header-modal-"
+                idPrefix="hero-register-modal-"
                 embedInModal
                 onAuthenticated={() => setModalOpen(false)}
               />
@@ -129,25 +129,19 @@ export function HeaderAuthEntry() {
 
   return (
     <>
-      <div className="flex items-center gap-2">
-        <Button
-          type="button"
-          variant="ghost"
-          aria-haspopup="dialog"
-          aria-expanded={modalOpen}
-          className="h-10 shrink-0 gap-1.5 rounded-full border border-border/75 bg-surface px-4 text-sm font-semibold text-foreground hover:border-[#17191F] hover:bg-[#17191F] hover:text-white"
-          onClick={() => setModalOpen(true)}
-        >
-          <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 shrink-0" aria-hidden="true">
-            <path
-              d="M12 12a4 4 0 100-8 4 4 0 000 8zm0 2c-3.314 0-6 2.015-6 4.5 0 .276.224.5.5.5h11a.5.5 0 00.5-.5c0-2.485-2.686-4.5-6-4.5z"
-              fill="currentColor"
-            />
-          </svg>
-          <span>Вход</span>
-        </Button>
-      </div>
+      <Button
+        type="button"
+        variant="outline"
+        size="lg"
+        className={className}
+        aria-haspopup="dialog"
+        aria-expanded={modalOpen}
+        onClick={() => setModalOpen(true)}
+      >
+        {label}
+      </Button>
       {mounted && modal ? createPortal(modal, document.body) : null}
     </>
   );
 }
+

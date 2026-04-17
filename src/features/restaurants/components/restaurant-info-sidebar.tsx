@@ -1,3 +1,5 @@
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import {
   WORKING_HOURS_ERROR_CODES,
   validateReservationAgainstWorkingHours,
@@ -15,6 +17,7 @@ type RestaurantInfoSidebarProps = {
   phone: string | null;
   email: string | null;
   workingHours: WorkingHoursItem[];
+  reserveHref?: string;
 };
 
 const DAY_LABELS: Record<number, string> = {
@@ -122,6 +125,7 @@ export function RestaurantInfoSidebar({
   phone,
   email,
   workingHours,
+  reserveHref,
 }: RestaurantInfoSidebarProps) {
   const openStatus = getOpenStatus(workingHours);
   const weeklyRows = buildWeeklyRows(workingHours);
@@ -129,6 +133,11 @@ export function RestaurantInfoSidebar({
   return (
     <aside className="space-y-4 rounded-2xl border border-border/50 bg-surface p-5 shadow-card lg:sticky lg:top-24">
       <div className="space-y-2">
+        {reserveHref ? (
+          <Button asChild variant="primary" className="w-full py-2.5 text-sm font-semibold">
+            <Link href={reserveHref}>Забронировать столик</Link>
+          </Button>
+        ) : null}
         <button
           type="button"
           className="w-full cursor-pointer rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white shadow-[0_2px_6px_rgba(123,47,155,0.25),0_8px_20px_rgba(123,47,155,0.15)] transition hover:bg-primary-hover"
