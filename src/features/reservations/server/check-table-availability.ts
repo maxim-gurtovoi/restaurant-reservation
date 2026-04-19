@@ -1,6 +1,8 @@
 import 'server-only';
 import { prisma } from '@/lib/prisma';
 import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
+import { getRestaurantIanaZoneById } from '@/features/reservations/server/restaurant-timezone.repository';
+import { prismaWhereBlockingReservationOverlap } from '@/features/reservations/server/reservation-blocking';
 import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
 
 export async function checkTableAvailability(input: {
@@ -14,7 +16,8 @@ export async function checkTableAvailability(input: {
 }> {
   const { restaurantId, date, time } = input;
 
-  const { startAt, endAt } = computeReservationWindow({ date, time });
+  const timeZone = await getRestaurantIanaZoneById(restaurantId);
+  const { startAt, endAt } = computeReservationWindow({ date, time, timeZone });
 
   await ensureWorkingHoursAllowReservation({
     restaurantId,
@@ -22,23 +25,14 @@ export async function checkTableAvailability(input: {
     endAt,
   });
 
-  // Query reservations that block availability
-  // These are overlapping reservations with statuses: CONFIRMED or CHECKED_IN
+  const now = new Date();
   const blockingReservations = await prisma.reservation.findMany({
-    where: {
+    where: prismaWhereBlockingReservationOverlap({
       restaurantId,
-      status: {
-        in: ['CONFIRMED', 'CHECKED_IN'],
-      },
-      // Overlap detection:
-      // existing.startAt < requestedEnd AND existing.endAt > requestedStart
-      startAt: {
-        lt: endAt,
-      },
-      endAt: {
-        gt: startAt,
-      },
-    },
+      requestedStartAt: startAt,
+      requestedEndAt: endAt,
+      now,
+    }),
     select: {
       tableId: true,
     },

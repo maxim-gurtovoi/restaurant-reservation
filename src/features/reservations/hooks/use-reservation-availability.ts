@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+const DEBOUNCE_MS = 320;
+
 type UseReservationAvailabilityOptions = {
   restaurantId: string;
   date: string;
@@ -28,6 +30,9 @@ export function useReservationAvailability({
   selectedRef.current = selectedTableId;
   clearRef.current = onSelectedTableCleared;
 
+  const abortRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
+
   const checkAvailability = useCallback(async () => {
     if (!date || !time) {
       setUnavailableTableIds([]);
@@ -35,6 +40,11 @@ export function useReservationAvailability({
       setAvailabilityError(null);
       return;
     }
+
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    const myId = ++requestIdRef.current;
 
     setIsCheckingAvailability(true);
     setAvailabilityError(null);
@@ -45,7 +55,11 @@ export function useReservationAvailability({
         time,
       });
 
-      const response = await fetch(`/api/reservations/availability?${params}`);
+      const response = await fetch(`/api/reservations/availability?${params}`, {
+        signal: ac.signal,
+      });
+      if (myId !== requestIdRef.current) return;
+
       if (!response.ok) {
         const errorPayload = await response.json().catch(() => ({}));
         const message =
@@ -66,6 +80,8 @@ export function useReservationAvailability({
 
       setAvailabilityCheckedAt(new Date());
     } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
+      if (myId !== requestIdRef.current) return;
       console.error('Error checking availability:', error);
       setUnavailableTableIds([]);
       setAvailabilityCheckedAt(null);
@@ -75,13 +91,29 @@ export function useReservationAvailability({
           : 'Не удалось загрузить доступность. Попробуйте ещё раз.',
       );
     } finally {
-      setIsCheckingAvailability(false);
+      if (myId === requestIdRef.current) {
+        setIsCheckingAvailability(false);
+      }
     }
   }, [restaurantId, date, time]);
 
   useEffect(() => {
-    void checkAvailability();
-  }, [checkAvailability]);
+    if (!date || !time) {
+      setUnavailableTableIds([]);
+      setAvailabilityCheckedAt(null);
+      setAvailabilityError(null);
+      return;
+    }
+
+    const t = window.setTimeout(() => {
+      void checkAvailability();
+    }, DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(t);
+      abortRef.current?.abort();
+    };
+  }, [checkAvailability, date, time]);
 
   return {
     unavailableTableIds,

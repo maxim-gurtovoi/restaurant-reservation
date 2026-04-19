@@ -1,5 +1,8 @@
 export const AUTH_COOKIE_NAME = 'reservation_jwt';
 
+/** Must match `expiresIn` in signUserJwt (7d). */
+export const JWT_COOKIE_MAX_AGE_SECONDS = 7 * 24 * 60 * 60;
+
 /** Locale for dates, times, and copy across the Russian UI. */
 export const UI_LOCALE = 'ru-RU' as const;
 

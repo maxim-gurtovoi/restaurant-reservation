@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getCurrentUser } from '@/server/auth';
+import { requireManagerApi } from '@/server/require-manager-api';
 import {
   applyManagerReservationAction,
   type ManagerReservationAction,
@@ -20,10 +20,9 @@ export async function POST(
   req: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
-  const manager = await getCurrentUser();
-  if (!manager) {
-    return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
-  }
+  const auth = await requireManagerApi();
+  if (!auth.ok) return auth.response;
+  const manager = auth.user;
 
   const { id: reservationId } = await ctx.params;
   if (!reservationId) {

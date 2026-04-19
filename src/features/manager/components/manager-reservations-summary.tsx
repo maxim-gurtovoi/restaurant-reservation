@@ -1,6 +1,6 @@
-import type { TodaySummary } from '@/features/manager/lib/manager-reservations-filter-utils';
+import type { ManagerTodaySummary } from '@/features/manager/lib/manager-reservation-filters';
 
-export function ManagerReservationsSummary({ summary }: { summary: TodaySummary }) {
+export function ManagerReservationsSummary({ summary }: { summary: ManagerTodaySummary }) {
   const items = [
     { label: 'Подтверждено', value: summary.confirmed, tone: 'text-accent-text' },
     { label: 'Заселено', value: summary.checkedIn, tone: 'text-sky-800' },
@@ -10,7 +10,9 @@ export function ManagerReservationsSummary({ summary }: { summary: TodaySummary 
 
   return (
     <div className="rounded-2xl border border-border/55 bg-surface-soft/70 px-4 py-3 shadow-card-soft">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">Сегодня (локально)</p>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
+        Сегодня (календарь приложения)
+      </p>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {items.map(({ label, value, tone }) => (
           <div key={label} className="min-w-0">

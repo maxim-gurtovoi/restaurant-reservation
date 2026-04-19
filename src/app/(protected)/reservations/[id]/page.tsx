@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { QrCode } from '@/components/qr/qr-code';
 import { getCurrentUser } from '@/server/auth';
 import { getReservationDetailsById } from '@/features/reservations/server/get-reservation-details';
+import { buildManagerCheckInUrl } from '@/features/qr/server/qr.service';
 import { CancelReservationButton } from '@/features/reservations/components/cancel-reservation-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { formatReservationStatus } from '@/lib/reservation-status';
@@ -61,10 +62,7 @@ export default async function ReservationDetailsPage({
     process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.length > 0
       ? process.env.NEXT_PUBLIC_APP_URL
       : 'http://localhost:3000';
-  const normalizedBaseUrl = baseUrl.replace(/\/+$/, '');
-  const checkInUrl = `${normalizedBaseUrl}/manager/check-in/${encodeURIComponent(
-    reservation.qrToken,
-  )}`;
+  const checkInUrl = buildManagerCheckInUrl({ baseUrl, qrToken: reservation.qrToken });
 
   const isCancellable = reservation.status === 'CONFIRMED';
   const statusLabel = formatReservationStatus(reservation.status);

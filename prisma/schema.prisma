@@ -57,6 +57,8 @@ model Restaurant {
   address     String
   phone       String?
   email       String?
+  /// IANA zone (e.g. Europe/Chisinau). Null = use APP_TIMEZONE from env.
+  timeZone    String?
   imageUrl    String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

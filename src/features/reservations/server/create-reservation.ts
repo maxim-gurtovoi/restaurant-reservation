@@ -2,6 +2,8 @@ import 'server-only';
 import { randomUUID } from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
+import { getRestaurantIanaZoneById } from '@/features/reservations/server/restaurant-timezone.repository';
+import { prismaWhereBlockingReservationOverlap } from '@/features/reservations/server/reservation-blocking';
 import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
 
 function generateQRToken(): string {
@@ -28,7 +30,8 @@ export async function createReservation(input: {
 }> {
   const { userId, restaurantId, tableId, date, time, guestCount } = input;
 
-  const { startAt, endAt } = computeReservationWindow({ date, time });
+  const timeZone = await getRestaurantIanaZoneById(restaurantId);
+  const { startAt, endAt } = computeReservationWindow({ date, time, timeZone });
 
   await ensureWorkingHoursAllowReservation({
     restaurantId,
@@ -69,20 +72,15 @@ export async function createReservation(input: {
       throw new Error('Число гостей превышает вместимость столика');
     }
 
+    const now = new Date();
     const blockingReservations = await tx.reservation.count({
-      where: {
+      where: prismaWhereBlockingReservationOverlap({
         restaurantId,
+        requestedStartAt: startAt,
+        requestedEndAt: endAt,
+        now,
         tableId,
-        status: {
-          in: ['CONFIRMED', 'CHECKED_IN'],
-        },
-        startAt: {
-          lt: endAt,
-        },
-        endAt: {
-          gt: startAt,
-        },
-      },
+      }),
     });
 
     if (blockingReservations > 0) {

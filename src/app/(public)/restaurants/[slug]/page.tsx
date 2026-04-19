@@ -75,6 +75,7 @@ export default async function RestaurantDetailsPage({ params }: RestaurantDetail
           phone={restaurant.phone}
           email={restaurant.email}
           workingHours={restaurant.workingHours}
+          timeZone={restaurant.timeZone}
           reserveHref={reserveHref}
         />
       </div>

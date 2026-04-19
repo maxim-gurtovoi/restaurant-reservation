@@ -98,6 +98,22 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
     setIsSubmitting(true);
     setSubmissionError(null);
     try {
+      const params = new URLSearchParams({
+        restaurantId: restaurant.id,
+        date,
+        time,
+      });
+      const avRes = await fetch(`/api/reservations/availability?${params}`);
+      if (avRes.ok) {
+        const av = (await avRes.json()) as { unavailableTableIds?: string[] };
+        const blocked = av.unavailableTableIds ?? [];
+        if (blocked.includes(selectedTable.id)) {
+          throw new Error(
+            'Столик только что заняли на это время. Вернитесь к выбору столика и выберите другой.',
+          );
+        }
+      }
+
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

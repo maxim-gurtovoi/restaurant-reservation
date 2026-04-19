@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { getCurrentUser } from '@/server/auth';
+import { requireManagerApi } from '@/server/require-manager-api';
 import {
   confirmCheckInByQrToken,
   getReservationByQrTokenForManager,
@@ -9,8 +9,9 @@ export async function GET(
   _req: NextRequest,
   ctx: { params: Promise<{ token: string }> },
 ) {
-  const manager = await getCurrentUser();
-  if (!manager) return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
+  const auth = await requireManagerApi();
+  if (!auth.ok) return auth.response;
+  const manager = auth.user;
 
   const { token } = await ctx.params;
   if (!token) return NextResponse.json({ error: 'Требуется токен' }, { status: 400 });
@@ -50,8 +51,9 @@ export async function POST(
   _req: NextRequest,
   ctx: { params: Promise<{ token: string }> },
 ) {
-  const manager = await getCurrentUser();
-  if (!manager) return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
+  const auth = await requireManagerApi();
+  if (!auth.ok) return auth.response;
+  const manager = auth.user;
 
   const { token } = await ctx.params;
   if (!token) return NextResponse.json({ error: 'Требуется токен' }, { status: 400 });

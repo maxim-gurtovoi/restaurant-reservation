@@ -1,6 +1,8 @@
 import 'server-only';
 
+import { DateTime } from 'luxon';
 import { prisma } from '@/lib/prisma';
+import { getRestaurantIanaZone } from '@/lib/restaurant-time';
 
 /** Machine-readable codes for API / UI (domain validation, not generic failures). */
 export const WORKING_HOURS_ERROR_CODES = {
@@ -47,28 +49,24 @@ function tryParseHHmmToMinutes(value: string): number | null {
   return hours * 60 + minutes;
 }
 
-function localDateAtMinutes(
-  year: number,
-  monthIndex: number,
-  dayOfMonth: number,
-  minutesFromMidnight: number,
-): Date {
-  const h = Math.floor(minutesFromMidnight / 60);
-  const min = minutesFromMidnight % 60;
-  return new Date(year, monthIndex, dayOfMonth, h, min, 0, 0);
+/** JS getDay(): 0 Sunday … 6 Saturday — same convention as Prisma seed `dayOfWeek`. */
+function jsDayOfWeekInZone(startAt: Date, timeZone: string): number {
+  const wall = DateTime.fromJSDate(startAt, { zone: 'utc' }).setZone(timeZone);
+  return wall.weekday % 7;
 }
 
 /**
- * Pure working-hours check: uses Date.getDay() on startAt (0 = Sunday … 6 = Saturday).
- * Reservation must be half-open [startAt, endAt) fully inside half-open [openDate, closeDate)
- * on startAt's local calendar day. No Prisma / restaurantId — pass all rows for the restaurant.
+ * Pure working-hours check in a fixed IANA zone.
+ * Reservation must lie fully inside [open, close] on the calendar day of `startAt` in that zone.
+ * `dayOfWeek` on schedule rows matches JS: 0 = Sunday … 6 = Saturday.
  */
 export function validateReservationAgainstWorkingHours(input: {
   workingHours: WorkingHoursScheduleRow[];
   startAt: Date;
   endAt: Date;
+  timeZone: string;
 }): WorkingHoursValidationResult {
-  const { workingHours, startAt, endAt } = input;
+  const { workingHours, startAt, endAt, timeZone } = input;
 
   if (!(endAt > startAt)) {
     return {
@@ -78,7 +76,7 @@ export function validateReservationAgainstWorkingHours(input: {
     };
   }
 
-  const dayOfWeek = startAt.getDay();
+  const dayOfWeek = jsDayOfWeekInZone(startAt, timeZone);
   const schedule = workingHours.find((wh) => wh.dayOfWeek === dayOfWeek);
 
   if (!schedule) {
@@ -115,11 +113,39 @@ export function validateReservationAgainstWorkingHours(input: {
     };
   }
 
-  const y = startAt.getFullYear();
-  const mo = startAt.getMonth();
-  const d = startAt.getDate();
-  const openDate = localDateAtMinutes(y, mo, d, openMinutes);
-  const closeDate = localDateAtMinutes(y, mo, d, closeMinutes);
+  const startWall = DateTime.fromJSDate(startAt, { zone: 'utc' }).setZone(timeZone);
+  const openH = Math.floor(openMinutes / 60);
+  const openM = openMinutes % 60;
+  const closeH = Math.floor(closeMinutes / 60);
+  const closeM = closeMinutes % 60;
+
+  const openWall = DateTime.fromObject(
+    {
+      year: startWall.year,
+      month: startWall.month,
+      day: startWall.day,
+      hour: openH,
+      minute: openM,
+      second: 0,
+      millisecond: 0,
+    },
+    { zone: timeZone },
+  );
+  const closeWall = DateTime.fromObject(
+    {
+      year: startWall.year,
+      month: startWall.month,
+      day: startWall.day,
+      hour: closeH,
+      minute: closeM,
+      second: 0,
+      millisecond: 0,
+    },
+    { zone: timeZone },
+  );
+
+  const openDate = openWall.toUTC().toJSDate();
+  const closeDate = closeWall.toUTC().toJSDate();
 
   if (startAt < openDate || endAt > closeDate) {
     return {
@@ -144,28 +170,36 @@ export class WorkingHoursDomainError extends Error {
 }
 
 /**
- * Loads all WorkingHours for the restaurant and applies the same validation as availability/create.
- * Single integration point so rule logic is not duplicated across flows.
+ * Loads WorkingHours + restaurant TZ and applies the same validation as availability/create.
  */
 export async function ensureWorkingHoursAllowReservation(input: {
   restaurantId: string;
   startAt: Date;
   endAt: Date;
 }): Promise<void> {
-  const rows = await prisma.workingHours.findMany({
-    where: { restaurantId: input.restaurantId },
-    select: {
-      dayOfWeek: true,
-      isClosed: true,
-      openTime: true,
-      closeTime: true,
-    },
-  });
+  const [rows, restaurant] = await Promise.all([
+    prisma.workingHours.findMany({
+      where: { restaurantId: input.restaurantId },
+      select: {
+        dayOfWeek: true,
+        isClosed: true,
+        openTime: true,
+        closeTime: true,
+      },
+    }),
+    prisma.restaurant.findUnique({
+      where: { id: input.restaurantId },
+      select: { timeZone: true },
+    }),
+  ]);
+
+  const timeZone = getRestaurantIanaZone(restaurant ?? { timeZone: null });
 
   const result = validateReservationAgainstWorkingHours({
     workingHours: rows,
     startAt: input.startAt,
     endAt: input.endAt,
+    timeZone,
   });
 
   if (!result.valid) {

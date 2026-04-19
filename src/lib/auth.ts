@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import type { NextResponse } from 'next/server';
-import { AUTH_COOKIE_NAME } from '@/lib/constants';
+import { AUTH_COOKIE_NAME, JWT_COOKIE_MAX_AGE_SECONDS } from '@/lib/constants';
 import type { JwtPayloadUser } from '@/types/auth';
 
 function getJwtSecret(): string {
@@ -14,8 +14,7 @@ function getJwtSecret(): string {
 }
 
 export function signUserJwt(payload: JwtPayloadUser): string {
-  // TODO: tune expiration and claims
-  return jwt.sign(payload, getJwtSecret(), { expiresIn: '7d' });
+  return jwt.sign(payload, getJwtSecret(), { expiresIn: JWT_COOKIE_MAX_AGE_SECONDS });
 }
 
 export function verifyUserJwt(token: string): JwtPayloadUser | null {
@@ -38,7 +37,7 @@ export function setAuthCookie(response: NextResponse, token: string): void {
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     sameSite: 'lax',
-    // TODO: align with JWT expiration
+    maxAge: JWT_COOKIE_MAX_AGE_SECONDS,
   });
 }
 

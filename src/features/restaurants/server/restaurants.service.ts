@@ -25,6 +25,8 @@ export type RestaurantDetails = {
   phone: string | null;
   email: string | null;
   imageUrl: string | null;
+  /** IANA TZ from DB, or null to use app default. */
+  timeZone: string | null;
   galleryImages: string[];
   floorPlans: {
     id: string;
@@ -163,6 +165,7 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
     phone: restaurant.phone ?? null,
     email: restaurant.email ?? null,
     imageUrl: restaurant.imageUrl ?? null,
+    timeZone: restaurant.timeZone ?? null,
     galleryImages,
     floorPlans: restaurant.floorPlans.map((fp) => ({
       id: fp.id,

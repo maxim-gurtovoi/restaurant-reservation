@@ -1,6 +1,7 @@
 'use client';
 
-import type { StatusFilter, TimeFilter } from '@/features/manager/lib/manager-reservations-filter-utils';
+import Link from 'next/link';
+import type { StatusFilter, TimeFilter } from '@/features/manager/lib/manager-reservation-filters';
 
 const TIME_OPTIONS: { id: TimeFilter; label: string }[] = [
   { id: 'all', label: 'Все даты' },
@@ -27,32 +28,35 @@ function pillClass(active: boolean) {
 type Props = {
   timeFilter: TimeFilter;
   statusFilter: StatusFilter;
-  onTimeChange: (t: TimeFilter) => void;
-  onStatusChange: (s: StatusFilter) => void;
 };
 
-export function ManagerReservationsFilterBar({
-  timeFilter,
-  statusFilter,
-  onTimeChange,
-  onStatusChange,
-}: Props) {
+export function ManagerReservationsFilterBar({ timeFilter, statusFilter }: Props) {
+  function hrefFor(partial: { status?: StatusFilter; time?: TimeFilter }): string {
+    const params = new URLSearchParams();
+    const nextStatus = partial.status ?? statusFilter;
+    const nextTime = partial.time ?? timeFilter;
+    if (nextStatus !== 'all') params.set('status', nextStatus);
+    if (nextTime !== 'all') params.set('time', nextTime);
+    params.set('page', '1');
+    const q = params.toString();
+    return q ? `/manager/reservations?${q}` : '/manager/reservations?page=1';
+  }
+
   return (
     <div className="space-y-3">
       <div>
         <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">Когда</p>
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Фильтр по дате">
           {TIME_OPTIONS.map(({ id, label }) => (
-            <button
+            <Link
               key={id}
-              type="button"
               role="tab"
               aria-selected={timeFilter === id}
-              onClick={() => onTimeChange(id)}
-              className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${pillClass(timeFilter === id)}`}
+              href={hrefFor({ time: id })}
+              className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${pillClass(timeFilter === id)}`}
             >
               {label}
-            </button>
+            </Link>
           ))}
         </div>
       </div>
@@ -60,16 +64,15 @@ export function ManagerReservationsFilterBar({
         <p className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-muted">Статус</p>
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Фильтр по статусу">
           {STATUS_OPTIONS.map(({ id, label }) => (
-            <button
+            <Link
               key={id}
-              type="button"
               role="tab"
               aria-selected={statusFilter === id}
-              onClick={() => onStatusChange(id)}
-              className={`cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${pillClass(statusFilter === id)}`}
+              href={hrefFor({ status: id })}
+              className={`inline-flex rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${pillClass(statusFilter === id)}`}
             >
               {label}
-            </button>
+            </Link>
           ))}
         </div>
       </div>

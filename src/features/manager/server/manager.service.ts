@@ -1,7 +1,14 @@
 import 'server-only';
-import type { ReservationStatus, TableShape } from '@prisma/client';
+import type { Prisma, ReservationStatus, TableShape } from '@prisma/client';
+import { DateTime } from 'luxon';
 import type { ApiResult } from '@/types/common';
+import type {
+  ManagerTodaySummary,
+  StatusFilter,
+  TimeFilter,
+} from '@/features/manager/lib/manager-reservation-filters';
 import { prisma } from '@/lib/prisma';
+import { getAppDefaultTimeZone } from '@/lib/restaurant-time';
 
 export type ManagerReservationDetails = {
   id: string;
@@ -54,27 +61,122 @@ export type ManagerReservationsPage = {
   totalPages: number;
 };
 
+function managerReservationScope(managerUserId: string): Prisma.ReservationWhereInput {
+  return {
+    restaurant: {
+      managers: {
+        some: {
+          userId: managerUserId,
+        },
+      },
+    },
+  };
+}
+
+/** Extra `where` for list filters (status + calendar window in app default TZ). */
+function managerReservationListFilters(
+  status: StatusFilter,
+  time: TimeFilter,
+): Prisma.ReservationWhereInput {
+  const parts: Prisma.ReservationWhereInput[] = [];
+  if (status !== 'all') {
+    parts.push({ status });
+  }
+  if (time !== 'all') {
+    const zone = getAppDefaultTimeZone();
+    const wall = DateTime.now().setZone(zone);
+    const startToday = wall.startOf('day').toUTC().toJSDate();
+    const startTomorrow = wall.plus({ days: 1 }).startOf('day').toUTC().toJSDate();
+    const nowUtc = new Date();
+    if (time === 'today') {
+      parts.push({ startAt: { gte: startToday, lt: startTomorrow } });
+    } else if (time === 'upcoming') {
+      parts.push({ startAt: { gte: startTomorrow } });
+    } else {
+      parts.push({
+        OR: [{ endAt: { lt: nowUtc } }, { startAt: { lt: startToday } }],
+      });
+    }
+  }
+  return parts.length ? { AND: parts } : {};
+}
+
+function buildManagerReservationListWhere(
+  managerUserId: string,
+  status: StatusFilter,
+  time: TimeFilter,
+): Prisma.ReservationWhereInput {
+  const scope = managerReservationScope(managerUserId);
+  const filters = managerReservationListFilters(status, time);
+  if (Object.keys(filters).length === 0) {
+    return scope;
+  }
+  return { AND: [scope, filters] };
+}
+
+/** Aggregates for the summary strip (today in app default TZ, all managed restaurants). */
+export async function getManagerTodayReservationSummary(
+  managerUserId: string,
+): Promise<ManagerTodaySummary> {
+  const zone = getAppDefaultTimeZone();
+  const wall = DateTime.now().setZone(zone);
+  const startToday = wall.startOf('day').toUTC().toJSDate();
+  const startTomorrow = wall.plus({ days: 1 }).startOf('day').toUTC().toJSDate();
+  const scope = managerReservationScope(managerUserId);
+
+  const [confirmed, checkedIn, completed, noShow] = await prisma.$transaction([
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'CONFIRMED',
+        startAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'CHECKED_IN',
+        checkedInAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'COMPLETED',
+        startAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'NO_SHOW',
+        startAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+  ]);
+
+  return { confirmed, checkedIn, completed, noShow };
+}
+
 export async function listManagerReservations(input: {
   managerUserId: string;
   page?: number;
   pageSize?: number;
+  status?: StatusFilter;
+  time?: TimeFilter;
 }): Promise<ApiResult<ManagerReservationsPage>> {
-  const page = Math.max(1, Math.floor(input.page ?? 1));
+  const requestedPage = Math.max(1, Math.floor(input.page ?? 1));
   const pageSize = Math.min(100, Math.max(5, Math.floor(input.pageSize ?? 30)));
-  const skip = (page - 1) * pageSize;
-  const where = {
-    restaurant: {
-      managers: {
-        some: {
-          userId: input.managerUserId,
-        },
-      },
-    },
-  } as const;
+  const status = input.status ?? 'all';
+  const time = input.time ?? 'all';
+  const where = buildManagerReservationListWhere(input.managerUserId, status, time);
 
-  const [total, reservations] = await prisma.$transaction([
-    prisma.reservation.count({ where }),
-    prisma.reservation.findMany({
+  const total = await prisma.reservation.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+  const skip = (page - 1) * pageSize;
+
+  const reservations = await prisma.reservation.findMany({
       where,
       orderBy: [
         { startAt: 'desc' },
@@ -104,8 +206,7 @@ export async function listManagerReservations(input: {
           },
         },
       },
-    }),
-  ]);
+    });
 
   const dto: ManagerReservationListItem[] = reservations.map((r) => ({
     id: r.id,
@@ -197,10 +298,10 @@ export async function getManagerDashboardStats(input: {
   managerUserId: string;
 }): Promise<ManagerDashboardStats> {
   const now = new Date();
-  const startOfDay = new Date(now);
-  startOfDay.setHours(0, 0, 0, 0);
-  const startOfTomorrow = new Date(startOfDay);
-  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+  const zone = getAppDefaultTimeZone();
+  const wall = DateTime.now().setZone(zone);
+  const startOfDay = wall.startOf('day').toUTC().toJSDate();
+  const startOfTomorrow = wall.plus({ days: 1 }).startOf('day').toUTC().toJSDate();
 
   const managerRestaurantWhere = {
     restaurant: {

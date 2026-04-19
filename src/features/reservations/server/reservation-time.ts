@@ -1,12 +1,18 @@
 import 'server-only';
 
+import { DateTime } from 'luxon';
+
 export const RESERVATION_DURATION_MINUTES = 90;
 
+/**
+ * Interprets calendar date + wall-clock time in the given IANA zone and returns UTC instants.
+ */
 export function computeReservationWindow(input: {
   date: string; // YYYY-MM-DD
   time: string; // HH:mm
+  timeZone: string;
 }): { startAt: Date; endAt: Date } {
-  const { date, time } = input;
+  const { date, time, timeZone } = input;
 
   const dateParts = date.split('-');
   const timeParts = time.split(':');
@@ -27,15 +33,17 @@ export function computeReservationWindow(input: {
     throw new Error('Invalid date or time value');
   }
 
-  const startAt = new Date(year, month - 1, day, hours, minutes, 0, 0);
-  if (Number.isNaN(startAt.getTime())) {
+  const startWall = DateTime.fromObject(
+    { year, month, day, hour: hours, minute: minutes, second: 0, millisecond: 0 },
+    { zone: timeZone },
+  );
+
+  if (!startWall.isValid) {
     throw new Error('Invalid date or time');
   }
 
-  const endAt = new Date(
-    startAt.getTime() + RESERVATION_DURATION_MINUTES * 60 * 1000,
-  );
+  const startAt = startWall.toUTC().toJSDate();
+  const endAt = startWall.plus({ minutes: RESERVATION_DURATION_MINUTES }).toUTC().toJSDate();
 
   return { startAt, endAt };
 }
-

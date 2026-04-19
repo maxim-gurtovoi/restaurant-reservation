@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { DateTime } from 'luxon';
 import { Button } from '@/components/ui/button';
 import {
   WORKING_HOURS_ERROR_CODES,
   validateReservationAgainstWorkingHours,
 } from '@/features/reservations/server/working-hours-validation';
+import { getRestaurantIanaZone } from '@/lib/restaurant-time';
 
 type WorkingHoursItem = {
   dayOfWeek: number;
@@ -17,6 +19,8 @@ type RestaurantInfoSidebarProps = {
   phone: string | null;
   email: string | null;
   workingHours: WorkingHoursItem[];
+  /** Restaurant IANA zone, or null for app default (see APP_TIMEZONE). */
+  timeZone?: string | null;
   reserveHref?: string;
 };
 
@@ -78,9 +82,8 @@ function formatWorkingHoursValue(item: WorkingHoursItem | undefined): {
   return { text: `${item.openTime} - ${item.closeTime}`, emphasized: true };
 }
 
-function buildWeeklyRows(workingHours: WorkingHoursItem[]): WeekRow[] {
-  const now = new Date();
-  const today = now.getDay();
+function buildWeeklyRows(workingHours: WorkingHoursItem[], timeZone: string): WeekRow[] {
+  const today = DateTime.now().setZone(timeZone).weekday % 7;
   const byDay = new Map(workingHours.map((item) => [item.dayOfWeek, item]));
 
   return Array.from({ length: 7 }, (_, dayOfWeek) => {
@@ -96,13 +99,14 @@ function buildWeeklyRows(workingHours: WorkingHoursItem[]): WeekRow[] {
   });
 }
 
-function getOpenStatus(workingHours: WorkingHoursItem[]): StatusBadge {
+function getOpenStatus(workingHours: WorkingHoursItem[], timeZone: string): StatusBadge {
   const now = new Date();
   const minuteLater = new Date(now.getTime() + 60 * 1000);
   const result = validateReservationAgainstWorkingHours({
     workingHours,
     startAt: now,
     endAt: minuteLater,
+    timeZone,
   });
 
   if (result.valid) {
@@ -125,10 +129,12 @@ export function RestaurantInfoSidebar({
   phone,
   email,
   workingHours,
+  timeZone,
   reserveHref,
 }: RestaurantInfoSidebarProps) {
-  const openStatus = getOpenStatus(workingHours);
-  const weeklyRows = buildWeeklyRows(workingHours);
+  const zone = getRestaurantIanaZone({ timeZone: timeZone ?? null });
+  const openStatus = getOpenStatus(workingHours, zone);
+  const weeklyRows = buildWeeklyRows(workingHours, zone);
 
   return (
     <aside className="space-y-4 rounded-2xl border border-border/50 bg-surface p-5 shadow-card lg:sticky lg:top-24">

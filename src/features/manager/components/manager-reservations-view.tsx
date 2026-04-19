@@ -1,19 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import type { ManagerReservationListItem } from '@/features/manager/server/manager.service';
+import type {
+  ManagerTodaySummary,
+  StatusFilter,
+  TimeFilter,
+} from '@/features/manager/lib/manager-reservation-filters';
 import { ManagerReservationsFilterBar } from '@/features/manager/components/manager-reservations-filter-bar';
 import { ManagerReservationsList } from '@/features/manager/components/manager-reservations-list';
 import { ManagerReservationsSummary } from '@/features/manager/components/manager-reservations-summary';
 import { ManagerReservationsTimeline } from '@/features/manager/components/manager-reservations-timeline';
-import {
-  type StatusFilter,
-  type TimeFilter,
-  computeTodaySummary,
-  filterManagerReservations,
-} from '@/features/manager/lib/manager-reservations-filter-utils';
 
 type ViewMode = 'list' | 'timeline';
 
@@ -22,28 +21,24 @@ export function ManagerReservationsView({
   page,
   totalPages,
   total,
+  statusFilter,
+  timeFilter,
+  todaySummary,
 }: {
   reservations: ManagerReservationListItem[];
   page: number;
   totalPages: number;
   total: number;
+  statusFilter: StatusFilter;
+  timeFilter: TimeFilter;
+  todaySummary: ManagerTodaySummary;
 }) {
   const [mode, setMode] = useState<ViewMode>('list');
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
 
-  const empty = !reservations.length;
+  const noMatches = total === 0;
+  const noReservationsEver = noMatches && statusFilter === 'all' && timeFilter === 'all';
 
-  const summary = useMemo(() => computeTodaySummary(reservations), [reservations]);
-
-  const filtered = useMemo(
-    () => filterManagerReservations(reservations, statusFilter, timeFilter),
-    [reservations, statusFilter, timeFilter],
-  );
-
-  const emptyFiltered = !empty && filtered.length === 0;
-
-  if (empty) {
+  if (noReservationsEver) {
     return (
       <Card className="border-dashed border-border/50 bg-surface">
         <p className="text-sm text-foreground">Пока нет бронирований по вашим ресторанам.</p>
@@ -54,22 +49,32 @@ export function ManagerReservationsView({
     );
   }
 
+  if (noMatches) {
+    return (
+      <div className="space-y-4">
+        <ManagerReservationsSummary summary={todaySummary} />
+        <ManagerReservationsFilterBar statusFilter={statusFilter} timeFilter={timeFilter} />
+        <Card className="border-dashed border-border/50 bg-surface">
+          <p className="text-sm text-foreground">Нет броней по текущим фильтрам.</p>
+          <p className="mt-1 text-xs text-muted">Измените фильтры статуса или периода выше.</p>
+        </Card>
+      </div>
+    );
+  }
+
+  const emptyFiltered = reservations.length === 0;
+
   return (
     <div className="space-y-4">
-      <ManagerReservationsSummary summary={summary} />
+      <ManagerReservationsSummary summary={todaySummary} />
 
-      <ManagerReservationsFilterBar
-        timeFilter={timeFilter}
-        statusFilter={statusFilter}
-        onTimeChange={setTimeFilter}
-        onStatusChange={setStatusFilter}
-      />
+      <ManagerReservationsFilterBar statusFilter={statusFilter} timeFilter={timeFilter} />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted">
           {mode === 'list'
-            ? `Показано ${filtered.length} из ${reservations.length} · список по времени.`
-            : `Показано ${filtered.length} из ${reservations.length} · по часам.`}
+            ? `Показано ${reservations.length} из ${total} · список по времени.`
+            : `Показано ${reservations.length} из ${total} · по часам.`}
         </p>
         <div
           className="inline-flex rounded-xl border border-border/60 bg-surface-soft/80 p-1 shadow-card-soft"
@@ -102,9 +107,9 @@ export function ManagerReservationsView({
       </div>
 
       {mode === 'list' ? (
-        <ManagerReservationsList reservations={filtered} emptyFiltered={emptyFiltered} />
+        <ManagerReservationsList reservations={reservations} emptyFiltered={emptyFiltered} />
       ) : (
-        <ManagerReservationsTimeline reservations={filtered} emptyFiltered={emptyFiltered} />
+        <ManagerReservationsTimeline reservations={reservations} emptyFiltered={emptyFiltered} />
       )}
       {totalPages > 1 ? (
         <div className="flex items-center justify-between rounded-xl border border-border/60 bg-surface/70 px-3 py-2 text-xs">
@@ -114,7 +119,7 @@ export function ManagerReservationsView({
           <div className="flex items-center gap-2">
             {page > 1 ? (
               <Link
-                href={`/manager/reservations?page=${page - 1}`}
+                href={buildReservationsPageHref({ page: page - 1, statusFilter, timeFilter })}
                 className="rounded-md border border-border/70 px-2.5 py-1.5 font-semibold text-foreground transition-colors hover:bg-surface-soft"
               >
                 Назад
@@ -124,7 +129,7 @@ export function ManagerReservationsView({
             )}
             {page < totalPages ? (
               <Link
-                href={`/manager/reservations?page=${page + 1}`}
+                href={buildReservationsPageHref({ page: page + 1, statusFilter, timeFilter })}
                 className="rounded-md border border-border/70 px-2.5 py-1.5 font-semibold text-foreground transition-colors hover:bg-surface-soft"
               >
                 Вперёд
@@ -137,4 +142,17 @@ export function ManagerReservationsView({
       ) : null}
     </div>
   );
+}
+
+function buildReservationsPageHref(input: {
+  page: number;
+  statusFilter: StatusFilter;
+  timeFilter: TimeFilter;
+}): string {
+  const p = new URLSearchParams();
+  p.set('page', String(input.page));
+  if (input.statusFilter !== 'all') p.set('status', input.statusFilter);
+  if (input.timeFilter !== 'all') p.set('time', input.timeFilter);
+  const q = p.toString();
+  return q ? `/manager/reservations?${q}` : '/manager/reservations';
 }
