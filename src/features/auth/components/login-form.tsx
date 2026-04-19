@@ -13,12 +13,15 @@ export type LoginFormProps = {
   embedInModal?: boolean;
   /** Called after successful sign-in (after refresh when embedded). */
   onAuthenticated?: () => void;
+  /** Same-origin path after login (ignored when embedInModal). */
+  postLoginRedirect?: string | null;
 };
 
 export function LoginForm({
   idPrefix = '',
   embedInModal = false,
   onAuthenticated,
+  postLoginRedirect,
 }: LoginFormProps = {}) {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
@@ -50,7 +53,11 @@ export function LoginForm({
         router.refresh();
         onAuthenticated?.();
       } else {
-        router.replace('/restaurants');
+        const target =
+          postLoginRedirect && postLoginRedirect.startsWith('/') && !postLoginRedirect.startsWith('//')
+            ? postLoginRedirect
+            : '/restaurants';
+        router.replace(target);
         router.refresh();
         onAuthenticated?.();
       }

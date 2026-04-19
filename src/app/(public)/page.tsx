@@ -138,7 +138,7 @@ export default async function HomePage() {
   return (
     <div className="flex flex-col gap-12 pb-16 pt-1 sm:gap-16 sm:pb-20 md:gap-20">
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden rounded-2xl border border-white/45 bg-surface/58 p-7 shadow-elev-2 backdrop-blur-xl sm:p-10 lg:p-14">
+      <section className="relative isolate overflow-hidden rounded-2xl bg-surface/58 p-7 shadow-elev-2 backdrop-blur-xl sm:p-10 lg:p-14">
         <div
           className="pointer-events-none absolute inset-0 -z-10 opacity-58"
           aria-hidden="true"
@@ -259,7 +259,7 @@ export default async function HomePage() {
       </section>
 
       {/* ── Bottom CTA (closing block — stronger emphasis) ────────── */}
-      <section className="overflow-hidden rounded-3xl border border-white/45 bg-surface/55 p-8 backdrop-blur-xl ring-1 ring-white/30 sm:p-10 md:p-12">
+      <section className="overflow-hidden rounded-3xl bg-surface/55 p-8 backdrop-blur-xl sm:p-10 md:p-12">
         <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center sm:gap-10">
           <div className="max-w-xl space-y-2 sm:space-y-2.5">
             <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">

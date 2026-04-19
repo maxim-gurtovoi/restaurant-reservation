@@ -4,7 +4,11 @@ import { PageHeader } from '@/components/ui/page-header';
 import { Card } from '@/components/ui/card';
 import { QrCode } from '@/components/qr/qr-code';
 import { getCurrentUser } from '@/server/auth';
-import { getReservationDetailsById } from '@/features/reservations/server/get-reservation-details';
+import {
+  getReservationDetailsByGuestToken,
+  getReservationDetailsById,
+  type ReservationDetails,
+} from '@/features/reservations/server/get-reservation-details';
 import { buildManagerCheckInUrl } from '@/features/qr/server/qr.service';
 import { CancelReservationButton } from '@/features/reservations/components/cancel-reservation-button';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -14,23 +18,47 @@ import { UI_LOCALE } from '@/lib/constants';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+function firstQuery(
+  params: Record<string, string | string[] | undefined>,
+  key: string,
+): string | undefined {
+  const v = params[key];
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v[0];
+  return undefined;
+}
+
 type ReservationDetailsPageProps = {
   params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function ReservationDetailsPage({
   params,
+  searchParams,
 }: ReservationDetailsPageProps) {
   const user = await getCurrentUser();
-  if (!user) notFound();
-
   const { id } = await params;
-  // Disable caching so each new reservation id shows fresh data.
+  const sp = await searchParams;
+  const guestToken = firstQuery(sp, 'token');
+
   unstable_noStore();
-  const reservation = await getReservationDetailsById({
-    reservationId: id,
-    userId: user.id,
-  });
+
+  let reservation: ReservationDetails | null = null;
+
+  if (user) {
+    reservation = await getReservationDetailsById({
+      reservationId: id,
+      userId: user.id,
+    });
+  }
+
+  if (!reservation && guestToken) {
+    reservation = await getReservationDetailsByGuestToken({
+      reservationId: id,
+      qrToken: guestToken,
+    });
+  }
 
   if (!reservation) {
     notFound();
@@ -64,79 +92,88 @@ export default async function ReservationDetailsPage({
       : 'http://localhost:3000';
   const checkInUrl = buildManagerCheckInUrl({ baseUrl, qrToken: reservation.qrToken });
 
-  const isCancellable = reservation.status === 'CONFIRMED';
+  const canCancel =
+    user != null &&
+    reservation.ownerUserId != null &&
+    reservation.ownerUserId === user.id &&
+    reservation.status === 'CONFIRMED';
+
   const statusLabel = formatReservationStatus(reservation.status);
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Бронирование"
-        subtitle="Детали вашей брони и QR для заселения."
+        subtitle={
+          user
+            ? 'Детали вашей брони и QR для заселения.'
+            : 'Гостевое подтверждение: сохраните эту страницу — здесь ваш QR и детали визита.'
+        }
       />
 
       <Card className="space-y-4">
         <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
           <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <p className="text-xs font-medium text-muted">Номер брони</p>
-            <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted">Статус</p>
-            <p
-              className={[
-                'text-sm font-semibold',
-                reservation.status === 'CANCELLED' ? 'text-error' : 'text-accent-text',
-              ].join(' ')}
-            >
-              {statusLabel}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted">Ресторан</p>
-            <p className="text-sm text-foreground">{reservation.restaurant.name}</p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted">Столик</p>
-            <p className="text-sm text-foreground">
-              {reservation.table.label} ({reservation.table.capacity} мест)
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted">Дата</p>
-            <p className="text-sm text-foreground">{dateStr}</p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted">Время</p>
-            <p className="text-sm text-foreground">
-              {startTimeStr} – {endTimeStr}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted">Гостей</p>
-            <p className="text-sm text-foreground">{reservation.guestCount}</p>
-          </div>
-
-          <div>
-            <p className="text-xs font-medium text-muted">Создано</p>
-            <p className="text-sm text-foreground">
-              {new Date(reservation.createdAt).toLocaleString(UI_LOCALE, { hour12: false })}
-            </p>
-          </div>
-          {reservation.cancelledAt ? (
             <div>
-              <p className="text-xs font-medium text-muted">Отменено</p>
-              <p className="text-sm text-foreground">
-                {new Date(reservation.cancelledAt).toLocaleString(UI_LOCALE, { hour12: false })}
+              <p className="text-xs font-medium text-muted">Номер брони</p>
+              <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted">Статус</p>
+              <p
+                className={[
+                  'text-sm font-semibold',
+                  reservation.status === 'CANCELLED' ? 'text-error' : 'text-accent-text',
+                ].join(' ')}
+              >
+                {statusLabel}
               </p>
             </div>
-          ) : null}
+
+            <div>
+              <p className="text-xs font-medium text-muted">Ресторан</p>
+              <p className="text-sm text-foreground">{reservation.restaurant.name}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted">Столик</p>
+              <p className="text-sm text-foreground">
+                {reservation.table.label} ({reservation.table.capacity} мест)
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted">Дата</p>
+              <p className="text-sm text-foreground">{dateStr}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted">Время</p>
+              <p className="text-sm text-foreground">
+                {startTimeStr} – {endTimeStr}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted">Гостей</p>
+              <p className="text-sm text-foreground">{reservation.guestCount}</p>
+            </div>
+
+            <div>
+              <p className="text-xs font-medium text-muted">Создано</p>
+              <p className="text-sm text-foreground">
+                {new Date(reservation.createdAt).toLocaleString(UI_LOCALE, { hour12: false })}
+              </p>
+            </div>
+            {reservation.cancelledAt ? (
+              <div>
+                <p className="text-xs font-medium text-muted">Отменено</p>
+                <p className="text-sm text-foreground">
+                  {new Date(reservation.cancelledAt).toLocaleString(UI_LOCALE, { hour12: false })}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           <div className="space-y-2">
@@ -147,13 +184,11 @@ export default async function ReservationDetailsPage({
                 Отсканируйте QR, чтобы открыть страницу заселения для менеджера.
               </p>
               <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background p-2">
-                <p className="truncate font-mono text-[10px] text-muted">
-                  {checkInUrl}
-                </p>
+                <p className="truncate font-mono text-[10px] text-muted">{checkInUrl}</p>
                 <CopyButton value={checkInUrl} label="Копировать ссылку" small />
               </div>
             </div>
-            {isCancellable ? (
+            {canCancel ? (
               <div className="pt-2">
                 <CancelReservationButton reservationId={reservation.id} />
               </div>
@@ -166,9 +201,7 @@ export default async function ReservationDetailsPage({
           <div className="break-all rounded-xl border border-border/60 bg-background p-3">
             <p className="font-mono text-xs text-foreground/85">{reservation.qrToken}</p>
           </div>
-          <p className="mt-2 text-xs text-muted">
-            Токен привязан к брони и используется при заселении.
-          </p>
+          <p className="mt-2 text-xs text-muted">Токен привязан к брони и используется при заселении.</p>
           <div className="mt-2">
             <CopyButton value={reservation.qrToken} label="Копировать токен" small />
           </div>

@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { TableShape } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { FloorPlanView } from '@/features/floor-plan/components/floor-plan-view';
 import { useReservationAvailability } from '@/features/reservations/hooks/use-reservation-availability';
+import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
 import { cn } from '@/lib/utils';
 
 type ReserveRestaurant = {
@@ -58,7 +58,15 @@ const STEPS = [
   { id: 3, label: 'Подтверждение' },
 ] as const;
 
-export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveRestaurant }) {
+export function RestaurantReserveFlow({
+  restaurant,
+  isLoggedIn,
+  accountProfile,
+}: {
+  restaurant: ReserveRestaurant;
+  isLoggedIn: boolean;
+  accountProfile: { name: string; phone: string | null } | null;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
@@ -67,6 +75,21 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
   const [guests, setGuests] = useState(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+
+  const [contactName, setContactName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+
+  useEffect(() => {
+    if (isLoggedIn && accountProfile) {
+      setContactName(accountProfile.name.trim());
+      setContactPhone(accountProfile.phone?.trim() ?? '');
+    } else if (!isLoggedIn) {
+      setContactName('');
+      setContactPhone('');
+      setContactEmail('');
+    }
+  }, [isLoggedIn, accountProfile]);
 
   const clearTableIfUnavailable = useCallback(() => {
     setSelectedTableId(null);
@@ -93,8 +116,21 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
   const canGoToConfirm =
     Boolean(selectedTable && !exceedsCapacity && date && time) && activeTablesCount > 0;
 
+  const profilePhoneDigits = accountProfile?.phone
+    ? normalizePhoneDigits(accountProfile.phone)
+    : '';
+  const effectiveName =
+    (contactName.trim() || accountProfile?.name.trim() || '').trim();
+  const effectivePhoneDigits = normalizePhoneDigits(
+    contactPhone || (isLoggedIn ? profilePhoneDigits : '') || '',
+  );
+  const contactsReadyForSubmit =
+    effectiveName.length >= 2 &&
+    effectivePhoneDigits.length >= 10 &&
+    isValidBookingPhone(effectivePhoneDigits);
+
   const handleConfirm = async () => {
-    if (!selectedTable || !canGoToConfirm) return;
+    if (!selectedTable || !canGoToConfirm || !contactsReadyForSubmit) return;
     setIsSubmitting(true);
     setSubmissionError(null);
     try {
@@ -114,16 +150,21 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
         }
       }
 
+      const payload: Record<string, unknown> = {
+        restaurantId: restaurant.id,
+        tableId: selectedTable.id,
+        date,
+        time,
+        guestCount: guests,
+        contactName: effectiveName,
+        contactPhone: effectivePhoneDigits || contactPhone,
+        contactEmail: contactEmail.trim() || undefined,
+      };
+
       const response = await fetch('/api/reservations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          restaurantId: restaurant.id,
-          tableId: selectedTable.id,
-          date,
-          time,
-          guestCount: guests,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -133,8 +174,14 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
         );
       }
 
-      const result = await response.json();
-      router.push(`/reservations/${result.id}`);
+      const result = (await response.json()) as { id: string; qrToken: string };
+      if (isLoggedIn) {
+        router.push(`/reservations/${result.id}`);
+      } else {
+        router.push(
+          `/reservations/${result.id}?token=${encodeURIComponent(result.qrToken)}`,
+        );
+      }
       router.refresh();
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Не удалось создать бронь';
@@ -144,6 +191,10 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
       setIsSubmitting(false);
     }
   };
+
+  const hasProfilePhone =
+    Boolean(accountProfile?.phone?.trim()) &&
+    isValidBookingPhone(normalizePhoneDigits(accountProfile.phone!));
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -378,7 +429,8 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
             </p>
             <h2 className="text-lg font-semibold text-foreground">Проверьте детали брони</h2>
             <p className="text-sm text-muted">
-              После подтверждения вы перейдёте к странице брони с QR-кодом и деталями визита.
+              После подтверждения откроется страница с QR-кодом. Без аккаунта сохраните ссылку из
+              адресной строки.
             </p>
           </header>
 
@@ -414,18 +466,76 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
             </div>
           </dl>
 
-          {submissionError && (
+          <div className="space-y-4 rounded-xl border border-border/50 bg-surface px-4 py-4 text-sm shadow-card-soft">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Контакт для брони</p>
+
+            {isLoggedIn && hasProfilePhone ? (
+              <p className="text-sm text-foreground">
+                <span className="text-muted">Имя и телефон из профиля: </span>
+                <span className="font-medium">{effectiveName}</span>
+                {', '}
+                <span className="font-medium">{accountProfile.phone}</span>
+              </p>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-foreground" htmlFor="res-contact-name">
+                    Имя <span className="text-error">*</span>
+                  </label>
+                  <input
+                    id="res-contact-name"
+                    type="text"
+                    autoComplete="name"
+                    className={inputClass}
+                    value={contactName}
+                    onChange={(e) => setContactName(e.target.value)}
+                    placeholder="Как к вам обращаться"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-medium text-foreground" htmlFor="res-contact-phone">
+                    Телефон <span className="text-error">*</span>
+                  </label>
+                  <input
+                    id="res-contact-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    className={inputClass}
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="+373 …"
+                  />
+                  {isLoggedIn && !accountProfile?.phone ? (
+                    <p className="text-xs text-muted">
+                      В профиле нет телефона — укажите номер для связи по этой брони.
+                    </p>
+                  ) : null}
+                </div>
+                {!isLoggedIn ? (
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-medium text-foreground" htmlFor="res-contact-email">
+                      Email <span className="text-muted">(необязательно)</span>
+                    </label>
+                    <input
+                      id="res-contact-email"
+                      type="email"
+                      autoComplete="email"
+                      className={inputClass}
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="Для напоминаний"
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+
+          {submissionError ? (
             <div className="rounded-xl border border-error/25 bg-error/8 px-3 py-2.5 text-sm text-error">
               {submissionError}
-              {submissionError.includes('авторизац') ? (
-                <p className="mt-2 text-xs">
-                  <Link href="/auth/login" className="font-medium underline underline-offset-2">
-                    Перейти ко входу
-                  </Link>
-                </p>
-              ) : null}
             </div>
-          )}
+          ) : null}
 
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
             <Button type="button" variant="ghost" className="w-full sm:w-auto" onClick={() => setStep(2)}>
@@ -435,7 +545,7 @@ export function RestaurantReserveFlow({ restaurant }: { restaurant: ReserveResta
               type="button"
               variant="primary"
               className="w-full sm:w-auto"
-              disabled={!canGoToConfirm || isSubmitting}
+              disabled={!canGoToConfirm || isSubmitting || !contactsReadyForSubmit}
               onClick={() => void handleConfirm()}>
               {isSubmitting ? 'Отправка…' : 'Подтвердить бронь'}
             </Button>

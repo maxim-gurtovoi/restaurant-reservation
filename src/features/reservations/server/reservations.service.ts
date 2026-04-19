@@ -68,7 +68,7 @@ export async function listUserReservations(input: {
 }
 
 export async function createReservation(input: {
-  userId: string;
+  userId: string | null;
   restaurantId: string;
   tableId: string;
   date: string;

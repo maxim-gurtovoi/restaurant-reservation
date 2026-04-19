@@ -143,7 +143,8 @@ model WorkingHours {
 
 model Reservation {
   id           String            @id @default(uuid()) @db.Uuid
-  userId       String            @db.Uuid
+  /// Null = гостевая бронь (контакты в contact*).
+  userId       String?           @db.Uuid
   restaurantId String            @db.Uuid
   tableId      String            @db.Uuid
   guestCount   Int
@@ -160,7 +161,7 @@ model Reservation {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
 
-  user       User            @relation(fields: [userId], references: [id])
+  user       User?           @relation(fields: [userId], references: [id])
   restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
   table      RestaurantTable @relation(fields: [tableId], references: [id])
   checkInLogs CheckInLog[]

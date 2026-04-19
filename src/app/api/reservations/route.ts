@@ -4,6 +4,8 @@ import {
   createReservation,
   listUserReservations,
 } from '@/features/reservations/server/reservations.service';
+import { prisma } from '@/lib/prisma';
+import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
 
 function isValidDate(value: unknown): value is string {
   return typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
@@ -23,7 +25,6 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: 'Требуется авторизация' }, { status: 401 });
 
   const payload = await req.json().catch(() => null);
   if (!payload) {
@@ -46,16 +47,58 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'guestCount должно быть числом ≥ 1' }, { status: 400 });
   }
 
+  let contactName = typeof payload.contactName === 'string' ? payload.contactName.trim() : '';
+  let contactPhone = typeof payload.contactPhone === 'string' ? payload.contactPhone.trim() : '';
+  const contactEmail =
+    typeof payload.contactEmail === 'string' && payload.contactEmail.trim().length > 0
+      ? payload.contactEmail.trim()
+      : undefined;
+
+  if (user) {
+    const profile = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { name: true, phone: true },
+    });
+    if (!contactName && profile?.name) {
+      contactName = profile.name.trim();
+    }
+    const profilePhoneDigits = profile?.phone ? normalizePhoneDigits(profile.phone) : '';
+    if (!contactPhone && profilePhoneDigits) {
+      contactPhone = profilePhoneDigits;
+    }
+  } else {
+    if (!contactName || contactName.length < 2) {
+      return NextResponse.json({ error: 'Укажите имя' }, { status: 400 });
+    }
+    if (!contactPhone || !isValidBookingPhone(contactPhone)) {
+      return NextResponse.json({ error: 'Укажите корректный номер телефона' }, { status: 400 });
+    }
+  }
+
+  if (!contactName || contactName.length < 2) {
+    return NextResponse.json({ error: 'Укажите имя' }, { status: 400 });
+  }
+  if (!contactPhone || !isValidBookingPhone(contactPhone)) {
+    return NextResponse.json(
+      {
+        error: user
+          ? 'Укажите телефон для брони или добавьте его в профиль'
+          : 'Укажите корректный номер телефона',
+      },
+      { status: 400 },
+    );
+  }
+
   const result = await createReservation({
-    userId: user.id,
+    userId: user?.id ?? null,
     restaurantId: payload.restaurantId,
     tableId: payload.tableId,
     date: payload.date,
     time: payload.time,
     guestCount: payload.guestCount,
-    contactName: payload.contactName,
-    contactPhone: payload.contactPhone,
-    contactEmail: payload.contactEmail,
+    contactName,
+    contactPhone,
+    contactEmail,
   });
   return NextResponse.json(result.body, { status: result.status });
 }

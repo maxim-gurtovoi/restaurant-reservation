@@ -5,13 +5,14 @@ import { computeReservationWindow } from '@/features/reservations/server/reserva
 import { getRestaurantIanaZoneById } from '@/features/reservations/server/restaurant-timezone.repository';
 import { prismaWhereBlockingReservationOverlap } from '@/features/reservations/server/reservation-blocking';
 import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
+import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
 
 function generateQRToken(): string {
   return randomUUID();
 }
 
 export async function createReservation(input: {
-  userId: string;
+  userId: string | null;
   restaurantId: string;
   tableId: string;
   date: string;
@@ -29,6 +30,26 @@ export async function createReservation(input: {
   restaurantName: string;
 }> {
   const { userId, restaurantId, tableId, date, time, guestCount } = input;
+
+  const contactNameTrim = (input.contactName ?? '').trim();
+  const phoneRaw = (input.contactPhone ?? '').trim();
+  const phoneNorm = phoneRaw ? normalizePhoneDigits(phoneRaw) : '';
+
+  if (!userId) {
+    if (contactNameTrim.length < 2) {
+      throw new Error('Укажите имя для брони');
+    }
+    if (!phoneNorm || !isValidBookingPhone(phoneNorm)) {
+      throw new Error('Укажите корректный номер телефона');
+    }
+  } else {
+    if (contactNameTrim.length < 2) {
+      throw new Error('Укажите имя для брони');
+    }
+    if (!phoneNorm || !isValidBookingPhone(phoneNorm)) {
+      throw new Error('Укажите телефон для связи по брони');
+    }
+  }
 
   const timeZone = await getRestaurantIanaZoneById(restaurantId);
   const { startAt, endAt } = computeReservationWindow({ date, time, timeZone });
@@ -98,9 +119,9 @@ export async function createReservation(input: {
         guestCount,
         status: 'CONFIRMED',
         qrToken,
-        contactName: input.contactName || '',
-        contactPhone: input.contactPhone || null,
-        contactEmail: input.contactEmail || null,
+        contactName: contactNameTrim,
+        contactPhone: phoneNorm,
+        contactEmail: (input.contactEmail ?? '').trim() || null,
       },
       select: {
         id: true,

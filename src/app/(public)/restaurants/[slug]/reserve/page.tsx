@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { RestaurantReserveFlow } from '@/features/reservations/components/restaurant-reserve-flow';
 import { getRestaurantBySlug } from '@/features/restaurants/server/restaurants.service';
+import { getCurrentUser } from '@/server/auth';
+import { prisma } from '@/lib/prisma';
 
 type RestaurantReservePageProps = {
   params: Promise<{ slug: string }>;
@@ -13,6 +15,20 @@ export default async function RestaurantReservePage({ params }: RestaurantReserv
 
   if (!restaurant) {
     notFound();
+  }
+
+  const user = await getCurrentUser();
+  const isLoggedIn = Boolean(user);
+
+  let accountProfile: { name: string; phone: string | null } | null = null;
+  if (user) {
+    const row = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { name: true, phone: true },
+    });
+    if (row) {
+      accountProfile = { name: row.name, phone: row.phone };
+    }
   }
 
   return (
@@ -31,7 +47,11 @@ export default async function RestaurantReservePage({ params }: RestaurantReserv
         </div>
       </header>
 
-      <RestaurantReserveFlow restaurant={restaurant} />
+      <RestaurantReserveFlow
+        restaurant={restaurant}
+        isLoggedIn={isLoggedIn}
+        accountProfile={accountProfile}
+      />
     </div>
   );
 }
