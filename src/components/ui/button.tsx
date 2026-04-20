@@ -20,9 +20,9 @@ export interface ButtonProps
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    'bg-primary text-white shadow-glow-primary hover:bg-primary-hover active:bg-primary-active disabled:opacity-50',
+    'bg-primary text-white hover:bg-primary-hover active:bg-primary-active disabled:opacity-50',
   hero:
-    'bg-gradient-to-r from-primary via-hero-via to-hero-to text-white shadow-glow-primary hover:brightness-105 active:brightness-95',
+    'bg-gradient-to-r from-primary via-hero-via to-hero-to text-white hover:brightness-105 active:brightness-95',
   outline:
     'border border-border-strong/65 bg-surface text-foreground hover:border-accent-border hover:bg-accent-bg/35 hover:text-accent-text',
   ghost: 'text-foreground hover:bg-surface-soft',

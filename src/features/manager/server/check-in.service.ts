@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export type CheckInReservationSummary = {
   id: string;
+  referenceCode: string;
   status: ReservationStatus;
   guestCount: number;
   startAt: Date;
@@ -54,6 +55,7 @@ export async function getReservationByQrTokenForManager(input: {
 
   return {
     id: reservation.id,
+    referenceCode: reservation.referenceCode,
     status: reservation.status,
     guestCount: reservation.guestCount,
     startAt: reservation.startAt,

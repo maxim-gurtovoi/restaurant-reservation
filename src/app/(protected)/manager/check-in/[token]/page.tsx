@@ -7,6 +7,7 @@ import { getReservationByQrTokenForManager } from '@/features/manager/server/che
 import { CheckInConfirmButton } from '@/features/manager/components/check-in-confirm-button';
 import { formatReservationStatus } from '@/lib/reservation-status';
 import { UI_LOCALE } from '@/lib/constants';
+import { formatReferenceCode } from '@/features/reservations/lib/reference-code';
 
 type Props = {
   params: Promise<{ token: string }>;
@@ -65,8 +66,10 @@ export default async function ManagerCheckInPage({ params }: Props) {
             <p className="text-sm font-semibold text-foreground">{statusLabel}</p>
           </div>
           <div>
-            <p className="text-xs font-medium text-muted">Бронь</p>
-            <p className="font-mono text-xs text-foreground/90">{reservation.id}</p>
+            <p className="text-xs font-medium text-muted">Номер брони</p>
+            <p className="font-mono text-base font-bold tracking-wider text-foreground">
+              {formatReferenceCode(reservation.referenceCode)}
+            </p>
           </div>
           <div>
             <p className="text-xs font-medium text-muted">Столик</p>

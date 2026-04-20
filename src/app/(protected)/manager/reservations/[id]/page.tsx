@@ -7,6 +7,7 @@ import { getReservationDetailsForManager } from '@/features/manager/server/manag
 import { formatReservationStatus } from '@/lib/reservation-status';
 import { UI_LOCALE } from '@/lib/constants';
 import { ManagerReservationActions } from '@/features/manager/components/manager-reservation-actions';
+import { formatReferenceCode } from '@/features/reservations/lib/reference-code';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -69,7 +70,12 @@ export default async function ManagerReservationDetailsPage({ params }: Props) {
           </div>
           <div>
             <p className="text-xs font-medium text-muted">Номер брони</p>
-            <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
+            <p className="font-mono text-lg font-bold tracking-wider text-foreground">
+              {formatReferenceCode(reservation.referenceCode)}
+            </p>
+            <p className="mt-0.5 font-mono text-[10px] text-muted/80" title="Внутренний идентификатор">
+              {reservation.id}
+            </p>
           </div>
           <div>
             <p className="text-xs font-medium text-muted">Статус</p>

@@ -7,6 +7,7 @@ import { WorkingHoursDomainError } from './working-hours-validation';
 
 export type UserReservationListItem = {
   id: string;
+  referenceCode: string;
   status: string;
   guestCount: number;
   startAt: string;
@@ -34,6 +35,7 @@ export async function listUserReservations(input: {
     ],
     select: {
       id: true,
+      referenceCode: true,
       status: true,
       guestCount: true,
       startAt: true,
@@ -55,6 +57,7 @@ export async function listUserReservations(input: {
 
   const dto: UserReservationListItem[] = reservations.map((r) => ({
     id: r.id,
+    referenceCode: r.referenceCode,
     status: r.status,
     guestCount: r.guestCount,
     startAt: r.startAt.toISOString(),
@@ -81,6 +84,7 @@ export async function createReservation(input: {
   ApiResult<{
     id: string;
     qrToken: string;
+    referenceCode: string;
     startAt: string;
     endAt: string;
     tableLabel: string;

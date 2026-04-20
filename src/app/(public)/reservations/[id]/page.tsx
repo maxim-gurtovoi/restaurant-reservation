@@ -14,6 +14,7 @@ import { CancelReservationButton } from '@/features/reservations/components/canc
 import { CopyButton } from '@/components/ui/copy-button';
 import { formatReservationStatus } from '@/lib/reservation-status';
 import { UI_LOCALE } from '@/lib/constants';
+import { formatReferenceCode } from '@/features/reservations/lib/reference-code';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -114,9 +115,14 @@ export default async function ReservationDetailsPage({
       <Card className="space-y-4">
         <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
           <div className="grid gap-4 sm:grid-cols-2">
-            <div>
+            <div className="sm:col-span-2">
               <p className="text-xs font-medium text-muted">Номер брони</p>
-              <p className="font-mono text-sm font-semibold text-foreground">{reservation.id}</p>
+              <p className="font-mono text-2xl font-bold tracking-wider text-foreground">
+                {formatReferenceCode(reservation.referenceCode)}
+              </p>
+              <p className="mt-1 text-[11px] text-muted">
+                Назовите этот номер менеджеру, если QR не получится отсканировать.
+              </p>
             </div>
 
             <div>
@@ -193,17 +199,6 @@ export default async function ReservationDetailsPage({
                 <CancelReservationButton reservationId={reservation.id} />
               </div>
             ) : null}
-          </div>
-        </div>
-
-        <div className="border-t border-border pt-4">
-          <p className="mb-2 text-xs font-medium text-muted">Токен QR</p>
-          <div className="break-all rounded-xl border border-border/60 bg-background p-3">
-            <p className="font-mono text-xs text-foreground/85">{reservation.qrToken}</p>
-          </div>
-          <p className="mt-2 text-xs text-muted">Токен привязан к брони и используется при заселении.</p>
-          <div className="mt-2">
-            <CopyButton value={reservation.qrToken} label="Копировать токен" small />
           </div>
         </div>
 

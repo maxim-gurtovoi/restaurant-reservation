@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { RestaurantReserveFlow } from '@/features/reservations/components/restaurant-reserve-flow';
 import { getRestaurantBySlug } from '@/features/restaurants/server/restaurants.service';
+import { getRestaurantIanaZone } from '@/lib/restaurant-time';
 import { getCurrentUser } from '@/server/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -16,6 +17,8 @@ export default async function RestaurantReservePage({ params }: RestaurantReserv
   if (!restaurant) {
     notFound();
   }
+
+  const bookingTimeZone = getRestaurantIanaZone(restaurant);
 
   const user = await getCurrentUser();
   const isLoggedIn = Boolean(user);
@@ -49,6 +52,7 @@ export default async function RestaurantReservePage({ params }: RestaurantReserv
 
       <RestaurantReserveFlow
         restaurant={restaurant}
+        bookingTimeZone={bookingTimeZone}
         isLoggedIn={isLoggedIn}
         accountProfile={accountProfile}
       />

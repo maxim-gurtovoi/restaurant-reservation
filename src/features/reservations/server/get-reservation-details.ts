@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 
 export type ReservationDetails = {
   id: string;
+  referenceCode: string;
   status: ReservationStatus;
   guestCount: number;
   startAt: Date;
@@ -30,6 +31,7 @@ export type ReservationDetails = {
 
 function mapReservationRow(reservation: {
   id: string;
+  referenceCode: string;
   status: ReservationStatus;
   guestCount: number;
   startAt: Date;
@@ -46,6 +48,7 @@ function mapReservationRow(reservation: {
 }): ReservationDetails {
   return {
     id: reservation.id,
+    referenceCode: reservation.referenceCode,
     status: reservation.status,
     guestCount: reservation.guestCount,
     startAt: reservation.startAt,

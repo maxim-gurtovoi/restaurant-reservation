@@ -13,6 +13,7 @@
     "prisma:studio": "prisma studio",
     "lint": "next lint",
     "db:seed": "prisma db seed",
+    "db:backfill-reservation-codes": "tsx scripts/backfill-reservation-codes.ts",
     "cron:stale": "tsx scripts/close-stale-reservations.ts"
   },
   "dependencies": {

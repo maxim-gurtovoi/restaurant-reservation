@@ -1,8 +1,7 @@
 import 'server-only';
 
 import { DateTime } from 'luxon';
-
-export const RESERVATION_DURATION_MINUTES = 90;
+import { RESERVATION_DURATION_MINUTES } from '@/features/reservations/reservation-window';
 
 /**
  * Interprets calendar date + wall-clock time in the given IANA zone and returns UTC instants.

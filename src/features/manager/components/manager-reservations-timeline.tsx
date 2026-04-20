@@ -3,6 +3,7 @@ import type { ManagerReservationListItem } from '@/features/manager/server/manag
 import { managerReservationStatusBadgeClass } from '@/features/manager/lib/manager-reservation-status';
 import { formatReservationStatus } from '@/lib/reservation-status';
 import { UI_LOCALE } from '@/lib/constants';
+import { formatReferenceCode } from '@/features/reservations/lib/reference-code';
 
 function formatTimeRange(startIso: string, endIso: string) {
   const start = new Date(startIso);
@@ -94,6 +95,9 @@ export function ManagerReservationsTimeline({
                         {formatTimeRange(r.startAt, r.endAt)}
                       </span>
                       <span className="text-sm font-medium text-foreground">{guestLabel}</span>
+                      <span className="font-mono text-[11px] tracking-wider text-muted">
+                        № {formatReferenceCode(r.referenceCode)}
+                      </span>
                       <span className="text-xs text-muted">
                         Стол {r.table.label} · гостей: {r.guestCount} · {r.restaurant.name}
                       </span>

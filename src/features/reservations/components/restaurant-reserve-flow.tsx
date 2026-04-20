@@ -1,18 +1,35 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { TableShape } from '@prisma/client';
+import { DateTime } from 'luxon';
 import { Button } from '@/components/ui/button';
+import { BookingMiniCalendar } from '@/features/reservations/components/booking-mini-calendar';
 import { FloorPlanView } from '@/features/floor-plan/components/floor-plan-view';
 import { useReservationAvailability } from '@/features/reservations/hooks/use-reservation-availability';
+import {
+  buildReservationTimeSlots,
+  minBookableDateTimeInZone,
+  ymdInZone,
+} from '@/features/reservations/lib/booking-datetime-ui';
+import { RESERVATION_DURATION_MINUTES } from '@/features/reservations/reservation-window';
 import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
 import { cn } from '@/lib/utils';
+
+const TIME_SLOT_STEP_MIN = 15;
+const BOOKING_LEAD_MINUTES = 20;
 
 type ReserveRestaurant = {
   id: string;
   name: string;
   slug: string;
+  workingHours: {
+    dayOfWeek: number;
+    openTime: string;
+    closeTime: string;
+    isClosed: boolean;
+  }[];
   floorPlans: {
     id: string;
     name: string;
@@ -40,6 +57,9 @@ const inputClass =
 const inputWithIconClass =
   'h-11 w-full cursor-pointer rounded-xl border border-border-strong/55 bg-surface pl-10 pr-3 text-sm text-foreground shadow-card-soft transition-colors hover:border-border-strong/75 focus:border-accent-text focus:outline-none focus:ring-2 focus:ring-accent-border/40 disabled:cursor-not-allowed disabled:opacity-60';
 
+const selectClass =
+  'h-11 w-full cursor-pointer appearance-none rounded-xl border border-border-strong/55 bg-surface px-3 pr-10 text-sm text-foreground shadow-card-soft transition-colors hover:border-border-strong/75 focus:border-accent-text focus:outline-none focus:ring-2 focus:ring-accent-border/40 disabled:cursor-not-allowed disabled:opacity-60';
+
 function formatDateRu(isoDate: string): string {
   const [y, m, d] = isoDate.split('-').map((n) => Number(n));
   if (!y || !m || !d) return isoDate;
@@ -58,20 +78,30 @@ const STEPS = [
   { id: 3, label: 'Подтверждение' },
 ] as const;
 
+function tryShowPicker(el: HTMLInputElement | null) {
+  const extended = el as (HTMLInputElement & { showPicker?: () => void }) | null;
+  extended?.showPicker?.();
+}
+
 export function RestaurantReserveFlow({
   restaurant,
+  bookingTimeZone,
   isLoggedIn,
   accountProfile,
 }: {
   restaurant: ReserveRestaurant;
+  /** Resolved IANA zone (same rule as server `getRestaurantIanaZone`). */
+  bookingTimeZone: string;
   isLoggedIn: boolean;
   accountProfile: { name: string; phone: string | null } | null;
 }) {
   const router = useRouter();
+  const timeInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
+  const [showCustomTime, setShowCustomTime] = useState(false);
   const [guests, setGuests] = useState(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
@@ -90,6 +120,60 @@ export function RestaurantReserveFlow({
       setContactEmail('');
     }
   }, [isLoggedIn, accountProfile]);
+
+  const todayYmd = ymdInZone(bookingTimeZone);
+  const tomorrowYmd = ymdInZone(
+    bookingTimeZone,
+    DateTime.now().setZone(bookingTimeZone).plus({ days: 1 }),
+  );
+  const afterTomorrowYmd = ymdInZone(
+    bookingTimeZone,
+    DateTime.now().setZone(bookingTimeZone).plus({ days: 2 }),
+  );
+  const maxBookingYmd = ymdInZone(
+    bookingTimeZone,
+    DateTime.now().setZone(bookingTimeZone).plus({ days: 90 }),
+  );
+
+  const maxTableCapacity = useMemo(() => {
+    const caps = restaurant.tables.filter((t) => t.isActive).map((t) => t.capacity);
+    return caps.length > 0 ? Math.max(...caps) : 8;
+  }, [restaurant.tables]);
+
+  const guestOptions = useMemo(() => {
+    const hi = Math.min(20, Math.max(10, maxTableCapacity));
+    return Array.from({ length: hi }, (_, i) => i + 1);
+  }, [maxTableCapacity]);
+
+  const slotPlan = useMemo(() => {
+    if (!date) {
+      return { slots: [] as string[], dayClosed: false, scheduleMissing: false };
+    }
+    const notBefore =
+      date === todayYmd
+        ? minBookableDateTimeInZone(bookingTimeZone, BOOKING_LEAD_MINUTES)
+        : null;
+    return buildReservationTimeSlots({
+      isoDate: date,
+      timeZone: bookingTimeZone,
+      workingHours: restaurant.workingHours,
+      slotStepMinutes: TIME_SLOT_STEP_MIN,
+      reservationDurationMinutes: RESERVATION_DURATION_MINUTES,
+      notBeforeInZone: notBefore,
+    });
+  }, [date, bookingTimeZone, restaurant.workingHours, todayYmd]);
+
+  useEffect(() => {
+    if (!date || showCustomTime) return;
+    if (time && !slotPlan.slots.includes(time)) {
+      setTime('');
+    }
+  }, [date, time, slotPlan.slots, showCustomTime]);
+
+  useEffect(() => {
+    const hi = guestOptions[guestOptions.length - 1] ?? 1;
+    if (guests > hi) setGuests(hi);
+  }, [guestOptions, guests]);
 
   const clearTableIfUnavailable = useCallback(() => {
     setSelectedTableId(null);
@@ -192,9 +276,10 @@ export function RestaurantReserveFlow({
     }
   };
 
+  const profilePhoneTrimmed = accountProfile?.phone?.trim() ?? '';
   const hasProfilePhone =
-    Boolean(accountProfile?.phone?.trim()) &&
-    isValidBookingPhone(normalizePhoneDigits(accountProfile.phone!));
+    profilePhoneTrimmed.length > 0 &&
+    isValidBookingPhone(normalizePhoneDigits(profilePhoneTrimmed));
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -249,69 +334,144 @@ export function RestaurantReserveFlow({
           </header>
 
           <div className="space-y-4 text-sm">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-foreground" htmlFor="res-date">
-                  Дата
-                </label>
-                <div className="relative">
-                  <svg
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-                    viewBox="0 0 24 24"
-                    fill="none">
-                    <path
-                      d="M8 2v2M16 2v2M3.5 9h17M5 5h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <input
-                    id="res-date"
-                    type="date"
-                    title="Выберите дату"
-                    className={inputWithIconClass}
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <span className="block text-xs font-medium text-foreground" id="res-date-label">
+                Дата визита
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { ymd: todayYmd, label: 'Сегодня' },
+                    { ymd: tomorrowYmd, label: 'Завтра' },
+                    { ymd: afterTomorrowYmd, label: 'Послезавтра' },
+                  ] as const
+                ).map(({ ymd, label }) => (
+                  <button
+                    key={ymd}
+                    type="button"
+                    className={cn(
+                      'rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors',
+                      date === ymd
+                        ? 'border-accent-text bg-accent-bg text-accent-text ring-1 ring-accent-border/50'
+                        : 'border-border-strong/55 bg-surface-soft text-foreground hover:border-border-strong/75',
+                    )}
+                    onClick={() => {
+                      setDate(ymd);
+                      setShowCustomTime(false);
+                    }}>
+                    {label}
+                  </button>
+                ))}
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-foreground" htmlFor="res-time">
-                  Время
-                </label>
-                <div className="relative">
-                  <svg
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-                    viewBox="0 0 24 24"
-                    fill="none">
-                    <path
-                      d="M12 7v5l3 2"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <input
-                    id="res-time"
-                    type="time"
-                    title="Выберите время"
-                    className={inputWithIconClass}
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                  />
+              <BookingMiniCalendar
+                valueYmd={date}
+                timeZone={bookingTimeZone}
+                minYmd={todayYmd}
+                maxYmd={maxBookingYmd}
+                onSelectYmd={(ymd) => {
+                  setDate(ymd);
+                  setShowCustomTime(false);
+                }}
+              />
+            </div>
+
+            <div className="space-y-2 border-t border-border/50 pt-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-medium text-foreground">Время прихода</span>
+                {slotPlan.scheduleMissing && date && !slotPlan.dayClosed ? (
+                  <span className="text-[11px] text-muted">Подсказка по типовым часам</span>
+                ) : null}
+              </div>
+
+              {!date ? (
+                <p className="text-sm text-muted">Сначала выберите день — появятся допустимые интервалы.</p>
+              ) : slotPlan.dayClosed ? (
+                <p className="text-sm text-error">
+                  По графику ресторан не работает в выбранный день. Выберите другую дату.
+                </p>
+              ) : slotPlan.slots.length === 0 ? (
+                <p className="text-sm text-muted">
+                  На этот день не осталось доступных интервалов с учётом длительности визита и запаса по
+                  времени. Попробуйте завтра или другую дату.
+                </p>
+              ) : (
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="group"
+                  aria-label="Доступное время прихода">
+                  {slotPlan.slots.map((slot) => (
+                    <button
+                      key={slot}
+                      type="button"
+                      className={cn(
+                        'min-w-17 rounded-lg border px-2.5 py-2 text-sm font-medium tabular-nums transition-colors',
+                        time === slot && !showCustomTime
+                          ? 'border-accent-text bg-accent-bg text-accent-text shadow-sm ring-1 ring-accent-border/45'
+                          : 'border-border-strong/55 bg-surface shadow-card-soft hover:border-border-strong/80',
+                      )}
+                      onClick={() => {
+                        setShowCustomTime(false);
+                        setTime(slot);
+                      }}>
+                      {slot}
+                    </button>
+                  ))}
                 </div>
+              )}
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  className={cn(
+                    'text-left text-xs font-semibold text-accent-text underline-offset-4 hover:underline',
+                    showCustomTime && 'text-foreground',
+                  )}
+                  onClick={() => {
+                    setShowCustomTime((v) => !v);
+                    if (!showCustomTime) {
+                      window.setTimeout(() => {
+                        timeInputRef.current?.focus();
+                        tryShowPicker(timeInputRef.current);
+                      }, 0);
+                    }
+                  }}>
+                  {showCustomTime ? 'Скрыть ручной ввод времени' : 'Ввести время вручную'}
+                </button>
+                {showCustomTime ? (
+                  <div className="relative max-w-xs sm:ml-auto">
+                    <svg
+                      aria-hidden="true"
+                      className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                      viewBox="0 0 24 24"
+                      fill="none">
+                      <path
+                        d="M12 7v5l3 2"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <input
+                      ref={timeInputRef}
+                      id="res-time-custom"
+                      type="time"
+                      title="Укажите время"
+                      step={60 * TIME_SLOT_STEP_MIN}
+                      className={inputWithIconClass}
+                      value={time}
+                      onChange={(e) => setTime(e.target.value)}
+                      onClick={(e) => tryShowPicker(e.currentTarget)}
+                    />
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -319,14 +479,32 @@ export function RestaurantReserveFlow({
               <label className="block text-xs font-medium text-foreground" htmlFor="res-guests">
                 Число гостей
               </label>
-              <input
-                id="res-guests"
-                type="number"
-                min={1}
-                className={inputClass}
-                value={guests}
-                onChange={(e) => setGuests(Number(e.target.value) || 1)}
-              />
+              <div className="relative">
+                <select
+                  id="res-guests"
+                  className={selectClass}
+                  value={guests}
+                  onChange={(e) => setGuests(Number(e.target.value) || 1)}>
+                  {guestOptions.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                    </option>
+                  ))}
+                </select>
+                <svg
+                  aria-hidden="true"
+                  className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+                  viewBox="0 0 24 24"
+                  fill="none">
+                  <path
+                    d="m6 9 6 6 6-6"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </div>
             </div>
           </div>
 
@@ -474,7 +652,7 @@ export function RestaurantReserveFlow({
                 <span className="text-muted">Имя и телефон из профиля: </span>
                 <span className="font-medium">{effectiveName}</span>
                 {', '}
-                <span className="font-medium">{accountProfile.phone}</span>
+                <span className="font-medium">{profilePhoneTrimmed}</span>
               </p>
             ) : (
               <>

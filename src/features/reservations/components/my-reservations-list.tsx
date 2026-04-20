@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import type { UserReservationListItem } from '@/features/reservations/server/reservations.service';
 import { formatReservationStatus } from '@/lib/reservation-status';
 import { UI_LOCALE } from '@/lib/constants';
+import { formatReferenceCode } from '@/features/reservations/lib/reference-code';
 
 function listStatusBadgeClass(status: string) {
   if (status === 'CANCELLED') return 'border-error/30 bg-error/8 text-error';
@@ -61,11 +62,16 @@ export function MyReservationsList({
                     Стол {r.table.label} · гостей: {r.guestCount}
                   </p>
                 </div>
-                <span
-                  className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${listStatusBadgeClass(r.status)}`}
-                >
-                  {formatReservationStatus(r.status)}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${listStatusBadgeClass(r.status)}`}
+                  >
+                    {formatReservationStatus(r.status)}
+                  </span>
+                  <span className="font-mono text-[11px] tracking-wider text-muted">
+                    № {formatReferenceCode(r.referenceCode)}
+                  </span>
+                </div>
               </div>
             </Card>
           </Link>

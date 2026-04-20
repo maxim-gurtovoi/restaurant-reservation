@@ -12,6 +12,7 @@ import { getAppDefaultTimeZone } from '@/lib/restaurant-time';
 
 export type ManagerReservationDetails = {
   id: string;
+  referenceCode: string;
   status: ReservationStatus;
   guestCount: number;
   startAt: Date;
@@ -36,6 +37,7 @@ export type ManagerDashboardStats = {
 
 export type ManagerReservationListItem = {
   id: string;
+  referenceCode: string;
   status: string;
   guestCount: number;
   startAt: string;
@@ -186,6 +188,7 @@ export async function listManagerReservations(input: {
       take: pageSize,
       select: {
         id: true,
+        referenceCode: true,
         status: true,
         guestCount: true,
         startAt: true,
@@ -210,6 +213,7 @@ export async function listManagerReservations(input: {
 
   const dto: ManagerReservationListItem[] = reservations.map((r) => ({
     id: r.id,
+    referenceCode: r.referenceCode,
     status: r.status,
     guestCount: r.guestCount,
     startAt: r.startAt.toISOString(),
@@ -254,6 +258,7 @@ export async function listManagerReservationsAll(input: {
     ],
     select: {
       id: true,
+      referenceCode: true,
       status: true,
       guestCount: true,
       startAt: true,
@@ -278,6 +283,7 @@ export async function listManagerReservationsAll(input: {
 
   const dto: ManagerReservationListItem[] = reservations.map((r) => ({
     id: r.id,
+    referenceCode: r.referenceCode,
     status: r.status,
     guestCount: r.guestCount,
     startAt: r.startAt.toISOString(),
@@ -383,6 +389,7 @@ export async function getReservationDetailsForManager(input: {
 
   return {
     id: reservation.id,
+    referenceCode: reservation.referenceCode,
     status: reservation.status,
     guestCount: reservation.guestCount,
     startAt: reservation.startAt,

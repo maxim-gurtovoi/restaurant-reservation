@@ -152,6 +152,8 @@ model Reservation {
   endAt        DateTime
   status       ReservationStatus @default(CONFIRMED)
   qrToken      String            @unique
+  /// Human-readable 7-digit code shown in UI and used for manual lookup.
+  referenceCode String           @unique
   contactName  String
   contactPhone String?
   contactEmail String?

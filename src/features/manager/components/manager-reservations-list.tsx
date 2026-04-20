@@ -4,6 +4,7 @@ import type { ManagerReservationListItem } from '@/features/manager/server/manag
 import { formatReservationStatus } from '@/lib/reservation-status';
 import { managerReservationStatusBadgeClass } from '@/features/manager/lib/manager-reservation-status';
 import { UI_LOCALE } from '@/lib/constants';
+import { formatReferenceCode } from '@/features/reservations/lib/reference-code';
 
 function formatDateRange(startIso: string, endIso: string) {
   const start = new Date(startIso);
@@ -69,9 +70,14 @@ export function ManagerReservationsList({
             className="flex flex-col gap-3 border-border/50 sm:flex-row sm:items-center sm:justify-between"
           >
             <div className="space-y-1">
-              <p className="text-sm font-semibold text-foreground">
-                {r.contactName?.trim() || 'Гость'}
-              </p>
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <p className="text-sm font-semibold text-foreground">
+                  {r.contactName?.trim() || 'Гость'}
+                </p>
+                <span className="font-mono text-[11px] tracking-wider text-muted">
+                  № {formatReferenceCode(r.referenceCode)}
+                </span>
+              </div>
               <p className="text-xs text-muted">
                 {dateStr} · {startTimeStr}–{endTimeStr}
               </p>
