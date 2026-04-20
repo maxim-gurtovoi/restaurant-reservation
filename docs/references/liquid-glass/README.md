@@ -1,5 +1,10 @@
 # Liquid Glass
 
+> **Локальная заметка (repo context):** это визуальный референс, сохранённый в проекте.
+> Используется для визуального вдохновения UI. Из кодовой базы `src/` не импортируется.
+> Тяжёлые фоны (`backgrounds/*.jpg|avif`) игнорируются git-ом (см. корневой `.gitignore`) —
+> если нужны, скачай оригинал по ссылке в разделе Live Demo ниже.
+
 An interactive demo of an **iOS 26–style Liquid Glass** effect for the web.
 
 ## Live Demo

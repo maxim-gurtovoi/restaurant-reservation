@@ -83,7 +83,7 @@ export function BookingMiniCalendar({
 
   const clampMonth = useCallback(
     (m: DateTime) => {
-      let v = m.setZone(timeZone).startOf('month');
+      const v = m.setZone(timeZone).startOf('month');
       if (v < minDt.startOf('month')) return minDt.startOf('month');
       if (v > maxDt.startOf('month')) return maxDt.startOf('month');
       return v;

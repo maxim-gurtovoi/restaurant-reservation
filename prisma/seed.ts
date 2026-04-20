@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, ReservationStatus, TableShape, CheckInMethod } from '@prisma/client';
+import { PrismaClient, UserRole, ReservationStatus, TableShape } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -18,7 +18,7 @@ async function main() {
   await prisma.user.deleteMany();
 
   // Users
-  const admin = await prisma.user.create({
+  await prisma.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@example.com',
@@ -349,6 +349,7 @@ async function main() {
         endAt: withDuration(startOfWindow(19), reservationDurationMinutes),
         status: ReservationStatus.CONFIRMED,
         qrToken: 'qr_gastrobar_1',
+        referenceCode: '7000001',
         contactName: 'Bob Customer',
         contactPhone: userBob.phone,
         contactEmail: userBob.email,
@@ -365,6 +366,7 @@ async function main() {
         endAt: withDuration(startOfWindow(20), reservationDurationMinutes),
         status: ReservationStatus.CONFIRMED,
         qrToken: 'qr_pegas_1',
+        referenceCode: '7000002',
         contactName: 'Bob Customer',
         contactPhone: userBob.phone,
         contactEmail: userBob.email,
@@ -381,6 +383,7 @@ async function main() {
         endAt: withDuration(startOfWindow(18), reservationDurationMinutes),
         status: ReservationStatus.CONFIRMED,
         qrToken: 'qr_smokehouse_1',
+        referenceCode: '7000003',
         contactName: 'Bob Customer',
         contactPhone: userBob.phone,
         contactEmail: userBob.email,
@@ -397,6 +400,7 @@ async function main() {
         endAt: withDuration(startOfWindow(19), reservationDurationMinutes),
         status: ReservationStatus.CONFIRMED,
         qrToken: 'qr_attico_1',
+        referenceCode: '7000004',
         contactName: 'Bob Customer',
         contactPhone: userBob.phone,
         contactEmail: userBob.email,
@@ -413,6 +417,7 @@ async function main() {
         endAt: withDuration(startOfWindow(20), reservationDurationMinutes),
         status: ReservationStatus.CONFIRMED,
         qrToken: 'qr_garden_1',
+        referenceCode: '7000005',
         contactName: 'Bob Customer',
         contactPhone: userBob.phone,
         contactEmail: userBob.email,
@@ -429,6 +434,7 @@ async function main() {
         endAt: withDuration(startOfWindow(18), reservationDurationMinutes),
         status: ReservationStatus.CONFIRMED,
         qrToken: 'qr_la_placinte_1',
+        referenceCode: '7000006',
         contactName: 'Carol Diner',
         contactPhone: userCarol.phone,
         contactEmail: userCarol.email,

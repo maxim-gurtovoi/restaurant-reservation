@@ -6,6 +6,5 @@ export interface JwtPayloadUser {
   id: string;
   email: string;
   role: UserRole;
-  // TODO: add restaurantId for managers if needed
 }
 

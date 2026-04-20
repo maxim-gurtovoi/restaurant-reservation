@@ -11,7 +11,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:repair-init-checksum": "node scripts/prisma-repair-init-checksum.mjs",
     "prisma:studio": "prisma studio",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:seed": "prisma db seed",
     "db:backfill-reservation-codes": "tsx scripts/backfill-reservation-codes.ts",
     "cron:stale": "tsx scripts/close-stale-reservations.ts"
@@ -38,11 +38,15 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.4",
+    "globals": "^17.5.0",
     "prisma": "^6.0.0",
     "tailwindcss": "^4",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "typescript-eslint": "^8.58.2"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
