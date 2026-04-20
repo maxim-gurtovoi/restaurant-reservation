@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
 import { UserAvatarMenu } from '@/components/auth/user-avatar-menu';
@@ -17,8 +18,8 @@ export async function AppShell({
   const user = await getCurrentUser();
   const locale = await getServerLocale();
   const t = getMessages(locale);
+  const canSeeAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER';
   const canSeeManager = user?.role === 'MANAGER';
-  const canSeeAdmin = user?.role === 'ADMIN';
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 bg-transparent">
@@ -33,16 +34,21 @@ export async function AppShell({
               className="group relative z-10 hidden shrink-0 items-center sm:inline-flex"
             >
               <span className="relative h-10 w-10">
-                <img
+                <Image
                   src="/logo-mark.png"
                   alt="Логотип TableFlow"
-                  className="absolute inset-0 h-10 w-10 object-contain transition-opacity duration-200 group-hover:opacity-0"
+                  fill
+                  sizes="40px"
+                  priority
+                  className="object-contain transition-opacity duration-200 group-hover:opacity-0"
                 />
-                <img
+                <Image
                   src="/logo-mark-black.png"
                   alt=""
                   aria-hidden="true"
-                  className="absolute inset-0 h-10 w-10 object-contain opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  fill
+                  sizes="40px"
+                  className="object-contain opacity-0 transition-opacity duration-200 group-hover:opacity-100"
                 />
               </span>
             </Link>
@@ -67,20 +73,20 @@ export async function AppShell({
                     {t.appShell.myReservations}
                   </Link>
                 ) : null}
-                {canSeeManager ? (
-                  <Link
-                    href={ROUTES.managerDashboard}
-                    className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
-                  >
-                    {t.appShell.manager}
-                  </Link>
-                ) : null}
                 {canSeeAdmin ? (
                   <Link
-                    href={ROUTES.admin}
+                    href={ROUTES.adminDashboard}
                     className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
                   >
                     {t.appShell.admin}
+                  </Link>
+                ) : null}
+                {canSeeManager ? (
+                  <Link
+                    href={ROUTES.manager}
+                    className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
+                  >
+                    {t.appShell.manager}
                   </Link>
                 ) : null}
               </nav>

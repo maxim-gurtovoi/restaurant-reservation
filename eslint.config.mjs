@@ -55,13 +55,14 @@ const config = [
       // flipping this to a warning keeps the feedback without blocking builds.
       '@typescript-eslint/no-explicit-any': 'warn',
 
-      // React 19 / react-hooks@7 rules. These catch real anti-patterns (cascading
-      // renders, unstable refs), but fixing them requires per-component UX review
-      // (switch to derived state, `useSyncExternalStore`, `useEffectEvent`, etc.).
-      // Kept as `warn` so they stay visible without blocking lint runs.
-      // TODO(architecture): migrate call-sites and flip back to `error`.
-      'react-hooks/set-state-in-effect': 'warn',
-      'react-hooks/refs': 'warn',
+      // React 19 / react-hooks@7 rules. These catch real anti-patterns
+      // (cascading renders, unstable refs). All existing call-sites have been
+      // migrated (derived state, render-time state sync, `useSyncExternalStore`,
+      // `useOptimistic`, refs updated in a commit-phase effect). A single
+      // legitimate exception in `booking-mini-calendar` uses a point
+      // `eslint-disable-next-line` with a rationale comment.
+      'react-hooks/set-state-in-effect': 'error',
+      'react-hooks/refs': 'error',
     },
   },
 

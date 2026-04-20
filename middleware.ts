@@ -9,14 +9,14 @@ export function middleware(req: NextRequest) {
   const user = verifyUserJwt(token);
   if (!user) return NextResponse.redirect(new URL('/auth/login', req.url));
 
-  if (req.nextUrl.pathname.startsWith('/manager')) {
-    if (user.role !== 'MANAGER' && user.role !== 'ADMIN') {
+  if (req.nextUrl.pathname.startsWith('/admin')) {
+    if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }
 
-  if (req.nextUrl.pathname.startsWith('/admin')) {
-    if (user.role !== 'ADMIN') {
+  if (req.nextUrl.pathname.startsWith('/manager')) {
+    if (user.role !== 'MANAGER') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }
@@ -27,4 +27,3 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: ['/my-reservations/:path*', '/manager/:path*', '/admin/:path*'],
 };
-

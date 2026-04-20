@@ -1,7 +1,7 @@
 import 'server-only';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import type { TableShape } from '@prisma/client';
+import type { FloorPlanElementType, TableShape } from '@prisma/client';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 
@@ -46,6 +46,17 @@ export type RestaurantDetails = {
     height: number;
     rotation: number;
     isActive: boolean;
+  }[];
+  floorPlanElements: {
+    id: string;
+    floorPlanId: string;
+    type: FloorPlanElementType;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    label: string | null;
   }[];
   workingHours: {
     id: string;
@@ -140,7 +151,11 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
       isActive: true,
     },
     include: {
-      floorPlans: true,
+      floorPlans: {
+        include: {
+          elements: true,
+        },
+      },
       tables: true,
       workingHours: true,
     },
@@ -173,6 +188,19 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
       width: fp.width,
       height: fp.height,
     })),
+    floorPlanElements: restaurant.floorPlans.flatMap((fp) =>
+      fp.elements.map((el) => ({
+        id: el.id,
+        floorPlanId: el.floorPlanId,
+        type: el.type,
+        x: el.x,
+        y: el.y,
+        width: el.width,
+        height: el.height,
+        rotation: el.rotation,
+        label: el.label,
+      })),
+    ),
     tables: restaurant.tables.map((t) => ({
       id: t.id,
       floorPlanId: t.floorPlanId,

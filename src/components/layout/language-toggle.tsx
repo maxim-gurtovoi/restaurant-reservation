@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import type { Locale } from '@/lib/i18n';
@@ -16,22 +16,19 @@ export function LanguageToggle({
   locale: Locale;
   ariaLabel: string;
 }) {
-  const [lang, setLang] = useState<Lang>(locale);
   const router = useRouter();
-
-  useEffect(() => {
-    setLang(locale);
-  }, [locale]);
-
-  const setLanguage = (next: Lang) => {
-    setLang(next);
-    document.cookie = `${LANG_COOKIE_KEY}=${next}; path=/; max-age=31536000; samesite=lax`;
-  };
+  // Optimistic value updates instantly on click for visual feedback,
+  // then snaps back to `locale` once the RSC refresh resolves.
+  const [lang, setOptimisticLang] = useOptimistic<Lang>(locale);
+  const [, startTransition] = useTransition();
 
   const toggleLanguage = () => {
-    const next = lang === 'ru' ? 'ro' : 'ru';
-    setLanguage(next);
-    router.refresh();
+    const next: Lang = lang === 'ru' ? 'ro' : 'ru';
+    document.cookie = `${LANG_COOKIE_KEY}=${next}; path=/; max-age=31536000; samesite=lax`;
+    startTransition(() => {
+      setOptimisticLang(next);
+      router.refresh();
+    });
   };
 
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { createPortal } from 'react-dom';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { LoginForm } from '@/features/auth/components/login-form';
 import { RegisterForm } from '@/features/auth/components/register-form';
 import type { Locale } from '@/lib/i18n';
@@ -18,6 +18,14 @@ type AuthModalProps = {
   onClose: () => void;
 };
 
+// `createPortal(..., document.body)` needs the DOM, so we gate rendering until
+// the client mount has happened. `useSyncExternalStore` is React 19's idiomatic
+// way to read a "value that differs between server and client" without any
+// state-in-effect ping-pong.
+const subscribeNoop = () => () => {};
+const getIsClient = () => true;
+const getIsServer = () => false;
+
 export function AuthModal({
   open,
   initialMode = 'login',
@@ -26,16 +34,13 @@ export function AuthModal({
   titleId,
   onClose,
 }: AuthModalProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(subscribeNoop, getIsClient, getIsServer);
+  // Reset to `initialMode` across open/close cycles is handled by the caller
+  // via `key={modalOpen ? 'open' : 'closed'}` — see `header-auth-entry.tsx`
+  // and `register-modal-trigger.tsx`. Within a single open session the user
+  // can still freely switch between login/register via the footer links.
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const t = getMessages(locale);
-
-  useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    if (!open) return;
-    setMode(initialMode);
-  }, [open, initialMode]);
 
   useEffect(() => {
     if (!open) return;

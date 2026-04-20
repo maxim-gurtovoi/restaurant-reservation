@@ -9,7 +9,7 @@ import {
   getReservationDetailsById,
   type ReservationDetails,
 } from '@/features/reservations/server/get-reservation-details';
-import { buildManagerCheckInUrl } from '@/features/qr/server/qr.service';
+import { buildAdminCheckInUrl } from '@/features/qr/server/qr.service';
 import { CancelReservationButton } from '@/features/reservations/components/cancel-reservation-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { formatReservationStatus } from '@/lib/reservation-status';
@@ -91,7 +91,7 @@ export default async function ReservationDetailsPage({
     process.env.NEXT_PUBLIC_APP_URL && process.env.NEXT_PUBLIC_APP_URL.length > 0
       ? process.env.NEXT_PUBLIC_APP_URL
       : 'http://localhost:3000';
-  const checkInUrl = buildManagerCheckInUrl({ baseUrl, qrToken: reservation.qrToken });
+  const checkInUrl = buildAdminCheckInUrl({ baseUrl, qrToken: reservation.qrToken });
 
   const canCancel =
     user != null &&

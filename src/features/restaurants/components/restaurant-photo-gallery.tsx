@@ -1,3 +1,5 @@
+import Image from 'next/image';
+
 type RestaurantPhotoGalleryProps = {
   restaurantName: string;
   imageUrls: string[];
@@ -31,13 +33,18 @@ export function RestaurantPhotoGallery({ restaurantName, imageUrls }: Restaurant
               index === 0 ? 'col-span-2 sm:col-span-2' : '',
             ].join(' ')}
           >
-            <div className={index === 0 ? 'aspect-video' : 'aspect-4/3'}>
-              {tile.kind === 'image' ? (
-                <img
+            <div className={`relative ${index === 0 ? 'aspect-video' : 'aspect-4/3'}`}>
+              {tile.kind === 'image' && tile.src ? (
+                <Image
                   src={tile.src}
                   alt={`${restaurantName} photo ${index + 1}`}
-                  className="h-full w-full object-cover"
-                  loading="lazy"
+                  fill
+                  sizes={
+                    index === 0
+                      ? '(min-width: 640px) 66vw, 100vw'
+                      : '(min-width: 640px) 33vw, 50vw'
+                  }
+                  className="object-cover"
                 />
               ) : (
                 <div className="relative flex h-full w-full items-center justify-center bg-[linear-gradient(135deg,#F8F8F8_0%,#F3EAFF_100%)]">

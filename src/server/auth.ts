@@ -15,19 +15,26 @@ export async function requireUser(): Promise<JwtPayloadUser> {
   return user;
 }
 
-export async function requireManager(): Promise<JwtPayloadUser> {
-  const user = await requireUser();
-  if (user.role !== 'MANAGER' && user.role !== 'ADMIN') {
-    redirect('/');
-  }
-  return user;
-}
-
+/**
+ * Allows ADMIN (restaurant staff) and MANAGER (higher in hierarchy).
+ * Used to gate all `/admin/*` routes (check-in, reservations, floor-plan view).
+ */
 export async function requireAdmin(): Promise<JwtPayloadUser> {
   const user = await requireUser();
-  if (user.role !== 'ADMIN') {
+  if (user.role !== 'ADMIN' && user.role !== 'MANAGER') {
     redirect('/');
   }
   return user;
 }
 
+/**
+ * Top-tier role only: platform operator / restaurant owner. Used for `/manager/*`
+ * routes (restaurant CRUD, admin-staff assignment, drag&drop floor plan editor).
+ */
+export async function requireManager(): Promise<JwtPayloadUser> {
+  const user = await requireUser();
+  if (user.role !== 'MANAGER') {
+    redirect('/');
+  }
+  return user;
+}

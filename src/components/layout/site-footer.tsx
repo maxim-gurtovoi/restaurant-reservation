@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
 import { SITE_FOOTER_META } from '@/lib/site-footer-meta';
@@ -26,9 +27,12 @@ export function SiteFooter({ locale = 'ru' }: { locale?: Locale }) {
               href={ROUTES.home}
               className="inline-flex items-center"
             >
-              <img
+              <Image
                 src="/logo-mark.png"
                 alt="TableFlow"
+                width={276}
+                height={339}
+                sizes="40px"
                 className="h-10 w-auto object-contain"
               />
             </Link>

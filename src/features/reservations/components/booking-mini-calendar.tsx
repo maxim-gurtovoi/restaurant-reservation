@@ -101,11 +101,22 @@ export function BookingMiniCalendar({
     clampMonth(selected ?? DateTime.now().setZone(timeZone)),
   );
 
+  // `viewMonth` is a hybrid piece of state: it advances independently when the
+  // user navigates with the arrows / selects, but must also follow `valueYmd`
+  // when the parent changes the selected date programmatically (e.g. the
+  // "today" / "tomorrow" quick chips). A `key`-based reset only covers the
+  // case where the new `valueYmd` is in a different month at mount time, so
+  // we keep this narrow sync here. The functional updater guards against
+  // redundant renders when the month is already correct.
   useEffect(() => {
     if (!valueYmd) return;
     const d = DateTime.fromISO(valueYmd, { zone: timeZone });
     if (!d.isValid) return;
-    setViewMonth(clampMonth(d.startOf('month')));
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setViewMonth((prev) => {
+      const next = clampMonth(d.startOf('month'));
+      return prev.hasSame(next, 'month') ? prev : next;
+    });
   }, [valueYmd, timeZone, clampMonth]);
 
   const cells = useMemo(() => buildMonthCells(viewMonth), [viewMonth]);

@@ -1,51 +1,103 @@
 'use client';
 
-import { useState } from 'react';
-import type { TableShape } from '@prisma/client';
-import { getVisualZonesForFloor } from '@/features/floor-plan/data/visual-zones';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { FloorPlanElementType, TableShape } from '@prisma/client';
+import { getFloorPlanElementPresentation } from '@/features/floor-plan/components/floor-plan-element-icon';
 import { cn } from '@/lib/utils';
 
+export type FloorPlanViewFloor = {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+};
+
+export type FloorPlanViewTable = {
+  id: string;
+  floorPlanId: string;
+  label: string;
+  capacity: number;
+  shape: TableShape;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  isActive: boolean;
+};
+
+export type FloorPlanViewElement = {
+  id: string;
+  floorPlanId: string;
+  type: FloorPlanElementType;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+  label: string | null;
+};
+
 type FloorPlanViewProps = {
-  floorPlans: {
-    id: string;
-    name: string;
-    width: number;
-    height: number;
-  }[];
-  tables: {
-    id: string;
-    floorPlanId: string;
-    label: string;
-    capacity: number;
-    shape: TableShape;
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-    rotation: number;
-    isActive: boolean;
-  }[];
+  floorPlans: FloorPlanViewFloor[];
+  tables: FloorPlanViewTable[];
+  /** Decorative elements (bar counters, stages, plants, etc.). Optional. */
+  elements?: FloorPlanViewElement[];
   selectedTableId?: string | null;
   unavailableTableIds?: string[];
   onSelectTable?: (tableId: string) => void;
-  /** Read-only overview (e.g. manager monitor) — no selection, neutral table styling */
+  /** Read-only overview — no selection, neutral table styling. */
   readOnly?: boolean;
   headerEyebrow?: string;
-  /** Used to show optional demo zone labels when coordinates match seeded layouts */
-  restaurantSlug?: string;
+  /** Optional: initial active floor on first render. Falls back to first floor. */
+  initialFloorPlanId?: string;
 };
+
+const MIN_CANVAS_HEIGHT = 280;
 
 export function FloorPlanView({
   floorPlans,
   tables,
+  elements = [],
   selectedTableId,
   unavailableTableIds = [],
   onSelectTable,
   readOnly = false,
   headerEyebrow = 'Шаг 2 · Выберите столик',
-  restaurantSlug,
+  initialFloorPlanId,
 }: FloorPlanViewProps) {
+  const [manualFloorId, setManualFloorId] = useState<string | null>(null);
   const [hoveredTableId, setHoveredTableId] = useState<string | null>(null);
+  const [trackedSelectedId, setTrackedSelectedId] = useState<string | null>(
+    selectedTableId ?? null,
+  );
+
+  // Follow external selection: when the user picks a table on another floor
+  // (e.g. via list), snap to that floor automatically. Implemented via
+  // "store a snapshot of a prop" pattern (setState during render) to avoid
+  // a useEffect purely for syncing state.
+  if ((selectedTableId ?? null) !== trackedSelectedId) {
+    setTrackedSelectedId(selectedTableId ?? null);
+    if (selectedTableId) {
+      const selectedTable = tables.find((t) => t.id === selectedTableId);
+      if (selectedTable) {
+        setManualFloorId(selectedTable.floorPlanId);
+      }
+    }
+  }
+
+  const activeFloor = useMemo(() => {
+    if (!floorPlans.length) return null;
+    if (manualFloorId) {
+      const match = floorPlans.find((f) => f.id === manualFloorId);
+      if (match) return match;
+    }
+    if (initialFloorPlanId) {
+      const match = floorPlans.find((f) => f.id === initialFloorPlanId);
+      if (match) return match;
+    }
+    return floorPlans[0];
+  }, [floorPlans, manualFloorId, initialFloorPlanId]);
 
   if (!floorPlans.length || !tables.length) {
     return (
@@ -55,178 +107,339 @@ export function FloorPlanView({
     );
   }
 
-  const floorPlan = floorPlans[0];
-  const planTables = tables.filter((t) => t.floorPlanId === floorPlan.id);
-
-  if (!planTables.length) {
-    return (
-      <div className="space-y-2 rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">
-        <p>На этом плане зала пока нет столиков.</p>
-      </div>
-    );
+  if (!activeFloor) {
+    return null;
   }
 
-  const visualZones = restaurantSlug
-    ? getVisualZonesForFloor(restaurantSlug, floorPlan.width, floorPlan.height)
-    : [];
+  const planTables = tables.filter((t) => t.floorPlanId === activeFloor.id);
+  const planElements = elements.filter((e) => e.floorPlanId === activeFloor.id);
 
-  const targetWidth = 640;
-  const targetHeight = 400;
-  const scaleX = targetWidth / floorPlan.width;
-  const scaleY = targetHeight / floorPlan.height;
-  const scale = Math.min(scaleX, scaleY);
+  const selectedTableOnOtherFloor =
+    selectedTableId != null &&
+    tables.some((t) => t.id === selectedTableId && t.floorPlanId !== activeFloor.id);
 
   return (
-    <div className="space-y-3 rounded-2xl border border-border/50 bg-surface p-5 shadow-card">
-      <div className="flex items-baseline justify-between gap-2">
+    <div className="space-y-4 rounded-2xl border border-border/50 bg-surface p-5 shadow-card">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="space-y-0.5">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-accent-text/80">
             {headerEyebrow}
           </p>
           <p className="text-sm font-medium text-foreground">
-            План зала: <span className="font-semibold">{floorPlan.name}</span>
+            План зала: <span className="font-semibold">{activeFloor.name}</span>
           </p>
         </div>
+
+        <FloorPlanLegend hasElements={planElements.length > 0} />
       </div>
 
-      <div className="w-full overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
+      {floorPlans.length > 1 ? (
         <div
-          className="relative mx-auto shrink-0 rounded-2xl border border-border/50 bg-[linear-gradient(180deg,rgba(250,248,245,0.96)_0%,rgba(240,236,228,0.98)_100%)] p-3 shadow-card-soft dark:bg-[linear-gradient(180deg,rgba(28,26,24,0.96)_0%,rgba(22,20,18,0.98)_100%)]"
-          style={{ width: targetWidth, height: targetHeight }}>
-          <div
-            className="relative overflow-hidden rounded-xl ring-1 ring-border/40"
-            style={{
-              width: floorPlan.width,
-              height: floorPlan.height,
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              backgroundImage: [
-                'linear-gradient(90deg,rgba(120,100,80,0.06)_1px,transparent 1px)',
-                'linear-gradient(rgba(120,100,80,0.06)_1px,transparent 1px)',
-              ].join(','),
-              backgroundSize: '32px 32px',
-              backgroundColor: 'rgba(255,252,247,0.35)',
-            }}>
-            {visualZones.map((zone) => (
-              <div
-                key={`${zone.label}-${zone.x}-${zone.y}`}
-                className="pointer-events-none absolute rounded-lg border border-dashed border-foreground/10 bg-foreground/3"
-                style={{
-                  left: zone.x,
-                  top: zone.y,
-                  width: zone.width,
-                  height: zone.height,
-                }}>
-                <span className="absolute left-2 top-1.5 text-[10px] font-semibold uppercase tracking-wider text-foreground/35">
-                  {zone.label}
-                </span>
-              </div>
-            ))}
-
-            {planTables.map((table) => {
-              const isSelected = selectedTableId === table.id;
-              const isUnavailable = unavailableTableIds.includes(table.id);
-              const isHovered = hoveredTableId === table.id && !readOnly;
-
-              let hoverOrSelectScale = 1;
-              if (!readOnly && table.isActive && !isUnavailable) {
-                if (isSelected) hoverOrSelectScale = 1.06;
-                else if (isHovered) hoverOrSelectScale = 1.035;
-              }
-
-              const transform = `rotate(${table.rotation}deg) scale(${hoverOrSelectScale})`;
-
-              const shapeOutline =
-                table.shape === 'ROUND'
-                  ? 'rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.45)]'
-                  : table.shape === 'SQUARE'
-                    ? 'rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]'
-                    : 'rounded-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.3)]';
-
-              const shapeSizeAccent =
-                table.shape === 'ROUND'
-                  ? 'border-[2.5px]'
-                  : table.shape === 'SQUARE'
-                    ? 'border-2'
-                    : 'border-2 border-b-[3px]';
-
-              let stateClasses = '';
-              if (readOnly) {
-                if (!table.isActive) {
-                  stateClasses =
-                    'border-dashed border-border/50 bg-surface-soft/80 text-muted opacity-50 cursor-default';
-                } else {
-                  stateClasses =
-                    'border-border/55 bg-surface/90 text-foreground/85 cursor-default shadow-sm';
-                }
-              } else if (!table.isActive) {
-                stateClasses =
-                  'border-border/50 bg-surface-soft text-muted opacity-45 cursor-not-allowed grayscale';
-              } else if (isUnavailable) {
-                stateClasses = cn(
-                  'cursor-not-allowed border-border/40 bg-surface-soft/90 text-muted',
-                  'opacity-50 grayscale-[0.4]',
-                );
-              } else if (isSelected) {
-                stateClasses = cn(
-                  'z-10 cursor-pointer border-accent-text bg-accent-bg text-accent-text',
-                  'shadow-[0_0_0_3px_rgba(123,47,155,0.35),0_8px_22px_rgba(28,28,28,0.12)]',
-                  'font-semibold ring-2 ring-accent-text/90',
-                );
-              } else {
-                stateClasses = cn(
-                  'cursor-pointer border-accent-border/60 bg-accent-bg/55 text-accent-text',
-                  'shadow-card-soft hover:border-accent-border hover:bg-accent-bg/80',
-                );
-              }
-
-              const baseClasses =
-                'absolute flex flex-col items-center justify-center text-[10px] font-medium transition-[transform,box-shadow,background-color,border-color] duration-150 ease-out';
-
-              return (
-                <div
-                  key={table.id}
-                  className="absolute"
-                  style={{
-                    left: table.x,
-                    top: table.y,
-                    width: table.width,
-                    height: table.height,
-                    transformOrigin: 'center',
-                  }}>
-                  <button
-                    type="button"
-                    disabled={readOnly || !table.isActive || isUnavailable || !onSelectTable}
-                    className={cn(
-                      baseClasses,
-                      shapeOutline,
-                      shapeSizeAccent,
-                      stateClasses,
-                      'h-full w-full select-none',
-                    )}
-                    style={{ transform, transformOrigin: 'center' }}
-                    onClick={() => {
-                      if (readOnly || !table.isActive || isUnavailable || !onSelectTable) return;
-                      onSelectTable(table.id);
-                    }}
-                    onMouseEnter={() => setHoveredTableId(table.id)}
-                    onMouseLeave={() => setHoveredTableId(null)}>
-                    <span className="px-0.5 text-center leading-tight">{table.label}</span>
-                    <span className="text-[9px] font-normal opacity-75">{table.capacity} мест</span>
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+          className="flex flex-wrap gap-1 rounded-xl border border-border/55 bg-surface-soft/60 p-1 text-sm"
+          role="tablist"
+          aria-label="Зоны ресторана"
+        >
+          {floorPlans.map((floor) => {
+            const active = floor.id === activeFloor.id;
+            return (
+              <button
+                key={floor.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setManualFloorId(floor.id)}
+                className={cn(
+                  'cursor-pointer rounded-md px-3 py-1.5 font-medium transition-colors',
+                  active
+                    ? 'bg-primary text-white shadow-sm'
+                    : 'text-muted hover:bg-surface hover:text-foreground',
+                )}
+              >
+                {floor.name}
+              </button>
+            );
+          })}
         </div>
-      </div>
+      ) : null}
+
+      {selectedTableOnOtherFloor ? (
+        <div className="rounded-lg border border-accent-border/60 bg-accent-bg/50 px-3 py-2 text-xs text-accent-text">
+          Выбранный стол находится на другой зоне — переключитесь, чтобы увидеть его расположение.
+        </div>
+      ) : null}
+
+      <FloorPlanCanvas
+        floor={activeFloor}
+        tables={planTables}
+        elements={planElements}
+        selectedTableId={selectedTableId ?? null}
+        unavailableTableIds={unavailableTableIds}
+        readOnly={readOnly}
+        hoveredTableId={hoveredTableId}
+        onHover={setHoveredTableId}
+        onSelectTable={onSelectTable}
+      />
 
       {!readOnly && (
         <p className="text-[11px] text-muted">
-          Свободные столики подсвечены; занятые отображаются бледнее. Выберите стол, подходящий по
-          числу гостей.
+          Свободные столы выделены акцентным цветом, занятые отображаются бледнее. Выберите стол,
+          подходящий по числу гостей.
         </p>
       )}
+    </div>
+  );
+}
+
+type FloorPlanCanvasProps = {
+  floor: FloorPlanViewFloor;
+  tables: FloorPlanViewTable[];
+  elements: FloorPlanViewElement[];
+  selectedTableId: string | null;
+  unavailableTableIds: string[];
+  readOnly: boolean;
+  hoveredTableId: string | null;
+  onHover: (id: string | null) => void;
+  onSelectTable?: (id: string) => void;
+};
+
+function FloorPlanCanvas({
+  floor,
+  tables,
+  elements,
+  selectedTableId,
+  unavailableTableIds,
+  readOnly,
+  hoveredTableId,
+  onHover,
+  onSelectTable,
+}: FloorPlanCanvasProps) {
+  const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
+
+  useLayoutEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const update = () => {
+      setContainerWidth(el.clientWidth);
+    };
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Scale floor plan to the container width, but clamp so it never overflows
+  // and never collapses below readable size.
+  const scale = containerWidth > 0 ? containerWidth / floor.width : 1;
+  const renderedHeight = Math.max(MIN_CANVAS_HEIGHT, floor.height * scale);
+
+  if (!tables.length && !elements.length) {
+    return (
+      <div className="rounded-xl border border-dashed border-border/60 bg-surface-soft p-5 text-sm text-muted">
+        На этом плане зала пока нет столиков.
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={wrapperRef}
+      className="relative w-full overflow-hidden rounded-xl border border-border/55 bg-[linear-gradient(180deg,rgba(250,248,245,0.98)_0%,rgba(240,236,228,1)_100%)]"
+      style={{ height: renderedHeight }}
+    >
+      <div
+        className="absolute left-0 top-0"
+        style={{
+          width: floor.width,
+          height: floor.height,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
+          backgroundImage: [
+            'linear-gradient(90deg,rgba(120,100,80,0.06) 1px,transparent 1px)',
+            'linear-gradient(rgba(120,100,80,0.06) 1px,transparent 1px)',
+          ].join(','),
+          backgroundSize: '32px 32px',
+        }}
+      >
+        {elements.map((element) => (
+          <FloorPlanElementBox key={element.id} element={element} />
+        ))}
+
+        {tables.map((table) => {
+          const isSelected = selectedTableId === table.id;
+          const isUnavailable = unavailableTableIds.includes(table.id);
+          const isHovered = hoveredTableId === table.id && !readOnly;
+
+          let innerScale = 1;
+          if (!readOnly && table.isActive && !isUnavailable) {
+            if (isSelected) innerScale = 1.06;
+            else if (isHovered) innerScale = 1.035;
+          }
+
+          const rotateTransform = `rotate(${table.rotation}deg) scale(${innerScale})`;
+
+          const shapeOutline =
+            table.shape === 'ROUND'
+              ? 'rounded-full'
+              : table.shape === 'SQUARE'
+                ? 'rounded-lg'
+                : 'rounded-xl';
+
+          const shapeBorder =
+            table.shape === 'ROUND'
+              ? 'border-[2.5px]'
+              : table.shape === 'SQUARE'
+                ? 'border-2'
+                : 'border-2';
+
+          let stateClasses = '';
+          if (readOnly) {
+            if (!table.isActive) {
+              stateClasses =
+                'border-dashed border-border/60 bg-surface-soft text-muted opacity-60 cursor-default';
+            } else {
+              stateClasses =
+                'border-[#c9ad7a] bg-[#fff6e6] text-[#5a3f1a] cursor-default shadow-sm';
+            }
+          } else if (!table.isActive) {
+            stateClasses =
+              'border-border/60 bg-surface-soft text-muted opacity-55 cursor-not-allowed';
+          } else if (isUnavailable) {
+            stateClasses =
+              'border-border/55 bg-surface-soft text-muted opacity-60 cursor-not-allowed';
+          } else if (isSelected) {
+            stateClasses = cn(
+              'z-10 cursor-pointer border-accent-text bg-accent-bg text-accent-text',
+              'shadow-[0_0_0_3px_rgba(123,47,155,0.35),0_8px_22px_rgba(28,28,28,0.12)]',
+              'font-semibold ring-2 ring-accent-text/90',
+            );
+          } else {
+            stateClasses = cn(
+              'cursor-pointer border-[#d9b47a] bg-[#fff2d6] text-[#5a3f1a]',
+              'shadow-card-soft hover:border-accent-border hover:bg-accent-bg/70 hover:text-accent-text',
+            );
+          }
+
+          const baseClasses =
+            'absolute flex flex-col items-center justify-center text-[11px] font-medium transition-[transform,box-shadow,background-color,border-color,color] duration-150 ease-out';
+
+          return (
+            <div
+              key={table.id}
+              className="absolute"
+              style={{
+                left: table.x,
+                top: table.y,
+                width: table.width,
+                height: table.height,
+                transformOrigin: 'center',
+              }}
+            >
+              <button
+                type="button"
+                disabled={readOnly || !table.isActive || isUnavailable || !onSelectTable}
+                className={cn(
+                  baseClasses,
+                  shapeOutline,
+                  shapeBorder,
+                  stateClasses,
+                  'h-full w-full select-none',
+                )}
+                style={{ transform: rotateTransform, transformOrigin: 'center' }}
+                onClick={() => {
+                  if (readOnly || !table.isActive || isUnavailable || !onSelectTable) return;
+                  onSelectTable(table.id);
+                }}
+                onMouseEnter={() => onHover(table.id)}
+                onMouseLeave={() => onHover(null)}
+              >
+                <span className="px-0.5 text-center leading-tight">{table.label}</span>
+                <span className="text-[10px] font-normal opacity-80">{table.capacity} мест</span>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FloorPlanElementBox({ element }: { element: FloorPlanViewElement }) {
+  const presentation = getFloorPlanElementPresentation(element.type);
+  const Icon = presentation.icon;
+  const rotate = `rotate(${element.rotation}deg)`;
+  const label = element.label ?? presentation.label;
+
+  const isThin = element.type === 'TERRACE_RAILING' || element.type === 'WALL';
+
+  return (
+    <div
+      className={cn(
+        'pointer-events-none absolute flex items-center justify-center gap-1.5 overflow-hidden border text-[10px] font-semibold uppercase tracking-widest',
+        presentation.surface,
+        presentation.border,
+        presentation.text,
+        isThin ? 'rounded-sm' : 'rounded-lg',
+      )}
+      style={{
+        left: element.x,
+        top: element.y,
+        width: element.width,
+        height: element.height,
+        transform: rotate,
+        transformOrigin: 'center',
+      }}
+    >
+      {!isThin ? (
+        <>
+          <Icon className="h-4 w-4 shrink-0" aria-hidden />
+          {label ? (
+            <span className="truncate px-1 text-[10px] leading-tight">{label}</span>
+          ) : null}
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function FloorPlanLegend({ hasElements }: { hasElements: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted">
+      <LegendSwatch shape="round" label="Круглый" />
+      <LegendSwatch shape="square" label="Квадратный" />
+      <LegendSwatch shape="rect" label="Прямоугольный" />
+      {hasElements ? <LegendSwatch shape="element" label="Интерьер" /> : null}
+    </div>
+  );
+}
+
+function LegendSwatch({
+  shape,
+  label,
+}: {
+  shape: 'round' | 'square' | 'rect' | 'element';
+  label: string;
+}) {
+  const shapeClass =
+    shape === 'round'
+      ? 'rounded-full w-3 h-3'
+      : shape === 'square'
+        ? 'rounded-sm w-3 h-3'
+        : shape === 'rect'
+          ? 'rounded-[3px] w-4 h-2.5'
+          : 'rounded-sm w-3 h-3 bg-surface-soft border-foreground/30';
+
+  const background =
+    shape === 'element'
+      ? undefined
+      : 'bg-[#fff2d6] border border-[#d9b47a]';
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn('inline-block border', shapeClass, background)} />
+      <span>{label}</span>
     </div>
   );
 }

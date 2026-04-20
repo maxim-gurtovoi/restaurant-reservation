@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import type { RestaurantListItem } from '@/features/restaurants/server/restaurants.service';
@@ -50,11 +51,12 @@ export function RestaurantCard({
       <Link href={detailHref} className="block shrink-0">
         <div className="relative h-56 overflow-hidden">
           {showImage ? (
-            <img
+            <Image
               src={restaurant.imageUrl ?? ''}
               alt={`${displayName} cover`}
-              className="h-full w-full object-cover transition duration-500 group-hover/card:scale-[1.06]"
-              loading="lazy"
+              fill
+              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+              className="object-cover transition duration-500 group-hover/card:scale-[1.06]"
               onError={() => setImgFailed(true)}
             />
           ) : (

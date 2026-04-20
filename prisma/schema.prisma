@@ -32,6 +32,23 @@ enum CheckInMethod {
   MANUAL
 }
 
+enum FloorPlanElementType {
+  BAR_COUNTER
+  STAGE
+  STAIRS
+  FIREPLACE
+  WINDOW
+  DOOR
+  WALL
+  PLANT
+  PILLAR
+  RESTROOM
+  KITCHEN
+  HOST_STAND
+  TERRACE_RAILING
+  SMOKER
+}
+
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   name         String
@@ -43,7 +60,7 @@ model User {
   updatedAt    DateTime @updatedAt
 
   reservations      Reservation[]
-  managedRestaurants RestaurantManager[]
+  adminRestaurants  RestaurantAdmin[]
   checkInLogs       CheckInLog[]
 
   @@index([role])
@@ -68,12 +85,12 @@ model Restaurant {
   tables      RestaurantTable[]
   reservations Reservation[]
   workingHours WorkingHours[]
-  managers    RestaurantManager[]
+  admins      RestaurantAdmin[]
 
   @@index([isActive])
 }
 
-model RestaurantManager {
+model RestaurantAdmin {
   id           String     @id @default(uuid()) @db.Uuid
   userId       String     @db.Uuid
   restaurantId String     @db.Uuid
@@ -98,8 +115,27 @@ model FloorPlan {
 
   restaurant Restaurant      @relation(fields: [restaurantId], references: [id])
   tables     RestaurantTable[]
+  elements   FloorPlanElement[]
 
   @@index([restaurantId])
+}
+
+model FloorPlanElement {
+  id          String                @id @default(uuid()) @db.Uuid
+  floorPlanId String                @db.Uuid
+  type        FloorPlanElementType
+  x           Int
+  y           Int
+  width       Int
+  height      Int
+  rotation    Int                   @default(0)
+  label       String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  floorPlan   FloorPlan             @relation(fields: [floorPlanId], references: [id], onDelete: Cascade)
+
+  @@index([floorPlanId])
 }
 
 model RestaurantTable {

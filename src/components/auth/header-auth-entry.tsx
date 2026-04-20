@@ -31,6 +31,7 @@ export function HeaderAuthEntry({ locale = 'ru' }: { locale?: Locale }) {
         </Button>
       </div>
       <AuthModal
+        key={modalOpen ? 'open' : 'closed'}
         open={modalOpen}
         initialMode="login"
         locale={locale}

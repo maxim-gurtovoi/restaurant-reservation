@@ -1,159 +1,539 @@
 import 'server-only';
-import { z } from 'zod';
+import type {
+  FloorPlanElementType,
+  Prisma,
+  ReservationStatus,
+  TableShape,
+} from '@prisma/client';
+import { DateTime } from 'luxon';
+import type { ApiResult } from '@/types/common';
+import type {
+  AdminTodaySummary,
+  StatusFilter,
+  TimeFilter,
+} from '@/features/admin/lib/admin-reservation-filters';
 import { prisma } from '@/lib/prisma';
+import { getAppDefaultTimeZone } from '@/lib/restaurant-time';
 
-const createRestaurantSchema = z.object({
-  name: z.string().min(2).max(120),
-  slug: z.string().min(2).max(120).regex(/^[a-z0-9-]+$/),
-  address: z.string().min(3).max(200),
-  description: z.string().min(10).max(500).optional(),
-  phone: z.string().max(50).optional(),
-});
+export type AdminReservationDetails = {
+  id: string;
+  referenceCode: string;
+  status: ReservationStatus;
+  guestCount: number;
+  startAt: Date;
+  endAt: Date;
+  qrToken: string;
+  contactName: string;
+  contactPhone: string | null;
+  contactEmail: string | null;
+  cancelledAt: Date | null;
+  checkedInAt: Date | null;
+  createdAt: Date;
+  restaurant: { name: string };
+  table: { label: string };
+};
 
-const assignManagerSchema = z.object({
-  userId: z.string().uuid(),
-  restaurantId: z.string().uuid(),
-});
+export type AdminDashboardStats = {
+  todayReservations: number;
+  upcomingReservations: number;
+  checkedInToday: number;
+  adminRestaurants: number;
+};
 
-const removeManagerAssignmentSchema = z.object({
-  linkId: z.string().uuid(),
-});
+export type AdminReservationListItem = {
+  id: string;
+  referenceCode: string;
+  status: string;
+  guestCount: number;
+  startAt: string;
+  endAt: string;
+  checkedInAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  restaurant: {
+    name: string;
+  };
+  table: {
+    label: string;
+  };
+  contactName: string;
+  qrToken: string;
+};
 
-export async function getAdminOverviewData() {
-  const [restaurants, managerUsers, managerLinks] = await prisma.$transaction([
-    prisma.restaurant.findMany({
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true, slug: true, isActive: true },
-    }),
-    prisma.user.findMany({
-      where: { role: 'MANAGER' },
-      orderBy: { name: 'asc' },
-      select: { id: true, name: true, email: true },
-    }),
-    prisma.restaurantManager.findMany({
-      select: {
-        id: true,
-        userId: true,
-        restaurantId: true,
-        user: { select: { name: true, email: true } },
-        restaurant: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-    }),
-  ]);
+export type AdminReservationsPage = {
+  items: AdminReservationListItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
 
-  const managerCountByRestaurantId = new Map<string, number>();
-  const restaurantsById = new Map(restaurants.map((r) => [r.id, r]));
-  for (const link of managerLinks) {
-    managerCountByRestaurantId.set(
-      link.restaurantId,
-      (managerCountByRestaurantId.get(link.restaurantId) ?? 0) + 1,
-    );
-  }
-
-  const restaurantsWithoutManagers = restaurants.filter(
-    (restaurant) => (managerCountByRestaurantId.get(restaurant.id) ?? 0) === 0,
-  );
-
-  const linksByManagerId = new Map<string, string[]>();
-  for (const link of managerLinks) {
-    const names = linksByManagerId.get(link.userId) ?? [];
-    const restaurantName = restaurantsById.get(link.restaurantId)?.name;
-    if (restaurantName) names.push(restaurantName);
-    linksByManagerId.set(link.userId, names);
-  }
-
-  const managersOverview = managerUsers.map((manager) => ({
-    ...manager,
-    restaurants: (linksByManagerId.get(manager.id) ?? []).sort((a, b) => a.localeCompare(b)),
-  }));
-
+function adminReservationScope(adminUserId: string): Prisma.ReservationWhereInput {
   return {
-    restaurants,
-    managerUsers,
-    managerLinks,
-    restaurantsWithoutManagers,
-    managersOverview,
+    restaurant: {
+      admins: {
+        some: {
+          userId: adminUserId,
+        },
+      },
+    },
   };
 }
 
-export async function createRestaurantBasic(input: unknown) {
-  const parsed = createRestaurantSchema.safeParse(input);
-  if (!parsed.success) {
-    return { ok: false as const, error: 'Некорректные данные ресторана' };
+/** Extra `where` for list filters (status + calendar window in app default TZ). */
+function adminReservationListFilters(
+  status: StatusFilter,
+  time: TimeFilter,
+): Prisma.ReservationWhereInput {
+  const parts: Prisma.ReservationWhereInput[] = [];
+  if (status !== 'all') {
+    parts.push({ status });
   }
-
-  const exists = await prisma.restaurant.findUnique({
-    where: { slug: parsed.data.slug },
-    select: { id: true },
-  });
-  if (exists) {
-    return { ok: false as const, error: 'Ресторан с таким slug уже существует' };
+  if (time !== 'all') {
+    const zone = getAppDefaultTimeZone();
+    const wall = DateTime.now().setZone(zone);
+    const startToday = wall.startOf('day').toUTC().toJSDate();
+    const startTomorrow = wall.plus({ days: 1 }).startOf('day').toUTC().toJSDate();
+    const nowUtc = new Date();
+    if (time === 'today') {
+      parts.push({ startAt: { gte: startToday, lt: startTomorrow } });
+    } else if (time === 'upcoming') {
+      parts.push({ startAt: { gte: startTomorrow } });
+    } else {
+      parts.push({
+        OR: [{ endAt: { lt: nowUtc } }, { startAt: { lt: startToday } }],
+      });
+    }
   }
-
-  const created = await prisma.restaurant.create({
-    data: {
-      name: parsed.data.name,
-      slug: parsed.data.slug,
-      address: parsed.data.address,
-      description: parsed.data.description ?? null,
-      phone: parsed.data.phone ?? null,
-      isActive: true,
-    },
-    select: { id: true, name: true },
-  });
-
-  return { ok: true as const, data: created };
+  return parts.length ? { AND: parts } : {};
 }
 
-export async function assignManagerToRestaurant(input: unknown) {
-  const parsed = assignManagerSchema.safeParse(input);
-  if (!parsed.success) {
-    return { ok: false as const, error: 'Некорректные данные назначения менеджера' };
+function buildAdminReservationListWhere(
+  adminUserId: string,
+  status: StatusFilter,
+  time: TimeFilter,
+): Prisma.ReservationWhereInput {
+  const scope = adminReservationScope(adminUserId);
+  const filters = adminReservationListFilters(status, time);
+  if (Object.keys(filters).length === 0) {
+    return scope;
   }
+  return { AND: [scope, filters] };
+}
 
-  const existingLink = await prisma.restaurantManager.findUnique({
+/** Aggregates for the summary strip (today in app default TZ, all admin-scoped restaurants). */
+export async function getAdminTodayReservationSummary(
+  adminUserId: string,
+): Promise<AdminTodaySummary> {
+  const zone = getAppDefaultTimeZone();
+  const wall = DateTime.now().setZone(zone);
+  const startToday = wall.startOf('day').toUTC().toJSDate();
+  const startTomorrow = wall.plus({ days: 1 }).startOf('day').toUTC().toJSDate();
+  const scope = adminReservationScope(adminUserId);
+
+  const [confirmed, checkedIn, completed, noShow] = await prisma.$transaction([
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'CONFIRMED',
+        startAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'CHECKED_IN',
+        checkedInAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'COMPLETED',
+        startAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...scope,
+        status: 'NO_SHOW',
+        startAt: { gte: startToday, lt: startTomorrow },
+      },
+    }),
+  ]);
+
+  return { confirmed, checkedIn, completed, noShow };
+}
+
+export async function listAdminReservations(input: {
+  adminUserId: string;
+  page?: number;
+  pageSize?: number;
+  status?: StatusFilter;
+  time?: TimeFilter;
+}): Promise<ApiResult<AdminReservationsPage>> {
+  const requestedPage = Math.max(1, Math.floor(input.page ?? 1));
+  const pageSize = Math.min(100, Math.max(5, Math.floor(input.pageSize ?? 30)));
+  const status = input.status ?? 'all';
+  const time = input.time ?? 'all';
+  const where = buildAdminReservationListWhere(input.adminUserId, status, time);
+
+  const total = await prisma.reservation.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(requestedPage, totalPages);
+  const skip = (page - 1) * pageSize;
+
+  const reservations = await prisma.reservation.findMany({
+      where,
+      orderBy: [
+        { startAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      skip,
+      take: pageSize,
+      select: {
+        id: true,
+        referenceCode: true,
+        status: true,
+        guestCount: true,
+        startAt: true,
+        endAt: true,
+        checkedInAt: true,
+        cancelledAt: true,
+        createdAt: true,
+        qrToken: true,
+        contactName: true,
+        restaurant: {
+          select: {
+            name: true,
+          },
+        },
+        table: {
+          select: {
+            label: true,
+          },
+        },
+      },
+    });
+
+  const dto: AdminReservationListItem[] = reservations.map((r) => ({
+    id: r.id,
+    referenceCode: r.referenceCode,
+    status: r.status,
+    guestCount: r.guestCount,
+    startAt: r.startAt.toISOString(),
+    endAt: r.endAt.toISOString(),
+    checkedInAt: r.checkedInAt ? r.checkedInAt.toISOString() : null,
+    cancelledAt: r.cancelledAt ? r.cancelledAt.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    restaurant: r.restaurant,
+    table: r.table,
+    contactName: r.contactName,
+    qrToken: r.qrToken,
+  }));
+
+  return {
+    status: 200,
+    body: {
+      items: dto,
+      page,
+      pageSize,
+      total,
+      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+    },
+  };
+}
+
+export async function listAdminReservationsAll(input: {
+  adminUserId: string;
+}): Promise<ApiResult<AdminReservationListItem[]>> {
+  const reservations = await prisma.reservation.findMany({
     where: {
-      userId_restaurantId: {
-        userId: parsed.data.userId,
-        restaurantId: parsed.data.restaurantId,
+      restaurant: {
+        admins: {
+          some: {
+            userId: input.adminUserId,
+          },
+        },
       },
     },
-    select: { id: true },
-  });
-  if (existingLink) {
-    return { ok: false as const, error: 'Этот менеджер уже назначен на ресторан' };
-  }
-
-  const created = await prisma.restaurantManager.create({
-    data: {
-      userId: parsed.data.userId,
-      restaurantId: parsed.data.restaurantId,
+    orderBy: [
+      { startAt: 'desc' },
+      { createdAt: 'desc' },
+    ],
+    select: {
+      id: true,
+      referenceCode: true,
+      status: true,
+      guestCount: true,
+      startAt: true,
+      endAt: true,
+      checkedInAt: true,
+      cancelledAt: true,
+      createdAt: true,
+      qrToken: true,
+      contactName: true,
+      restaurant: {
+        select: {
+          name: true,
+        },
+      },
+      table: {
+        select: {
+          label: true,
+        },
+      },
     },
-    select: { id: true },
   });
 
-  return { ok: true as const, data: created };
+  const dto: AdminReservationListItem[] = reservations.map((r) => ({
+    id: r.id,
+    referenceCode: r.referenceCode,
+    status: r.status,
+    guestCount: r.guestCount,
+    startAt: r.startAt.toISOString(),
+    endAt: r.endAt.toISOString(),
+    checkedInAt: r.checkedInAt ? r.checkedInAt.toISOString() : null,
+    cancelledAt: r.cancelledAt ? r.cancelledAt.toISOString() : null,
+    createdAt: r.createdAt.toISOString(),
+    restaurant: r.restaurant,
+    table: r.table,
+    contactName: r.contactName,
+    qrToken: r.qrToken,
+  }));
+
+  return { status: 200, body: dto };
 }
 
-export async function removeManagerAssignment(input: unknown) {
-  const parsed = removeManagerAssignmentSchema.safeParse(input);
-  if (!parsed.success) {
-    return { ok: false as const, error: 'Некорректные данные назначения менеджера' };
-  }
+export async function getAdminDashboardStats(input: {
+  adminUserId: string;
+}): Promise<AdminDashboardStats> {
+  const now = new Date();
+  const zone = getAppDefaultTimeZone();
+  const wall = DateTime.now().setZone(zone);
+  const startOfDay = wall.startOf('day').toUTC().toJSDate();
+  const startOfTomorrow = wall.plus({ days: 1 }).startOf('day').toUTC().toJSDate();
 
-  const exists = await prisma.restaurantManager.findUnique({
-    where: { id: parsed.data.linkId },
-    select: { id: true },
-  });
-  if (!exists) {
-    return { ok: false as const, error: 'Связь менеджера с рестораном не найдена' };
-  }
+  const adminRestaurantWhere = {
+    restaurant: {
+      admins: {
+        some: {
+          userId: input.adminUserId,
+        },
+      },
+    },
+  } as const;
 
-  await prisma.restaurantManager.delete({
-    where: { id: parsed.data.linkId },
-  });
+  const [todayReservations, upcomingReservations, checkedInToday, adminRestaurants] =
+    await prisma.$transaction([
+      prisma.reservation.count({
+        where: {
+          ...adminRestaurantWhere,
+          startAt: {
+            gte: startOfDay,
+            lt: startOfTomorrow,
+          },
+        },
+      }),
+      prisma.reservation.count({
+        where: {
+          ...adminRestaurantWhere,
+          status: {
+            in: ['CONFIRMED', 'CHECKED_IN'],
+          },
+          startAt: {
+            gte: now,
+          },
+        },
+      }),
+      prisma.reservation.count({
+        where: {
+          ...adminRestaurantWhere,
+          status: 'CHECKED_IN',
+          checkedInAt: {
+            gte: startOfDay,
+            lt: startOfTomorrow,
+          },
+        },
+      }),
+      prisma.restaurantAdmin.count({
+        where: {
+          userId: input.adminUserId,
+        },
+      }),
+    ]);
 
-  return { ok: true as const };
+  return {
+    todayReservations,
+    upcomingReservations,
+    checkedInToday,
+    adminRestaurants,
+  };
 }
 
+export async function getReservationDetailsForAdmin(input: {
+  reservationId: string;
+  adminUserId: string;
+}): Promise<AdminReservationDetails | null> {
+  const reservation = await prisma.reservation.findFirst({
+    where: {
+      id: input.reservationId,
+      restaurant: {
+        admins: {
+          some: { userId: input.adminUserId },
+        },
+      },
+    },
+    include: {
+      restaurant: { select: { name: true } },
+      table: { select: { label: true } },
+    },
+  });
+
+  if (!reservation) return null;
+
+  return {
+    id: reservation.id,
+    referenceCode: reservation.referenceCode,
+    status: reservation.status,
+    guestCount: reservation.guestCount,
+    startAt: reservation.startAt,
+    endAt: reservation.endAt,
+    qrToken: reservation.qrToken,
+    contactName: reservation.contactName,
+    contactPhone: reservation.contactPhone,
+    contactEmail: reservation.contactEmail,
+    cancelledAt: reservation.cancelledAt,
+    checkedInAt: reservation.checkedInAt,
+    createdAt: reservation.createdAt,
+    restaurant: reservation.restaurant,
+    table: reservation.table,
+  };
+}
+
+export type AdminFloorPlanRestaurantOption = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+export type AdminFloorPlanContext = {
+  restaurant: AdminFloorPlanRestaurantOption | null;
+  restaurants: AdminFloorPlanRestaurantOption[];
+  floorPlans: {
+    id: string;
+    name: string;
+    width: number;
+    height: number;
+  }[];
+  tables: {
+    id: string;
+    floorPlanId: string;
+    label: string;
+    capacity: number;
+    shape: TableShape;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    isActive: boolean;
+  }[];
+  elements: {
+    id: string;
+    floorPlanId: string;
+    type: FloorPlanElementType;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    label: string | null;
+  }[];
+};
+
+export async function getAdminFloorPlanContext(input: {
+  adminUserId: string;
+  restaurantId?: string | null;
+}): Promise<AdminFloorPlanContext> {
+  const links = await prisma.restaurantAdmin.findMany({
+    where: { userId: input.adminUserId },
+    select: {
+      restaurant: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          floorPlans: {
+            orderBy: { name: 'asc' },
+            include: { elements: true },
+          },
+          tables: true,
+        },
+      },
+    },
+    orderBy: { restaurant: { name: 'asc' } },
+  });
+
+  const restaurants: AdminFloorPlanRestaurantOption[] = links.map((l) => ({
+    id: l.restaurant.id,
+    name: l.restaurant.name,
+    slug: l.restaurant.slug,
+  }));
+
+  if (!restaurants.length) {
+    return {
+      restaurant: null,
+      restaurants: [],
+      floorPlans: [],
+      tables: [],
+      elements: [],
+    };
+  }
+
+  const requestedId =
+    typeof input.restaurantId === 'string' && input.restaurantId.length > 0
+      ? input.restaurantId
+      : null;
+  const allowed = requestedId && restaurants.some((r) => r.id === requestedId);
+  const selectedId = allowed ? requestedId! : restaurants[0]!.id;
+  const row = links.find((l) => l.restaurant.id === selectedId)!;
+  const r = row.restaurant;
+
+  return {
+    restaurant: { id: r.id, name: r.name, slug: r.slug },
+    restaurants,
+    floorPlans: r.floorPlans.map((fp) => ({
+      id: fp.id,
+      name: fp.name,
+      width: fp.width,
+      height: fp.height,
+    })),
+    tables: r.tables.map((t) => ({
+      id: t.id,
+      floorPlanId: t.floorPlanId,
+      label: t.label,
+      capacity: t.capacity,
+      shape: t.shape,
+      x: t.x,
+      y: t.y,
+      width: t.width,
+      height: t.height,
+      rotation: t.rotation,
+      isActive: t.isActive,
+    })),
+    elements: r.floorPlans.flatMap((fp) =>
+      fp.elements.map((el) => ({
+        id: el.id,
+        floorPlanId: el.floorPlanId,
+        type: el.type,
+        x: el.x,
+        y: el.y,
+        width: el.width,
+        height: el.height,
+        rotation: el.rotation,
+        label: el.label,
+      })),
+    ),
+  };
+}

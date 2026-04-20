@@ -25,13 +25,33 @@ export function useReservationAvailability({
   const [availabilityCheckedAt, setAvailabilityCheckedAt] = useState<Date | null>(null);
   const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
+  // Keep latest `selectedTableId` / `onSelectedTableCleared` accessible to the
+  // in-flight fetch without making the async callback's identity unstable.
+  // Refs must not be mutated during render (React 19 rule `react-hooks/refs`);
+  // we update them in a commit-phase effect that runs after every render.
   const selectedRef = useRef(selectedTableId);
   const clearRef = useRef(onSelectedTableCleared);
-  selectedRef.current = selectedTableId;
-  clearRef.current = onSelectedTableCleared;
+  useEffect(() => {
+    selectedRef.current = selectedTableId;
+    clearRef.current = onSelectedTableCleared;
+  });
 
   const abortRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef(0);
+
+  // Immediately clear stale availability data when the query parameters
+  // change. We do this during render (React's "adjust state while rendering"
+  // pattern) instead of an effect so the UI flips to a clean state in the
+  // same commit as the user's input. The debounced fetch still lives in the
+  // effect below.
+  const queryKey = `${date}|${time}`;
+  const [prevQueryKey, setPrevQueryKey] = useState(queryKey);
+  if (queryKey !== prevQueryKey) {
+    setPrevQueryKey(queryKey);
+    setUnavailableTableIds([]);
+    setAvailabilityCheckedAt(null);
+    setAvailabilityError(null);
+  }
 
   const checkAvailability = useCallback(async () => {
     if (!date || !time) {
@@ -98,12 +118,7 @@ export function useReservationAvailability({
   }, [restaurantId, date, time]);
 
   useEffect(() => {
-    if (!date || !time) {
-      setUnavailableTableIds([]);
-      setAvailabilityCheckedAt(null);
-      setAvailabilityError(null);
-      return;
-    }
+    if (!date || !time) return;
 
     const t = window.setTimeout(() => {
       void checkAvailability();

@@ -97,9 +97,9 @@ export default async function RestaurantDetailsPage({ params }: RestaurantDetail
           <FloorPlanView
             floorPlans={restaurant.floorPlans}
             tables={restaurant.tables}
+            elements={restaurant.floorPlanElements}
             readOnly
             headerEyebrow="Обзор · план зала"
-            restaurantSlug={restaurant.slug}
           />
         ) : (
           <div className="rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">

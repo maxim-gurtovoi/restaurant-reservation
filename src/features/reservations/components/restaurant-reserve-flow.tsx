@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { TableShape } from '@prisma/client';
+import type { FloorPlanElementType, TableShape } from '@prisma/client';
 import { DateTime } from 'luxon';
 import { Button } from '@/components/ui/button';
 import { BookingMiniCalendar } from '@/features/reservations/components/booking-mini-calendar';
@@ -48,6 +48,17 @@ type ReserveRestaurant = {
     height: number;
     rotation: number;
     isActive: boolean;
+  }[];
+  floorPlanElements: {
+    id: string;
+    floorPlanId: string;
+    type: FloorPlanElementType;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    rotation: number;
+    label: string | null;
   }[];
 };
 
@@ -106,11 +117,26 @@ export function RestaurantReserveFlow({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  const [contactName, setContactName] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
+  const [contactName, setContactName] = useState(() =>
+    isLoggedIn && accountProfile ? accountProfile.name.trim() : '',
+  );
+  const [contactPhone, setContactPhone] = useState(() =>
+    isLoggedIn && accountProfile ? (accountProfile.phone?.trim() ?? '') : '',
+  );
   const [contactEmail, setContactEmail] = useState('');
 
-  useEffect(() => {
+  // Sync contact fields when the auth state changes mid-flow (user logs in
+  // through the header modal, or signs out). We use React's "adjust state
+  // while rendering" pattern rather than `useEffect`: it avoids the
+  // cascading-render warning and keeps the form in lock-step with props
+  // without an extra commit. See:
+  // https://react.dev/reference/react/useState#storing-information-from-previous-renders
+  const authSignature = isLoggedIn
+    ? `in:${accountProfile?.name ?? ''}|${accountProfile?.phone ?? ''}`
+    : 'out';
+  const [prevAuthSignature, setPrevAuthSignature] = useState(authSignature);
+  if (authSignature !== prevAuthSignature) {
+    setPrevAuthSignature(authSignature);
     if (isLoggedIn && accountProfile) {
       setContactName(accountProfile.name.trim());
       setContactPhone(accountProfile.phone?.trim() ?? '');
@@ -119,7 +145,7 @@ export function RestaurantReserveFlow({
       setContactPhone('');
       setContactEmail('');
     }
-  }, [isLoggedIn, accountProfile]);
+  }
 
   const todayYmd = ymdInZone(bookingTimeZone);
   const tomorrowYmd = ymdInZone(
@@ -163,17 +189,27 @@ export function RestaurantReserveFlow({
     });
   }, [date, bookingTimeZone, restaurant.workingHours, todayYmd]);
 
-  useEffect(() => {
-    if (!date || showCustomTime) return;
-    if (time && !slotPlan.slots.includes(time)) {
+  // Invalidate `time` when the available slot list no longer contains it
+  // (happens when `date` changes and the new day has a different schedule).
+  // Using a ref-equality check on `slotPlan.slots`: `useMemo` preserves the
+  // array reference while its dependencies stay the same, so this cheaply
+  // detects real recomputations.
+  const [prevSlotsRef, setPrevSlotsRef] = useState(slotPlan.slots);
+  if (prevSlotsRef !== slotPlan.slots) {
+    setPrevSlotsRef(slotPlan.slots);
+    if (!showCustomTime && time && !slotPlan.slots.includes(time)) {
       setTime('');
     }
-  }, [date, time, slotPlan.slots, showCustomTime]);
+  }
 
-  useEffect(() => {
-    const hi = guestOptions[guestOptions.length - 1] ?? 1;
-    if (guests > hi) setGuests(hi);
-  }, [guestOptions, guests]);
+  // Clamp `guests` to the current max. `guestOptions` depends on static
+  // restaurant data within a booking flow, so this almost never fires; it's
+  // kept as a guard against future dynamic inputs. Safe to run during render
+  // because the guard makes this idempotent.
+  const maxGuestOption = guestOptions[guestOptions.length - 1] ?? 1;
+  if (guests > maxGuestOption) {
+    setGuests(maxGuestOption);
+  }
 
   const clearTableIfUnavailable = useCallback(() => {
     setSelectedTableId(null);
@@ -568,10 +604,10 @@ export function RestaurantReserveFlow({
             <FloorPlanView
               floorPlans={restaurant.floorPlans}
               tables={restaurant.tables}
+              elements={restaurant.floorPlanElements}
               selectedTableId={selectedTableId}
               unavailableTableIds={unavailableTableIds}
               onSelectTable={setSelectedTableId}
-              restaurantSlug={restaurant.slug}
               headerEyebrow="План зала"
             />
 

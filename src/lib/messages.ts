@@ -15,8 +15,8 @@ export const messages = {
     appShell: {
       restaurants: 'Рестораны',
       myReservations: 'Мои брони',
-      manager: 'Менеджер',
-      admin: 'Админ',
+      admin: 'Админ зала',
+      manager: 'Управляющий',
       search: 'Поиск',
       searchAria: 'Поиск ресторанов',
       localeToggleAria: 'Переключить язык интерфейса',
@@ -81,8 +81,8 @@ export const messages = {
     appShell: {
       restaurants: 'Restaurante',
       myReservations: 'Rezervările mele',
-      manager: 'Manager',
-      admin: 'Admin',
+      admin: 'Admin sală',
+      manager: 'Director',
       search: 'Căutare',
       searchAria: 'Căutare restaurante',
       localeToggleAria: 'Comută limba interfeței',

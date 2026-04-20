@@ -32,6 +32,7 @@ export function RegisterModalTrigger({
         {label}
       </Button>
       <AuthModal
+        key={modalOpen ? 'open' : 'closed'}
         open={modalOpen}
         initialMode="register"
         locale={locale}
