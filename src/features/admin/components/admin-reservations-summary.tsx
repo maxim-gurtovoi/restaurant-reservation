@@ -3,7 +3,7 @@ import type { AdminTodaySummary } from '@/features/admin/lib/admin-reservation-f
 export function AdminReservationsSummary({ summary }: { summary: AdminTodaySummary }) {
   const items = [
     { label: 'Подтверждено', value: summary.confirmed, tone: 'text-accent-text' },
-    { label: 'Заселено', value: summary.checkedIn, tone: 'text-sky-800' },
+    { label: 'Посетили', value: summary.checkedIn, tone: 'text-sky-800' },
     { label: 'Завершено', value: summary.completed, tone: 'text-emerald-800' },
     { label: 'Неявка', value: summary.noShow, tone: 'text-amber-900' },
   ] as const;

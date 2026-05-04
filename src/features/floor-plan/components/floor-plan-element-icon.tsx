@@ -75,7 +75,7 @@ const PRESENTATIONS: Record<FloorPlanElementType, ElementPresentation> = {
   },
   WALL: {
     icon: XIcon,
-    label: '',
+    label: 'Стена',
     surface: 'bg-foreground/15',
     border: 'border-foreground/20',
     text: 'text-foreground/50',

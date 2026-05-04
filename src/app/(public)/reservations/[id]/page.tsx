@@ -107,13 +107,13 @@ export default async function ReservationDetailsPage({
         title="Бронирование"
         subtitle={
           user
-            ? 'Детали вашей брони и QR для заселения.'
+            ? 'Детали вашей брони и QR для отметки посещения у менеджера.'
             : 'Гостевое подтверждение: сохраните эту страницу — здесь ваш QR и детали визита.'
         }
       />
 
       <Card className="space-y-4">
-        <div className="grid gap-6 lg:grid-cols-[1fr,260px]">
+        <div className="grid gap-6 lg:grid-cols-[1fr_260px]">
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
               <p className="text-xs font-medium text-muted">Номер брони</p>
@@ -183,11 +183,11 @@ export default async function ReservationDetailsPage({
           </div>
 
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted">QR для заселения</p>
+            <p className="text-xs font-medium text-muted">QR для посещения</p>
             <QrCode value={checkInUrl} />
             <div className="space-y-1">
               <p className="text-[11px] text-muted">
-                Отсканируйте QR, чтобы открыть страницу заселения для менеджера.
+                Отсканируйте QR, чтобы открыть страницу отметки посещения для менеджера.
               </p>
               <div className="flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-background p-2">
                 <p className="truncate font-mono text-[10px] text-muted">{checkInUrl}</p>
@@ -223,7 +223,7 @@ export default async function ReservationDetailsPage({
 
       <Card className="border-primary/25 bg-primary/5">
         <p className="text-sm text-foreground">
-          Совет: оставьте эту страницу под рукой. Для заселения быстрее всего отсканировать QR.
+          Совет: оставьте эту страницу под рукой. Чтобы отметить посещение, быстрее всего отсканировать QR.
         </p>
       </Card>
     </div>

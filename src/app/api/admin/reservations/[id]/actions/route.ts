@@ -4,6 +4,8 @@ import {
   applyAdminReservationAction,
   type AdminReservationAction,
 } from '@/features/admin/server/admin-reservation-actions.service';
+import { mapReservationLifecycleErrorCodeToHttpStatus } from '@/features/reservations/lib/reservation-lifecycle-http';
+import { ReservationLifecycleError } from '@/features/reservations/server/reservation-lifecycle-error';
 
 const ACTIONS: AdminReservationAction[] = ['check_in', 'complete', 'cancel', 'no_show'];
 
@@ -52,9 +54,13 @@ export async function POST(
     });
     return NextResponse.json({ status: result.status }, { status: 200 });
   } catch (error) {
+    if (error instanceof ReservationLifecycleError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: mapReservationLifecycleErrorCodeToHttpStatus(error.code) },
+      );
+    }
     const message = error instanceof Error ? error.message : 'Не удалось обновить бронь';
-    const status =
-      message === 'Бронь не найдена' ? 404 : message.startsWith('Нельзя') ? 400 : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

@@ -12,6 +12,8 @@
     "prisma:repair-init-checksum": "node scripts/prisma-repair-init-checksum.mjs",
     "prisma:studio": "prisma studio",
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:seed": "prisma db seed",
     "db:backfill-reservation-codes": "tsx scripts/backfill-reservation-codes.ts",
     "cron:stale": "tsx scripts/close-stale-reservations.ts"
@@ -47,6 +49,7 @@
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5",
-    "typescript-eslint": "^8.58.2"
+    "typescript-eslint": "^8.58.2",
+    "vitest": "^3.2.4"
   }
 }

@@ -1,11 +1,15 @@
 import 'server-only';
 import { randomInt, randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
+import { DateTime } from 'luxon';
 import { prisma } from '@/lib/prisma';
 import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
 import { getRestaurantIanaZoneById } from '@/features/reservations/server/restaurant-timezone.repository';
 import { prismaWhereBlockingReservationOverlap } from '@/features/reservations/server/reservation-blocking';
 import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
+import { isReservationStartBeforeMinBookable } from '@/features/reservations/lib/reservation-lifecycle-policy';
+import { BOOKING_LEAD_MINUTES } from '@/features/reservations/reservation-window';
+import { ReservationLifecycleError } from '@/features/reservations/server/reservation-lifecycle-error';
 import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
 
 function generateQRToken(): string {
@@ -60,22 +64,33 @@ export async function createReservation(input: {
 
   if (!userId) {
     if (contactNameTrim.length < 2) {
-      throw new Error('Укажите имя для брони');
+      throw new ReservationLifecycleError('VALIDATION', 'Укажите имя для брони');
     }
     if (!phoneNorm || !isValidBookingPhone(phoneNorm)) {
-      throw new Error('Укажите корректный номер телефона');
+      throw new ReservationLifecycleError('VALIDATION', 'Укажите корректный номер телефона');
     }
   } else {
     if (contactNameTrim.length < 2) {
-      throw new Error('Укажите имя для брони');
+      throw new ReservationLifecycleError('VALIDATION', 'Укажите имя для брони');
     }
     if (!phoneNorm || !isValidBookingPhone(phoneNorm)) {
-      throw new Error('Укажите телефон для связи по брони');
+      throw new ReservationLifecycleError('VALIDATION', 'Укажите телефон для связи по брони');
     }
   }
 
   const timeZone = await getRestaurantIanaZoneById(restaurantId);
   const { startAt, endAt } = computeReservationWindow({ date, time, timeZone });
+  const minBookableUtc = DateTime.now()
+    .setZone(timeZone)
+    .plus({ minutes: BOOKING_LEAD_MINUTES })
+    .toUTC()
+    .toJSDate();
+  if (isReservationStartBeforeMinBookable(startAt, minBookableUtc)) {
+    throw new ReservationLifecycleError(
+      'TOO_SOON',
+      `Бронь можно создать минимум за ${BOOKING_LEAD_MINUTES} минут до начала`,
+    );
+  }
 
   await ensureWorkingHoursAllowReservation({
     restaurantId,
@@ -120,11 +135,14 @@ export async function createReservation(input: {
         });
 
         if (!table) {
-          throw new Error('Столик не найден или неактивен');
+          throw new ReservationLifecycleError('NOT_FOUND', 'Столик не найден или неактивен');
         }
 
         if (guestCount > table.capacity) {
-          throw new Error('Число гостей превышает вместимость столика');
+          throw new ReservationLifecycleError(
+            'VALIDATION',
+            'Число гостей превышает вместимость столика',
+          );
         }
 
         const now = new Date();
@@ -139,7 +157,7 @@ export async function createReservation(input: {
         });
 
         if (blockingReservations > 0) {
-          throw new Error('Столик уже занят на выбранное время');
+          throw new ReservationLifecycleError('CONFLICT', 'Столик уже занят на выбранное время');
         }
 
         const qrToken = generateQRToken();
@@ -195,7 +213,7 @@ export async function createReservation(input: {
 
         const created = inserted[0];
         if (!created) {
-          throw new Error('Не удалось сохранить бронь');
+          throw new ReservationLifecycleError('CONFLICT', 'Не удалось сохранить бронь');
         }
 
         return {

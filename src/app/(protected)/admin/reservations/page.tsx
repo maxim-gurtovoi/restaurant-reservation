@@ -41,7 +41,7 @@ export default async function AdminReservationsPage({
     <div className="space-y-6">
       <PageHeader
         title="Брони"
-        subtitle="Просмотр броней по вашим ресторанам и управление заселением."
+        subtitle="Просмотр броней по вашим ресторанам и управление посещениями."
       />
       {'error' in result.body ? (
         <p className="text-sm text-red-300">{result.body.error}</p>

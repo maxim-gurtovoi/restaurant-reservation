@@ -1,7 +1,7 @@
 import 'server-only';
 import { readdir } from 'node:fs/promises';
 import path from 'node:path';
-import type { FloorPlanElementType, TableShape } from '@prisma/client';
+import type { FloorPlanElementType, RestaurantFeature, TableShape } from '@prisma/client';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 
@@ -13,6 +13,10 @@ export type RestaurantListItem = {
   address: string | null;
   description: string | null;
   imageUrl: string | null;
+  cuisine: string | null;
+  priceLevel: number | null;
+  rating: number | null;
+  reviewsCount: number;
 };
 
 export type RestaurantDetails = {
@@ -25,6 +29,16 @@ export type RestaurantDetails = {
   phone: string | null;
   email: string | null;
   imageUrl: string | null;
+  coverImageUrl: string | null;
+  cuisine: string | null;
+  priceLevel: number | null;
+  websiteUrl: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  googleMapsUrl: string | null;
+  rating: number | null;
+  reviewsCount: number;
+  features: RestaurantFeature[];
   /** IANA TZ from DB, or null to use app default. */
   timeZone: string | null;
   galleryImages: string[];
@@ -101,6 +115,8 @@ async function resolveRestaurantGalleryImages(input: {
       .filter((entry) => entry.isFile())
       .map((entry) => entry.name)
       .filter((name) => GALLERY_EXTENSIONS.has(path.extname(name).toLowerCase()))
+      // Reserve "cover.*" for the hero — it's not shown in the gallery.
+      .filter((name) => !/^cover\./i.test(name))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
       .slice(0, 6);
 
@@ -134,6 +150,10 @@ export async function listRestaurants(input: {
     address: r.address ?? null,
     description: r.description ?? null,
     imageUrl: r.imageUrl ?? null,
+    cuisine: r.cuisine ?? null,
+    priceLevel: r.priceLevel ?? null,
+    rating: r.rating ?? null,
+    reviewsCount: r.reviewsCount,
   }));
 
   if (input.city) {
@@ -180,6 +200,16 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
     phone: restaurant.phone ?? null,
     email: restaurant.email ?? null,
     imageUrl: restaurant.imageUrl ?? null,
+    coverImageUrl: restaurant.coverImageUrl ?? restaurant.imageUrl ?? null,
+    cuisine: restaurant.cuisine ?? null,
+    priceLevel: restaurant.priceLevel ?? null,
+    websiteUrl: restaurant.websiteUrl ?? null,
+    instagramUrl: restaurant.instagramUrl ?? null,
+    facebookUrl: restaurant.facebookUrl ?? null,
+    googleMapsUrl: restaurant.googleMapsUrl ?? null,
+    rating: restaurant.rating ?? null,
+    reviewsCount: restaurant.reviewsCount,
+    features: restaurant.features,
     timeZone: restaurant.timeZone ?? null,
     galleryImages,
     floorPlans: restaurant.floorPlans.map((fp) => ({
@@ -222,4 +252,37 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
       isClosed: wh.isClosed,
     })),
   };
+}
+
+export async function listSimilarRestaurants(input: {
+  excludeSlug: string;
+  limit?: number;
+}): Promise<RestaurantListItem[]> {
+  const limit = input.limit ?? 4;
+  const records = await prisma.restaurant.findMany({
+    where: {
+      isActive: true,
+      slug: { not: input.excludeSlug },
+    },
+    orderBy: [
+      { rating: 'desc' },
+      { reviewsCount: 'desc' },
+      { name: 'asc' },
+    ],
+    take: limit,
+  });
+
+  return records.map((r) => ({
+    id: r.id,
+    name: r.name,
+    slug: r.slug,
+    city: deriveCity(r.address),
+    address: r.address ?? null,
+    description: r.description ?? null,
+    imageUrl: r.imageUrl ?? null,
+    cuisine: r.cuisine ?? null,
+    priceLevel: r.priceLevel ?? null,
+    rating: r.rating ?? null,
+    reviewsCount: r.reviewsCount,
+  }));
 }

@@ -1,11 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { JwtPayloadUser } from '@/types/auth';
 import { Button } from '@/components/ui/button';
+import { ROUTES } from '@/lib/constants';
 
-export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
+export function UserAvatarMenu({
+  user,
+  myReservationsLabel,
+}: {
+  user: JwtPayloadUser;
+  myReservationsLabel: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
@@ -69,12 +77,20 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-10 mt-2 w-52 overflow-hidden rounded-xl border border-border/55 bg-surface shadow-card"
+          className="absolute right-0 z-50 mt-2 w-52 overflow-hidden rounded-xl border border-border/55 bg-surface shadow-card-strong ring-1 ring-border/40"
         >
+          <Link
+            href={ROUTES.myReservations}
+            role="menuitem"
+            className="block w-full px-3 py-2 text-left text-sm font-medium text-foreground transition-colors duration-150 ease-in-out hover:bg-surface-soft"
+            onClick={() => setOpen(false)}
+          >
+            {myReservationsLabel}
+          </Link>
           <button
             type="button"
             role="menuitem"
-            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
+            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface-soft hover:font-semibold"
             onClick={() => setOpen(false)}
           >
             Профиль
@@ -82,7 +98,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
           <button
             type="button"
             role="menuitem"
-            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold"
+            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface-soft hover:font-semibold"
             onClick={() => setOpen(false)}
           >
             Настройки
@@ -92,7 +108,7 @@ export function UserAvatarMenu({ user }: { user: JwtPayloadUser }) {
             type="button"
             role="menuitem"
             disabled={loggingOut}
-            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface hover:font-semibold disabled:cursor-not-allowed disabled:opacity-60"
+            className="block w-full cursor-pointer px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 ease-in-out hover:bg-surface-soft hover:font-semibold disabled:cursor-not-allowed disabled:opacity-60"
             onClick={onLogout}
           >
             {loggingOut ? 'Выход…' : 'Выйти'}

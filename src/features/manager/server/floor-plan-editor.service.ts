@@ -1,7 +1,25 @@
 import 'server-only';
+import type { FloorPlanElementType, TableShape, UserRole } from '@prisma/client';
 import { z } from 'zod';
-import type { FloorPlanElementType, TableShape } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+
+async function canEditFloorPlanForRestaurant(params: {
+  actorUserId: string;
+  actorRole: UserRole;
+  restaurantId: string;
+}): Promise<boolean> {
+  if (params.actorRole === 'OWNER') {
+    return true;
+  }
+  if (params.actorRole !== 'MANAGER') {
+    return false;
+  }
+  const row = await prisma.restaurant.findFirst({
+    where: { id: params.restaurantId, managerUserId: params.actorUserId },
+    select: { id: true },
+  });
+  return Boolean(row);
+}
 
 export type EditableTable = {
   id: string;
@@ -42,6 +60,7 @@ export type FloorPlanEditorContext = {
 
 export async function getFloorPlanEditorContext(
   floorPlanId: string,
+  actor: { userId: string; role: UserRole },
 ): Promise<FloorPlanEditorContext | null> {
   const floorPlan = await prisma.floorPlan.findUnique({
     where: { id: floorPlanId },
@@ -63,6 +82,13 @@ export async function getFloorPlanEditorContext(
   });
 
   if (!floorPlan) return null;
+
+  const allowed = await canEditFloorPlanForRestaurant({
+    actorUserId: actor.userId,
+    actorRole: actor.role,
+    restaurantId: floorPlan.restaurantId,
+  });
+  if (!allowed) return null;
 
   return {
     restaurant: floorPlan.restaurant,
@@ -160,6 +186,7 @@ export type SaveFloorPlanResult =
  */
 export async function saveFloorPlan(
   input: unknown,
+  actor: { userId: string; role: UserRole },
 ): Promise<SaveFloorPlanResult> {
   const parsed = savePayloadSchema.safeParse(input);
   if (!parsed.success) {
@@ -174,6 +201,15 @@ export async function saveFloorPlan(
   });
   if (!floorPlan) {
     return { ok: false, error: 'План зала не найден' };
+  }
+
+  const allowed = await canEditFloorPlanForRestaurant({
+    actorUserId: actor.userId,
+    actorRole: actor.role,
+    restaurantId: floorPlan.restaurantId,
+  });
+  if (!allowed) {
+    return { ok: false, error: 'Нет доступа к этому плану зала' };
   }
 
   // Labels must be unique within the plan

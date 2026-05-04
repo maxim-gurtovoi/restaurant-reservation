@@ -9,8 +9,9 @@ datasource db {
 
 enum UserRole {
   USER
-  MANAGER
   ADMIN
+  MANAGER
+  OWNER
 }
 
 enum ReservationStatus {
@@ -49,6 +50,19 @@ enum FloorPlanElementType {
   SMOKER
 }
 
+enum RestaurantFeature {
+  CARD_PAYMENT
+  DELIVERY
+  TAKEAWAY
+  TERRACE
+  LIVE_MUSIC
+  PARKING
+  WIFI
+  PET_FRIENDLY
+  FAMILY_FRIENDLY
+  RESERVATIONS
+}
+
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   name         String
@@ -59,9 +73,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  reservations      Reservation[]
-  adminRestaurants  RestaurantAdmin[]
-  checkInLogs       CheckInLog[]
+  reservations       Reservation[]
+  adminRestaurants   RestaurantAdmin[]
+  checkInLogs        CheckInLog[]
+  managedRestaurant  Restaurant? @relation("RestaurantManager")
 
   @@index([role])
 }
@@ -77,9 +92,26 @@ model Restaurant {
   /// IANA zone (e.g. Europe/Chisinau). Null = use APP_TIMEZONE from env.
   timeZone    String?
   imageUrl    String?
+  /// Wide hero cover shown on the detail page (distinct from the list thumbnail).
+  coverImageUrl String?
+  cuisine       String?
+  /// Price tier 1..4, rendered as $/$$/$$$/$$$$ with a localized hint.
+  priceLevel    Int?
+  websiteUrl    String?
+  instagramUrl  String?
+  facebookUrl   String?
+  googleMapsUrl String?
+  /// Aggregate rating 0..5 (kept as a scalar; no Review model yet).
+  rating        Float?
+  reviewsCount  Int       @default(0)
+  features      RestaurantFeature[]
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+  /// Hall manager (one restaurant — one manager user).
+  managerUserId String? @unique @db.Uuid
+  manager       User?   @relation("RestaurantManager", fields: [managerUserId], references: [id])
 
   floorPlans  FloorPlan[]
   tables      RestaurantTable[]

@@ -1,6 +1,8 @@
 import 'server-only';
 import type { ReservationStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
+import { canGuestCancelConfirmedReservation } from '@/features/reservations/lib/reservation-lifecycle-policy';
+import { ReservationLifecycleError } from '@/features/reservations/server/reservation-lifecycle-error';
 
 export type CancelReservationResult = {
   id: string;
@@ -20,24 +22,37 @@ export async function cancelReservation(input: {
     select: {
       id: true,
       status: true,
+      startAt: true,
     },
   });
 
   if (!existing) {
-    throw new Error('Бронь не найдена');
+    throw new ReservationLifecycleError('NOT_FOUND', 'Бронь не найдена');
   }
 
   // MVP: only CONFIRMED reservations can be cancelled by the user.
   if (existing.status !== 'CONFIRMED') {
-    throw new Error(`Нельзя отменить бронь со статусом ${existing.status}`);
+    throw new ReservationLifecycleError(
+      'INVALID_STATUS',
+      `Нельзя отменить бронь со статусом ${existing.status}`,
+    );
   }
 
-  const cancelledAt = new Date();
+  const now = new Date();
+  if (!canGuestCancelConfirmedReservation(existing.startAt, now)) {
+    throw new ReservationLifecycleError(
+      'CANCELLATION_CLOSED',
+      'Нельзя отменить бронь после времени начала',
+    );
+  }
+
+  const cancelledAt = now;
   const guarded = await prisma.reservation.updateMany({
     where: {
       id: existing.id,
       userId: input.userId,
       status: 'CONFIRMED',
+      startAt: { gt: now },
     },
     data: {
       status: 'CANCELLED',
@@ -46,7 +61,7 @@ export async function cancelReservation(input: {
   });
 
   if (guarded.count !== 1) {
-    throw new Error('Статус брони уже изменился. Обновите страницу.');
+    throw new ReservationLifecycleError('CONFLICT', 'Статус брони уже изменился. Обновите страницу.');
   }
 
   const updated = await prisma.reservation.findUnique({
@@ -60,7 +75,7 @@ export async function cancelReservation(input: {
 
   // Prisma schema defines cancelledAt as nullable, but update sets it.
   if (!updated?.cancelledAt) {
-    throw new Error('Не удалось отменить бронь');
+    throw new ReservationLifecycleError('CONFLICT', 'Не удалось отменить бронь');
   }
 
   return updated as CancelReservationResult;

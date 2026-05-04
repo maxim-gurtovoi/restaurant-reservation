@@ -13,7 +13,7 @@ const TIME_OPTIONS: { id: TimeFilter; label: string }[] = [
 const STATUS_OPTIONS: { id: StatusFilter; label: string }[] = [
   { id: 'all', label: 'Все статусы' },
   { id: 'CONFIRMED', label: 'Подтверждено' },
-  { id: 'CHECKED_IN', label: 'Заселение' },
+  { id: 'CHECKED_IN', label: 'Посетили' },
   { id: 'COMPLETED', label: 'Завершено' },
   { id: 'CANCELLED', label: 'Отменено' },
   { id: 'NO_SHOW', label: 'Неявка' },

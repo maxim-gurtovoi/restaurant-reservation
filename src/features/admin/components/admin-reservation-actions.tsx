@@ -54,7 +54,7 @@ export function AdminReservationActions({ reservationId, status, qrToken }: Prop
       <div className="space-y-3 border-t border-border pt-4">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Действия</p>
         <p className="text-xs text-muted">
-          Заселите гостей здесь без сканирования QR или воспользуйтесь QR-ссылкой ниже — тот же сценарий.
+          Подтвердите посещение гостей здесь без сканирования QR или воспользуйтесь QR-ссылкой ниже — тот же сценарий.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
@@ -63,7 +63,7 @@ export function AdminReservationActions({ reservationId, status, qrToken }: Prop
             disabled={!!loading}
             onClick={() => void postAction('check_in')}
           >
-            {loading === 'check_in' ? 'Заселение…' : 'Заселить гостей'}
+            {loading === 'check_in' ? 'Отметка…' : 'Подтвердить посещение'}
           </Button>
           <Button
             type="button"
@@ -88,7 +88,7 @@ export function AdminReservationActions({ reservationId, status, qrToken }: Prop
             href={`/admin/check-in/${encodeURIComponent(qrToken)}`}
             className="font-medium text-primary underline underline-offset-2 hover:text-primary/90"
           >
-            Открыть заселение по QR
+            Открыть отметку посещения по QR
           </Link>
           <span className="text-muted"> — та же бронь, быстрый доступ.</span>
         </div>

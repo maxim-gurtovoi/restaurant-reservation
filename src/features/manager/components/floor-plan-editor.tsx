@@ -474,6 +474,7 @@ export function FloorPlanEditor({
         onChangeCanvasSize={(w, h) =>
           dispatch({ type: 'set-canvas-size', width: w, height: h })
         }
+        onDeleteSelected={() => dispatch({ type: 'delete' })}
       />
     </div>
   );
@@ -573,7 +574,7 @@ function Toolbar({
           </button>
         </div>
         <p className="text-[11px] text-muted">
-          Горячие клавиши: Ctrl+Z, Ctrl+Y, Delete.
+          Горячие клавиши: Ctrl+Z, Ctrl+Y, Delete (не в полях ввода).
         </p>
       </section>
 
@@ -918,6 +919,7 @@ function PropertiesPanel({
   onPatchTable,
   onPatchElement,
   onChangeCanvasSize,
+  onDeleteSelected,
 }: {
   selectedTable: EditorTable | null;
   selectedElement: EditorElement | null;
@@ -929,6 +931,7 @@ function PropertiesPanel({
     patch: Partial<Omit<EditableElement, 'id'>>,
   ) => void;
   onChangeCanvasSize: (width: number, height: number) => void;
+  onDeleteSelected: () => void;
 }) {
   return (
     <aside className="space-y-4 rounded-2xl border border-border/55 bg-surface p-4 shadow-card-soft">
@@ -959,15 +962,33 @@ function PropertiesPanel({
 
       <div className="border-t border-border/60 pt-4">
         {selectedTable ? (
-          <TableProperties
-            table={selectedTable}
-            onPatch={(patch) => onPatchTable(selectedTable._clientId, patch)}
-          />
+          <>
+            <TableProperties
+              table={selectedTable}
+              onPatch={(patch) => onPatchTable(selectedTable._clientId, patch)}
+            />
+            <button
+              type="button"
+              onClick={onDeleteSelected}
+              className="mt-4 w-full rounded-lg border border-error/40 bg-error/5 px-3 py-2 text-sm font-medium text-error transition-colors hover:bg-error/10"
+            >
+              Удалить стол
+            </button>
+          </>
         ) : selectedElement ? (
-          <ElementProperties
-            element={selectedElement}
-            onPatch={(patch) => onPatchElement(selectedElement._clientId, patch)}
-          />
+          <>
+            <ElementProperties
+              element={selectedElement}
+              onPatch={(patch) => onPatchElement(selectedElement._clientId, patch)}
+            />
+            <button
+              type="button"
+              onClick={onDeleteSelected}
+              className="mt-4 w-full rounded-lg border border-error/40 bg-error/5 px-3 py-2 text-sm font-medium text-error transition-colors hover:bg-error/10"
+            >
+              Удалить элемент
+            </button>
+          </>
         ) : (
           <p className="text-sm text-muted">
             Кликните на стол или элемент, чтобы отредактировать его параметры.

@@ -7,23 +7,29 @@ import {
   saveFloorPlan,
 } from '@/features/manager/server/floor-plan-editor.service';
 import { ROUTES } from '@/lib/constants';
-import { requireManager } from '@/server/auth';
+import { requireManagerShell } from '@/server/auth';
 
 type FloorPlanEditPageProps = {
   params: Promise<{ floorPlanId: string }>;
 };
 
 export default async function FloorPlanEditPage({ params }: FloorPlanEditPageProps) {
-  await requireManager();
+  const user = await requireManagerShell();
   const { floorPlanId } = await params;
 
-  const ctx = await getFloorPlanEditorContext(floorPlanId);
+  const ctx = await getFloorPlanEditorContext(floorPlanId, {
+    userId: user.id,
+    role: user.role,
+  });
   if (!ctx) notFound();
 
   async function saveAction(payload: unknown) {
     'use server';
-    await requireManager();
-    const result = await saveFloorPlan(payload);
+    const actor = await requireManagerShell();
+    const result = await saveFloorPlan(payload, {
+      userId: actor.id,
+      role: actor.role,
+    });
     if (!result.ok) {
       return { ok: false as const, error: result.error };
     }
@@ -34,8 +40,8 @@ export default async function FloorPlanEditPage({ params }: FloorPlanEditPagePro
 
   async function backAction() {
     'use server';
-    await requireManager();
-    redirect(ROUTES.adminFloorPlan);
+    await requireManagerShell();
+    redirect(ROUTES.managerFloorPlan);
   }
 
   return (
@@ -47,7 +53,7 @@ export default async function FloorPlanEditPage({ params }: FloorPlanEditPagePro
 
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <Link
-          href={ROUTES.adminFloorPlan}
+          href={ROUTES.managerFloorPlan}
           className="rounded-lg border border-border px-3 py-1.5 font-medium text-foreground hover:bg-surface-soft"
         >
           ← К обзору планов

@@ -50,7 +50,7 @@ export default async function AdminReservationDetailsPage({ params }: Props) {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <PageHeader
           title="Детали брони"
-          subtitle="Оперативный вид — смена статуса или заселение без QR."
+          subtitle="Оперативный вид — смена статуса или отметка посещения без QR."
         />
         <Link
           href="/admin/reservations"
@@ -119,7 +119,7 @@ export default async function AdminReservationDetailsPage({ params }: Props) {
           </div>
           {reservation.checkedInAt ? (
             <div>
-              <p className="text-xs font-medium text-muted">Заселение</p>
+              <p className="text-xs font-medium text-muted">Посещение отмечено</p>
               <p className="text-sm text-foreground">
                 {new Date(reservation.checkedInAt).toLocaleString(UI_LOCALE, { hour12: false })}
               </p>

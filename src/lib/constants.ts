@@ -14,21 +14,21 @@ export const ROUTES = {
   myReservations: '/my-reservations',
   adminDashboard: '/admin/dashboard',
   adminReservations: '/admin/reservations',
-  adminFloorPlan: '/admin/floor-plan',
   manager: '/manager',
+  managerFloorPlan: '/manager/floor-plan',
   managerFloorPlanEdit: '/manager/floor-plan',
   privacy: '/privacy',
   terms: '/terms',
 } as const;
 
 /**
- * Role hierarchy (lowest → highest): USER < ADMIN < MANAGER.
- * ADMIN = restaurant staff (check-in, reservations view). MANAGER = restaurant owner/platform operator.
- * Higher role inherits all permissions of the lower one.
+ * USER — guest. ADMIN — hall staff (RestaurantAdmin). MANAGER — one restaurant (Restaurant.managerUserId).
+ * OWNER — platform: create restaurants; global /manager overview (no hall /admin panel by default).
  */
 export const ROLE = {
   user: 'USER',
   admin: 'ADMIN',
   manager: 'MANAGER',
+  owner: 'OWNER',
 } as const;
 

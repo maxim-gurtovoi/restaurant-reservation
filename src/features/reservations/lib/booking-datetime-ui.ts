@@ -45,13 +45,28 @@ export type SlotGenerationResult = {
   slots: string[];
   dayClosed: boolean;
   scheduleMissing: boolean;
+  /**
+   * The day's shift is effectively 24/7 (>= 22 hours long). Rendering a dropdown
+   * of 80+ slots is poor UX, so the caller should default to a manual time input.
+   */
+  manualOnly: boolean;
 };
 
 const FALLBACK_OPEN = 10 * 60;
 const FALLBACK_CLOSE = 23 * 60 + 30;
+const MANUAL_ONLY_SHIFT_MIN = 22 * 60;
+
+function shiftDuration(openMin: number, closeMin: number): number {
+  return closeMin <= openMin ? closeMin + 24 * 60 - openMin : closeMin - openMin;
+}
 
 /**
  * Wall-clock HH:mm slots in `timeZone` for `isoDate`, aligned with reservation duration on server.
+ *
+ * Two shifts can contribute slots to a given calendar day:
+ * 1. `isoDate`'s own shift — may extend past midnight (overnight).
+ * 2. The previous day's overnight tail — shows as early-morning slots on `isoDate`.
+ *
  * @param reservationDurationMinutes — must match `RESERVATION_DURATION_MINUTES`
  */
 export function buildReservationTimeSlots(input: {
@@ -74,14 +89,16 @@ export function buildReservationTimeSlots(input: {
 
   const dayStart = DateTime.fromISO(isoDate, { zone: timeZone });
   if (!dayStart.isValid) {
-    return { slots: [], dayClosed: false, scheduleMissing: true };
+    return { slots: [], dayClosed: false, scheduleMissing: true, manualOnly: false };
   }
 
   const dow = dayStart.weekday % 7;
-  const row = workingHours.find((w) => w.dayOfWeek === dow);
+  const yDow = (dow + 6) % 7;
+  const rowToday = workingHours.find((w) => w.dayOfWeek === dow);
+  const rowYesterday = workingHours.find((w) => w.dayOfWeek === yDow);
 
-  if (!row) {
-    const slots = buildSlotsForOpenCloseMinutes({
+  if (!rowToday && !rowYesterday) {
+    const slots = collectSameDayStartSlots({
       dayStart,
       openMinutes: FALLBACK_OPEN,
       closeMinutes: FALLBACK_CLOSE,
@@ -89,32 +106,63 @@ export function buildReservationTimeSlots(input: {
       reservationDurationMinutes,
       notBeforeInZone,
     });
-    return { slots, dayClosed: false, scheduleMissing: true };
+    return { slots, dayClosed: false, scheduleMissing: true, manualOnly: false };
   }
 
-  if (row.isClosed) {
-    return { slots: [], dayClosed: true, scheduleMissing: false };
+  if (rowToday?.isClosed && !rowYesterday) {
+    return { slots: [], dayClosed: true, scheduleMissing: false, manualOnly: false };
   }
 
-  const openMinutes = parseHHmmToMinutes(row.openTime);
-  const closeMinutes = parseHHmmToMinutes(row.closeTime);
-  if (openMinutes === null || closeMinutes === null || closeMinutes <= openMinutes) {
-    return { slots: [], dayClosed: false, scheduleMissing: true };
+  let manualOnly = false;
+  const collected = new Set<string>();
+
+  // Today's shift (same-day or overnight). Produces slots whose START falls on `isoDate`.
+  if (rowToday && !rowToday.isClosed) {
+    const openM = parseHHmmToMinutes(rowToday.openTime);
+    const closeM = parseHHmmToMinutes(rowToday.closeTime);
+    if (openM !== null && closeM !== null) {
+      if (shiftDuration(openM, closeM) >= MANUAL_ONLY_SHIFT_MIN) {
+        manualOnly = true;
+      } else {
+        for (const label of collectSameDayStartSlots({
+          dayStart,
+          openMinutes: openM,
+          closeMinutes: closeM,
+          slotStepMinutes,
+          reservationDurationMinutes,
+          notBeforeInZone,
+        })) {
+          collected.add(label);
+        }
+      }
+    }
   }
 
-  const slots = buildSlotsForOpenCloseMinutes({
-    dayStart,
-    openMinutes,
-    closeMinutes,
-    slotStepMinutes,
-    reservationDurationMinutes,
-    notBeforeInZone,
-  });
+  // Yesterday's overnight tail — shows slots on `isoDate` starting from 00:00.
+  if (rowYesterday && !rowYesterday.isClosed && !manualOnly) {
+    const openM = parseHHmmToMinutes(rowYesterday.openTime);
+    const closeM = parseHHmmToMinutes(rowYesterday.closeTime);
+    if (openM !== null && closeM !== null && closeM <= openM) {
+      const lastStart = closeM - reservationDurationMinutes;
+      for (let m = 0; m <= lastStart; m += slotStepMinutes) {
+        const h = Math.floor(m / 60);
+        const min = m % 60;
+        const slotWall = dayStart.set({ hour: h, minute: min, second: 0, millisecond: 0 });
+        if (notBeforeInZone && slotWall < notBeforeInZone) continue;
+        collected.add(`${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
+      }
+    }
+  }
 
-  return { slots, dayClosed: false, scheduleMissing: false };
+  if (manualOnly) {
+    return { slots: [], dayClosed: false, scheduleMissing: false, manualOnly: true };
+  }
+
+  const slots = [...collected].sort();
+  return { slots, dayClosed: false, scheduleMissing: false, manualOnly: false };
 }
 
-function buildSlotsForOpenCloseMinutes(input: {
+function collectSameDayStartSlots(input: {
   dayStart: DateTime;
   openMinutes: number;
   closeMinutes: number;
@@ -131,19 +179,24 @@ function buildSlotsForOpenCloseMinutes(input: {
     notBeforeInZone,
   } = input;
 
-  const lastStartMinutes = closeMinutes - reservationDurationMinutes;
+  const isOvernight = closeMinutes <= openMinutes;
+  const effectiveClose = isOvernight ? closeMinutes + 24 * 60 : closeMinutes;
+  const lastStartMinutes = effectiveClose - reservationDurationMinutes;
   if (lastStartMinutes < openMinutes) {
     return [];
   }
 
+  // Only produce slots whose wall-clock start falls within `dayStart`'s own date
+  // (< 24h). Slots after midnight belong to the next calendar day and should be
+  // rendered under that date via the "yesterday's overnight tail" branch.
+  const hardStop = Math.min(lastStartMinutes, 24 * 60 - 1);
+
   const slots: string[] = [];
-  for (let m = openMinutes; m <= lastStartMinutes; m += slotStepMinutes) {
+  for (let m = openMinutes; m <= hardStop; m += slotStepMinutes) {
     const h = Math.floor(m / 60);
     const min = m % 60;
     const slotWall = dayStart.set({ hour: h, minute: min, second: 0, millisecond: 0 });
-    if (notBeforeInZone && slotWall < notBeforeInZone) {
-      continue;
-    }
+    if (notBeforeInZone && slotWall < notBeforeInZone) continue;
     slots.push(`${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`);
   }
   return slots;

@@ -4,6 +4,8 @@ import {
   confirmCheckInByQrToken,
   getReservationByQrTokenForAdmin,
 } from '@/features/admin/server/check-in.service';
+import { mapReservationLifecycleErrorCodeToHttpStatus } from '@/features/reservations/lib/reservation-lifecycle-http';
+import { ReservationLifecycleError } from '@/features/reservations/server/reservation-lifecycle-error';
 
 export async function GET(
   _req: NextRequest,
@@ -41,9 +43,14 @@ export async function GET(
       { status: 200 },
     );
   } catch (error) {
+    if (error instanceof ReservationLifecycleError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: mapReservationLifecycleErrorCodeToHttpStatus(error.code) },
+      );
+    }
     const message = error instanceof Error ? error.message : 'Не удалось загрузить бронь';
-    const status = message === 'Нет доступа' ? 403 : 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
@@ -74,9 +81,13 @@ export async function POST(
       { status: 200 },
     );
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Не удалось выполнить заселение';
-    const status =
-      message === 'Бронь не найдена' ? 404 : message === 'Нет доступа' ? 403 : 400;
-    return NextResponse.json({ error: message }, { status });
+    if (error instanceof ReservationLifecycleError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: mapReservationLifecycleErrorCodeToHttpStatus(error.code) },
+      );
+    }
+    const message = error instanceof Error ? error.message : 'Не удалось подтвердить посещение';
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

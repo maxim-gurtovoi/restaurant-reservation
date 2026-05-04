@@ -4,6 +4,7 @@ import type {
   Prisma,
   ReservationStatus,
   TableShape,
+  UserRole,
 } from '@prisma/client';
 import { DateTime } from 'luxon';
 import type { ApiResult } from '@/types/common';
@@ -14,6 +15,10 @@ import type {
 } from '@/features/admin/lib/admin-reservation-filters';
 import { prisma } from '@/lib/prisma';
 import { getAppDefaultTimeZone } from '@/lib/restaurant-time';
+import {
+  reservationWhereStaffOrManager,
+  restaurantWhereStaffOrManager,
+} from '@/server/restaurant-staff-access';
 
 export type AdminReservationDetails = {
   id: string;
@@ -69,15 +74,7 @@ export type AdminReservationsPage = {
 };
 
 function adminReservationScope(adminUserId: string): Prisma.ReservationWhereInput {
-  return {
-    restaurant: {
-      admins: {
-        some: {
-          userId: adminUserId,
-        },
-      },
-    },
-  };
+  return reservationWhereStaffOrManager(adminUserId);
 }
 
 /** Extra `where` for list filters (status + calendar window in app default TZ). */
@@ -248,15 +245,7 @@ export async function listAdminReservationsAll(input: {
   adminUserId: string;
 }): Promise<ApiResult<AdminReservationListItem[]>> {
   const reservations = await prisma.reservation.findMany({
-    where: {
-      restaurant: {
-        admins: {
-          some: {
-            userId: input.adminUserId,
-          },
-        },
-      },
-    },
+    where: adminReservationScope(input.adminUserId),
     orderBy: [
       { startAt: 'desc' },
       { createdAt: 'desc' },
@@ -314,21 +303,13 @@ export async function getAdminDashboardStats(input: {
   const startOfDay = wall.startOf('day').toUTC().toJSDate();
   const startOfTomorrow = wall.plus({ days: 1 }).startOf('day').toUTC().toJSDate();
 
-  const adminRestaurantWhere = {
-    restaurant: {
-      admins: {
-        some: {
-          userId: input.adminUserId,
-        },
-      },
-    },
-  } as const;
+  const reservationScope = adminReservationScope(input.adminUserId);
 
   const [todayReservations, upcomingReservations, checkedInToday, adminRestaurants] =
     await prisma.$transaction([
       prisma.reservation.count({
         where: {
-          ...adminRestaurantWhere,
+          ...reservationScope,
           startAt: {
             gte: startOfDay,
             lt: startOfTomorrow,
@@ -337,7 +318,7 @@ export async function getAdminDashboardStats(input: {
       }),
       prisma.reservation.count({
         where: {
-          ...adminRestaurantWhere,
+          ...reservationScope,
           status: {
             in: ['CONFIRMED', 'CHECKED_IN'],
           },
@@ -348,7 +329,7 @@ export async function getAdminDashboardStats(input: {
       }),
       prisma.reservation.count({
         where: {
-          ...adminRestaurantWhere,
+          ...reservationScope,
           status: 'CHECKED_IN',
           checkedInAt: {
             gte: startOfDay,
@@ -356,10 +337,8 @@ export async function getAdminDashboardStats(input: {
           },
         },
       }),
-      prisma.restaurantAdmin.count({
-        where: {
-          userId: input.adminUserId,
-        },
+      prisma.restaurant.count({
+        where: restaurantWhereStaffOrManager(input.adminUserId),
       }),
     ]);
 
@@ -377,12 +356,10 @@ export async function getReservationDetailsForAdmin(input: {
 }): Promise<AdminReservationDetails | null> {
   const reservation = await prisma.reservation.findFirst({
     where: {
-      id: input.reservationId,
-      restaurant: {
-        admins: {
-          some: { userId: input.adminUserId },
-        },
-      },
+      AND: [
+        { id: input.reservationId },
+        reservationWhereStaffOrManager(input.adminUserId),
+      ],
     },
     include: {
       restaurant: { select: { name: true } },
@@ -452,34 +429,54 @@ export type AdminFloorPlanContext = {
   }[];
 };
 
-export async function getAdminFloorPlanContext(input: {
-  adminUserId: string;
+/**
+ * Floor plan overview for `/manager/floor-plan`: managed venues (MANAGER) or all venues (OWNER).
+ * Hall admins (ADMIN) do not use this — they have no floor-plan UI in `/admin`.
+ */
+export async function getManagerFloorPlanContext(input: {
+  userId: string;
+  role: UserRole;
   restaurantId?: string | null;
 }): Promise<AdminFloorPlanContext> {
-  const links = await prisma.restaurantAdmin.findMany({
-    where: { userId: input.adminUserId },
-    select: {
-      restaurant: {
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          floorPlans: {
-            orderBy: { name: 'asc' },
-            include: { elements: true },
-          },
-          tables: true,
-        },
-      },
+  const restaurantSelect = {
+    id: true,
+    name: true,
+    slug: true,
+    floorPlans: {
+      orderBy: { name: 'asc' as const },
+      include: { elements: true },
     },
-    orderBy: { restaurant: { name: 'asc' } },
-  });
+    tables: true,
+  } as const;
 
-  const restaurants: AdminFloorPlanRestaurantOption[] = links.map((l) => ({
-    id: l.restaurant.id,
-    name: l.restaurant.name,
-    slug: l.restaurant.slug,
-  }));
+  if (input.role !== 'MANAGER' && input.role !== 'OWNER') {
+    return {
+      restaurant: null,
+      restaurants: [],
+      floorPlans: [],
+      tables: [],
+      elements: [],
+    };
+  }
+
+  const rows =
+    input.role === 'OWNER'
+      ? await prisma.restaurant.findMany({
+          orderBy: { name: 'asc' },
+          select: restaurantSelect,
+        })
+      : await prisma.restaurant.findMany({
+          where: { managerUserId: input.userId },
+          orderBy: { name: 'asc' },
+          select: restaurantSelect,
+        });
+
+  type RestaurantRow = (typeof rows)[number];
+  const mergedById = new Map<string, RestaurantRow>(rows.map((r) => [r.id, r]));
+
+  const restaurants: AdminFloorPlanRestaurantOption[] = Array.from(mergedById.values())
+    .map((r) => ({ id: r.id, name: r.name, slug: r.slug }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   if (!restaurants.length) {
     return {
@@ -497,8 +494,7 @@ export async function getAdminFloorPlanContext(input: {
       : null;
   const allowed = requestedId && restaurants.some((r) => r.id === requestedId);
   const selectedId = allowed ? requestedId! : restaurants[0]!.id;
-  const row = links.find((l) => l.restaurant.id === selectedId)!;
-  const r = row.restaurant;
+  const r = mergedById.get(selectedId)!;
 
   return {
     restaurant: { id: r.id, name: r.name, slug: r.slug },

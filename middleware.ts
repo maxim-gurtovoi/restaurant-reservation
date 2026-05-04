@@ -16,7 +16,7 @@ export function middleware(req: NextRequest) {
   }
 
   if (req.nextUrl.pathname.startsWith('/manager')) {
-    if (user.role !== 'MANAGER') {
+    if (user.role !== 'MANAGER' && user.role !== 'OWNER') {
       return NextResponse.redirect(new URL('/', req.url));
     }
   }

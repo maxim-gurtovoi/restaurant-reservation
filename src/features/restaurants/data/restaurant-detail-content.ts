@@ -1,6 +1,10 @@
 /**
  * Демо-контент для страниц ресторанов (по slug).
  * Не из БД — упрощает объём дипломного проекта.
+ *
+ * Структурированные факты (кухня, ценовой уровень, фичи, адрес, соцсети, рейтинг) живут в БД
+ * и читаются сервисом `getRestaurantBySlug`. Здесь остаются только подборки, которые
+ * не оправдывают отдельных таблиц: отзывы-демо, фрагмент меню, оценки внешних площадок.
  */
 
 export type ReviewPreview = {
@@ -14,22 +18,23 @@ export type MenuPreviewItem = {
   price: string;
 };
 
+export type ExternalRatingSource = 'google' | 'tripadvisor' | 'relax';
+
+export type ExternalRating = {
+  source: ExternalRatingSource;
+  rating: number;
+  reviewsCount: number;
+};
+
 export type RestaurantDetailSupportingContent = {
-  ratingSummary: string;
   aboutDescription?: string;
-  cuisineTags: string[];
-  priceBand: string;
-  amenities: string[];
   reviews: ReviewPreview[];
   menuPreview: MenuPreviewItem[];
+  externalRatings: ExternalRating[];
 };
 
 export const DEFAULT_RESTAURANT_DETAIL_CONTENT: RestaurantDetailSupportingContent = {
-  ratingSummary: '4.6',
   aboutDescription: 'Уютное место для встреч с близкими. Выберите столик и удобное время.',
-  cuisineTags: ['Локальные блюда', 'Непринуждённо'],
-  priceBand: 'MDL 250–450 с человека',
-  amenities: ['Бронирование', 'Зал в помещении', 'С детьми'],
   reviews: [
     { author: 'Гость', rating: 5, text: 'Отличный сервис и уютная атмосфера.' },
     { author: 'Алекс К.', rating: 4, text: 'Простое бронирование и приветливый персонал.' },
@@ -39,16 +44,16 @@ export const DEFAULT_RESTAURANT_DETAIL_CONTENT: RestaurantDetailSupportingConten
     { name: 'Салат «Домашний»', price: 'MDL 85' },
     { name: 'Блюда с гриля', price: 'от MDL 180' },
   ],
+  externalRatings: [
+    { source: 'google', rating: 4.5, reviewsCount: 320 },
+    { source: 'tripadvisor', rating: 4.4, reviewsCount: 180 },
+  ],
 };
 
 export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailSupportingContent> = {
   gastrobar: {
-    ratingSummary: '4.8',
     aboutDescription:
       'Авторские коктейли и сезонные закуски в тёплом оживлённом баре Кишинёва. Подойдёт для неспешного ужина с друзьями.',
-    cuisineTags: ['Коктейль-бар', 'Сезонное меню', 'Средиземноморское'],
-    priceBand: 'MDL 300–550 с человека',
-    amenities: ['Вечера с музыкой', 'Зал в помещении', 'Кухня до поздна'],
     reviews: [
       { author: 'Наталья Х.', rating: 5, text: 'Тёплая атмосфера, отличные коктейли и быстрый сервис.' },
       { author: 'Михай Л.', rating: 4, text: 'Хороший баланс меню и удобное бронирование столика.' },
@@ -60,14 +65,15 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
       { name: 'Буррата с томатами', price: 'MDL 125' },
       { name: 'Авторский коктейль', price: 'от MDL 95' },
     ],
+    externalRatings: [
+      { source: 'google', rating: 4.7, reviewsCount: 412 },
+      { source: 'tripadvisor', rating: 4.5, reviewsCount: 256 },
+      { source: 'relax', rating: 4.6, reviewsCount: 98 },
+    ],
   },
   'pegas-terrace-restaurant': {
-    ratingSummary: '4.7',
     aboutDescription:
       'Светлая терраса, внимательный сервис и блюда на компанию. Для долгих ланчей, спокойных разговоров и тёплых кишинёвских вечеров.',
-    cuisineTags: ['Терраса', 'Европейская кухня', 'Винная карта'],
-    priceBand: 'MDL 280–500 с человека',
-    amenities: ['Летняя терраса', 'Романтика', 'Вид на город'],
     reviews: [
       { author: 'Елена С.', rating: 5, text: 'Чудесная терраса и очень внимательный персонал.' },
       { author: 'Дан П.', rating: 4, text: 'Отличное место для ужина.' },
@@ -79,14 +85,15 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
       { name: 'Говяжья вырезка', price: 'MDL 265' },
       { name: 'Тирамису', price: 'MDL 85' },
     ],
+    externalRatings: [
+      { source: 'google', rating: 4.5, reviewsCount: 612 },
+      { source: 'tripadvisor', rating: 4.3, reviewsCount: 291 },
+      { source: 'relax', rating: 4.4, reviewsCount: 135 },
+    ],
   },
   smokehouse: {
-    ratingSummary: '4.7',
     aboutDescription:
       'Мясо медленного копчения, фирменные BBQ-соусы и сытные гарниры. Для любителей насыщенного дымного вкуса и больших порций.',
-    cuisineTags: ['BBQ', 'Копчёное мясо', 'Комфорт-фуд'],
-    priceBand: 'MDL 260–480 с человека',
-    amenities: ['Большие порции', 'Семейные столы', 'На вынос'],
     reviews: [
       { author: 'Андрей В.', rating: 5, text: 'Рёбра и соусы — именно то, за чем стоит прийти.' },
       { author: 'Ирина М.', rating: 4, text: 'Сытные порции; здорово для обеда в выходной.' },
@@ -98,14 +105,15 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
       { name: 'Мак-н-чиз гарнир', price: 'MDL 65' },
       { name: 'Набор фирменных соусов', price: 'MDL 45' },
     ],
+    externalRatings: [
+      { source: 'google', rating: 4.8, reviewsCount: 756 },
+      { source: 'tripadvisor', rating: 4.6, reviewsCount: 342 },
+      { source: 'relax', rating: 4.7, reviewsCount: 188 },
+    ],
   },
   'attico-terrace-restaurant': {
-    ratingSummary: '4.8',
     aboutDescription:
       'Ужин на террасе на крыше: современные средиземноморские блюда и изящные коктейли. Идеально для свиданий и особых случаев.',
-    cuisineTags: ['Крыша', 'Средиземноморье', 'Коктейли'],
-    priceBand: 'MDL 320–600 с человека',
-    amenities: ['Закаты', 'Свидания', 'Мероприятия'],
     reviews: [
       { author: 'Крис Т.', rating: 5, text: 'Терраса на крыше — отлично для праздников.' },
       { author: 'Мария Г.', rating: 4, text: 'Стильное место; бронь через приложение прошла гладко.' },
@@ -117,14 +125,15 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
       { name: 'Бараньи отбивные', price: 'MDL 245' },
       { name: 'Апероль-спритц', price: 'MDL 85' },
     ],
+    externalRatings: [
+      { source: 'google', rating: 4.8, reviewsCount: 485 },
+      { source: 'tripadvisor', rating: 4.7, reviewsCount: 214 },
+      { source: 'relax', rating: 4.8, reviewsCount: 112 },
+    ],
   },
   'garden-restaurant-terrace': {
-    ratingSummary: '4.6',
     aboutDescription:
       'Кухня в духе сада на основе свежих сезонных продуктов. Светлый уютный зал для семейных ужинов и неспешных встреч.',
-    cuisineTags: ['Сезонное', 'Садовая терраса', 'Европейское'],
-    priceBand: 'MDL 270–490 с человека',
-    amenities: ['Сад', 'Дети welcome', 'Неспешно'],
     reviews: [
       { author: 'Ольга П.', rating: 5, text: 'Свежие вкусы и спокойная садовая атмосфера.' },
       { author: 'Серджу Д.', rating: 4, text: 'Удобно для семейного ужина; терпеливы к детям.' },
@@ -136,14 +145,15 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
       { name: 'Курица в травяной панировке', price: 'MDL 165' },
       { name: 'Сезонный фруктовый сорбет', price: 'MDL 55' },
     ],
+    externalRatings: [
+      { source: 'google', rating: 4.6, reviewsCount: 388 },
+      { source: 'tripadvisor', rating: 4.4, reviewsCount: 162 },
+      { source: 'relax', rating: 4.5, reviewsCount: 91 },
+    ],
   },
   'la-placinte-stefan-cel-mare': {
-    ratingSummary: '4.9',
     aboutDescription:
       'Традиционная молдавская кухня с современным акцентом. Домашние плацинды, местные блюда и по-настоящему уютная атмосфера.',
-    cuisineTags: ['Молдавская кухня', 'Домашние пироги', 'Традиции'],
-    priceBand: 'MDL 200–380 с человека',
-    amenities: ['Локальная классика', 'Уютный зал', 'Быстрый ланч'],
     reviews: [
       { author: 'Виктория Р.', rating: 5, text: 'Плацинды и зама — как дома, очень рекомендую.' },
       { author: 'Ион Б.', rating: 5, text: 'Доступно, сытно и стабильное качество.' },
@@ -154,6 +164,11 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
       { name: 'Традиционная зама', price: 'MDL 75' },
       { name: 'Сармале с мамалыгой', price: 'MDL 95' },
       { name: 'Плацинда с яблоками', price: 'MDL 40' },
+    ],
+    externalRatings: [
+      { source: 'google', rating: 4.6, reviewsCount: 1382 },
+      { source: 'tripadvisor', rating: 4.5, reviewsCount: 612 },
+      { source: 'relax', rating: 4.7, reviewsCount: 284 },
     ],
   },
 };

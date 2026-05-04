@@ -2,6 +2,9 @@ import 'server-only';
 import type { ReservationStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { confirmCheckInByReservationId } from '@/features/admin/server/check-in.service';
+import { reservationWhereStaffOrManager } from '@/server/restaurant-staff-access';
+import { canMarkNoShowAfterSlotEnd } from '@/features/reservations/lib/reservation-lifecycle-policy';
+import { ReservationLifecycleError } from '@/features/reservations/server/reservation-lifecycle-error';
 
 export type AdminReservationAction =
   | 'check_in'
@@ -15,15 +18,15 @@ async function assertAdminOwnsReservation(input: {
 }) {
   const row = await prisma.reservation.findFirst({
     where: {
-      id: input.reservationId,
-      restaurant: {
-        admins: { some: { userId: input.adminUserId } },
-      },
+      AND: [
+        { id: input.reservationId },
+        reservationWhereStaffOrManager(input.adminUserId),
+      ],
     },
-    select: { id: true, status: true },
+    select: { id: true, status: true, endAt: true },
   });
   if (!row) {
-    throw new Error('Бронь не найдена');
+    throw new ReservationLifecycleError('NOT_FOUND', 'Бронь не найдена');
   }
   return row;
 }
@@ -54,21 +57,27 @@ export async function applyAdminReservationAction(input: {
 
   if (action === 'complete') {
     if (current.status !== 'CHECKED_IN') {
-      throw new Error(`Нельзя отметить завершение при статусе ${current.status}`);
+      throw new ReservationLifecycleError(
+        'INVALID_STATUS',
+        `Нельзя отметить завершение при статусе ${current.status}`,
+      );
     }
     const guarded = await prisma.reservation.updateMany({
       where: { id: reservationId, status: 'CHECKED_IN' },
       data: { status: 'COMPLETED' },
     });
     if (guarded.count !== 1) {
-      throw new Error('Статус брони уже изменился. Обновите страницу.');
+      throw new ReservationLifecycleError('CONFLICT', 'Статус брони уже изменился. Обновите страницу.');
     }
     return { status: 'COMPLETED' };
   }
 
   if (action === 'cancel') {
     if (current.status !== 'CONFIRMED') {
-      throw new Error(`Нельзя отменить при статусе ${current.status}`);
+      throw new ReservationLifecycleError(
+        'INVALID_STATUS',
+        `Нельзя отменить при статусе ${current.status}`,
+      );
     }
     const now = new Date();
     const guarded = await prisma.reservation.updateMany({
@@ -79,24 +88,34 @@ export async function applyAdminReservationAction(input: {
       },
     });
     if (guarded.count !== 1) {
-      throw new Error('Статус брони уже изменился. Обновите страницу.');
+      throw new ReservationLifecycleError('CONFLICT', 'Статус брони уже изменился. Обновите страницу.');
     }
     return { status: 'CANCELLED' };
   }
 
   if (action === 'no_show') {
     if (current.status !== 'CONFIRMED') {
-      throw new Error(`Нельзя отметить неявку при статусе ${current.status}`);
+      throw new ReservationLifecycleError(
+        'INVALID_STATUS',
+        `Нельзя отметить неявку при статусе ${current.status}`,
+      );
+    }
+    const now = new Date();
+    if (!canMarkNoShowAfterSlotEnd(current.endAt, now)) {
+      throw new ReservationLifecycleError(
+        'NO_SHOW_TOO_EARLY',
+        'Нельзя отметить неявку до окончания брони',
+      );
     }
     const guarded = await prisma.reservation.updateMany({
       where: { id: reservationId, status: 'CONFIRMED' },
       data: { status: 'NO_SHOW' },
     });
     if (guarded.count !== 1) {
-      throw new Error('Статус брони уже изменился. Обновите страницу.');
+      throw new ReservationLifecycleError('CONFLICT', 'Статус брони уже изменился. Обновите страницу.');
     }
     return { status: 'NO_SHOW' };
   }
 
-  throw new Error('Недопустимое действие');
+  throw new ReservationLifecycleError('VALIDATION', 'Недопустимое действие');
 }

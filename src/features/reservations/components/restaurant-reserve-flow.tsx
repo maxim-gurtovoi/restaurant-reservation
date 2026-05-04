@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FloorPlanElementType, TableShape } from '@prisma/client';
 import { DateTime } from 'luxon';
@@ -13,12 +13,14 @@ import {
   minBookableDateTimeInZone,
   ymdInZone,
 } from '@/features/reservations/lib/booking-datetime-ui';
-import { RESERVATION_DURATION_MINUTES } from '@/features/reservations/reservation-window';
+import {
+  BOOKING_LEAD_MINUTES,
+  RESERVATION_DURATION_MINUTES,
+} from '@/features/reservations/reservation-window';
 import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
 import { cn } from '@/lib/utils';
 
 const TIME_SLOT_STEP_MIN = 15;
-const BOOKING_LEAD_MINUTES = 20;
 
 type ReserveRestaurant = {
   id: string;
@@ -89,6 +91,12 @@ const STEPS = [
   { id: 3, label: 'Подтверждение' },
 ] as const;
 
+const RESERVE_DRAFT_VERSION = 1;
+
+function reserveDraftStorageKey(slug: string) {
+  return `tableflow:reserveDraft:${slug}`;
+}
+
 function tryShowPicker(el: HTMLInputElement | null) {
   const extended = el as (HTMLInputElement & { showPicker?: () => void }) | null;
   extended?.showPicker?.();
@@ -124,6 +132,142 @@ export function RestaurantReserveFlow({
     isLoggedIn && accountProfile ? (accountProfile.phone?.trim() ?? '') : '',
   );
   const [contactEmail, setContactEmail] = useState('');
+  /** 0 until the first layout pass finishes (restore or noop); avoids clobbering the draft before read. */
+  const [persistVersion, setPersistVersion] = useState(0);
+
+  useLayoutEffect(() => {
+    const key = reserveDraftStorageKey(restaurant.slug);
+    try {
+      const raw = sessionStorage.getItem(key);
+      if (!raw) {
+        setPersistVersion(1);
+        return;
+      }
+      const p = JSON.parse(raw) as {
+        v?: number;
+        restaurantId?: string;
+        step?: number;
+        selectedTableId?: string | null;
+        date?: string;
+        time?: string;
+        showCustomTime?: boolean;
+        guests?: number;
+        contactName?: string;
+        contactPhone?: string;
+        contactEmail?: string;
+      };
+      if (p.v !== RESERVE_DRAFT_VERSION || p.restaurantId !== restaurant.id) {
+        setPersistVersion(1);
+        return;
+      }
+
+      const maxBookingYmdLocal = ymdInZone(
+        bookingTimeZone,
+        DateTime.now().setZone(bookingTimeZone).plus({ days: 90 }),
+      );
+      const caps = restaurant.tables.filter((t) => t.isActive).map((t) => t.capacity);
+      const maxTableCap = caps.length > 0 ? Math.max(...caps) : 8;
+      const maxGuestOpt = Math.min(20, Math.max(10, maxTableCap));
+      const activeTables = restaurant.tables.filter((t) => t.isActive).length;
+
+      let dateVal = typeof p.date === 'string' ? p.date : '';
+      let timeVal = typeof p.time === 'string' ? p.time : '';
+      if (timeVal && !/^\d{1,2}:\d{2}$/.test(timeVal)) {
+        timeVal = '';
+      } else if (timeVal) {
+        const [hh, mm] = timeVal.split(':').map((n) => Number(n));
+        if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
+          timeVal = '';
+        }
+      }
+
+      const d = DateTime.fromISO(dateVal, { zone: bookingTimeZone });
+      const todayStart = DateTime.now().setZone(bookingTimeZone).startOf('day');
+      const maxD = DateTime.fromISO(maxBookingYmdLocal, { zone: bookingTimeZone });
+      if (!dateVal || !d.isValid || d < todayStart || d > maxD) {
+        dateVal = '';
+        timeVal = '';
+      }
+
+      let guestsVal =
+        typeof p.guests === 'number' && Number.isFinite(p.guests) ? Math.round(p.guests) : 2;
+      guestsVal = Math.min(Math.max(1, guestsVal), maxGuestOpt);
+
+      let tableId =
+        typeof p.selectedTableId === 'string' && p.selectedTableId
+          ? p.selectedTableId
+          : null;
+      if (
+        tableId &&
+        !restaurant.tables.some((t) => t.id === tableId && t.isActive)
+      ) {
+        tableId = null;
+      }
+
+      let stepVal: 1 | 2 | 3 = 1;
+      if (p.step === 2 || p.step === 3) stepVal = p.step;
+
+      const canTable = Boolean(dateVal && timeVal && guestsVal >= 1);
+      if (stepVal >= 2 && !canTable) stepVal = 1;
+
+      const sel = tableId ? restaurant.tables.find((t) => t.id === tableId) : null;
+      const exceeds = sel != null && guestsVal > sel.capacity;
+      const canConfirm = Boolean(sel && !exceeds && dateVal && timeVal) && activeTables > 0;
+      if (stepVal >= 3 && !canConfirm) stepVal = 2;
+      if (stepVal >= 2 && !canTable) stepVal = 1;
+
+      setStep(stepVal);
+      setSelectedTableId(tableId);
+      setDate(dateVal);
+      setTime(timeVal);
+      setShowCustomTime(Boolean(p.showCustomTime));
+      setGuests(guestsVal);
+      if (typeof p.contactName === 'string') setContactName(p.contactName);
+      if (typeof p.contactPhone === 'string') setContactPhone(p.contactPhone);
+      if (typeof p.contactEmail === 'string') setContactEmail(p.contactEmail);
+    } catch {
+      /* ignore corrupt draft */
+    }
+    setPersistVersion(1);
+  }, [restaurant.id, restaurant.slug, bookingTimeZone]);
+
+  useEffect(() => {
+    if (persistVersion === 0) return;
+    const key = reserveDraftStorageKey(restaurant.slug);
+    try {
+      sessionStorage.setItem(
+        key,
+        JSON.stringify({
+          v: RESERVE_DRAFT_VERSION,
+          restaurantId: restaurant.id,
+          step,
+          selectedTableId,
+          date,
+          time,
+          showCustomTime,
+          guests,
+          contactName,
+          contactPhone,
+          contactEmail,
+        }),
+      );
+    } catch {
+      /* quota / private mode */
+    }
+  }, [
+    persistVersion,
+    restaurant.id,
+    restaurant.slug,
+    step,
+    selectedTableId,
+    date,
+    time,
+    showCustomTime,
+    guests,
+    contactName,
+    contactPhone,
+    contactEmail,
+  ]);
 
   // Sync contact fields when the auth state changes mid-flow (user logs in
   // through the header modal, or signs out). We use React's "adjust state
@@ -173,7 +317,12 @@ export function RestaurantReserveFlow({
 
   const slotPlan = useMemo(() => {
     if (!date) {
-      return { slots: [] as string[], dayClosed: false, scheduleMissing: false };
+      return {
+        slots: [] as string[],
+        dayClosed: false,
+        scheduleMissing: false,
+        manualOnly: false,
+      };
     }
     const notBefore =
       date === todayYmd
@@ -200,6 +349,12 @@ export function RestaurantReserveFlow({
     if (!showCustomTime && time && !slotPlan.slots.includes(time)) {
       setTime('');
     }
+  }
+
+  // For effectively-24/7 shifts the slot grid would balloon to 80+ entries — the
+  // slot generator flags them as `manualOnly` and we default to the manual input.
+  if (slotPlan.manualOnly && !showCustomTime) {
+    setShowCustomTime(true);
   }
 
   // Clamp `guests` to the current max. `guestOptions` depends on static
@@ -295,6 +450,11 @@ export function RestaurantReserveFlow({
       }
 
       const result = (await response.json()) as { id: string; qrToken: string };
+      try {
+        sessionStorage.removeItem(reserveDraftStorageKey(restaurant.slug));
+      } catch {
+        /* ignore */
+      }
       if (isLoggedIn) {
         router.push(`/reservations/${result.id}`);
       } else {
@@ -365,15 +525,12 @@ export function RestaurantReserveFlow({
             </p>
             <h2 className="text-lg font-semibold text-foreground">Дата, время и гости</h2>
             <p className="text-sm text-muted">
-              Выберите день визита, время прихода и размер компании.
+              Выберите дату и время визита, а также количество гостей.
             </p>
           </header>
 
           <div className="space-y-4 text-sm">
             <div className="space-y-1.5">
-              <span className="block text-xs font-medium text-foreground" id="res-date-label">
-                Дата визита
-              </span>
               <div className="flex flex-wrap gap-2">
                 {(
                   [
@@ -413,17 +570,21 @@ export function RestaurantReserveFlow({
 
             <div className="space-y-2 border-t border-border/50 pt-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-medium text-foreground">Время прихода</span>
+                <span className="text-xs font-medium text-foreground">Время визита</span>
                 {slotPlan.scheduleMissing && date && !slotPlan.dayClosed ? (
                   <span className="text-[11px] text-muted">Подсказка по типовым часам</span>
                 ) : null}
               </div>
 
               {!date ? (
-                <p className="text-sm text-muted">Сначала выберите день — появятся допустимые интервалы.</p>
+                <p className="text-sm text-muted">Сначала выберите дату — появятся допустимые интервалы.</p>
               ) : slotPlan.dayClosed ? (
                 <p className="text-sm text-error">
                   По графику ресторан не работает в выбранный день. Выберите другую дату.
+                </p>
+              ) : slotPlan.manualOnly ? (
+                <p className="text-sm text-muted">
+                  Ресторан работает круглосуточно — укажите удобное время вручную ниже.
                 </p>
               ) : slotPlan.slots.length === 0 ? (
                 <p className="text-sm text-muted">
@@ -434,7 +595,7 @@ export function RestaurantReserveFlow({
                 <div
                   className="flex flex-wrap gap-2"
                   role="group"
-                  aria-label="Доступное время прихода">
+                  aria-label="Доступное время визита">
                   {slotPlan.slots.map((slot) => (
                     <button
                       key={slot}
@@ -456,23 +617,29 @@ export function RestaurantReserveFlow({
               )}
 
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  className={cn(
-                    'text-left text-xs font-semibold text-accent-text underline-offset-4 hover:underline',
-                    showCustomTime && 'text-foreground',
-                  )}
-                  onClick={() => {
-                    setShowCustomTime((v) => !v);
-                    if (!showCustomTime) {
-                      window.setTimeout(() => {
-                        timeInputRef.current?.focus();
-                        tryShowPicker(timeInputRef.current);
-                      }, 0);
-                    }
-                  }}>
-                  {showCustomTime ? 'Скрыть ручной ввод времени' : 'Ввести время вручную'}
-                </button>
+                {slotPlan.manualOnly ? (
+                  <span className="text-left text-xs font-semibold text-foreground">
+                    Режим 24/7 — время указывается вручную
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className={cn(
+                      'text-left text-xs font-semibold text-accent-text underline-offset-4 hover:underline',
+                      showCustomTime && 'text-foreground',
+                    )}
+                    onClick={() => {
+                      setShowCustomTime((v) => !v);
+                      if (!showCustomTime) {
+                        window.setTimeout(() => {
+                          timeInputRef.current?.focus();
+                          tryShowPicker(timeInputRef.current);
+                        }, 0);
+                      }
+                    }}>
+                    {showCustomTime ? 'Скрыть ручной ввод времени' : 'Ввести время вручную'}
+                  </button>
+                )}
                 {showCustomTime ? (
                   <div className="relative max-w-xs sm:ml-auto">
                     <svg
@@ -513,7 +680,7 @@ export function RestaurantReserveFlow({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-medium text-foreground" htmlFor="res-guests">
-                Число гостей
+                Количество гостей
               </label>
               <div className="relative">
                 <select

@@ -51,8 +51,8 @@ export default async function AdminCheckInPage({ params }: Props) {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Заселение гостей"
-        subtitle="Быстрый переход по QR — заселение также доступно на странице брони без сканирования."
+        title="Отметка посещения"
+        subtitle="Быстрый переход по QR — то же действие доступно на странице брони без сканирования."
       />
 
       <Card className="space-y-4">
@@ -95,7 +95,7 @@ export default async function AdminCheckInPage({ params }: Props) {
           <CheckInConfirmButton token={token} />
         ) : (
           <div className="rounded-xl border border-border bg-background/80 p-3 text-xs text-muted">
-            Заселение невозможно при статусе{' '}
+            Отметить посещение нельзя при статусе{' '}
             <span className="font-mono">{statusLabel}</span>.
           </div>
         )}
@@ -105,7 +105,7 @@ export default async function AdminCheckInPage({ params }: Props) {
             href={`/admin/reservations/${reservation.id}`}
             className="text-sm font-medium text-primary hover:underline"
           >
-            Полная карточка брони (статусы, ручное заселение)
+            Полная карточка брони (статусы, ручная отметка посещения)
           </Link>
         </div>
       </Card>
@@ -114,7 +114,7 @@ export default async function AdminCheckInPage({ params }: Props) {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted">Подсказки</p>
         <ul className="space-y-1 text-xs text-muted">
           <li>• Перед подтверждением сверьте номер брони и имя гостя.</li>
-          <li>• Если заселение уже отмечено, повтор не нужен.</li>
+          <li>• Если посещение уже отмечено, повтор не нужен.</li>
           <li>• Список броней позволяет работать без QR — QR только для быстрого доступа.</li>
         </ul>
       </Card>

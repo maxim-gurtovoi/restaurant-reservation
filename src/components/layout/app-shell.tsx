@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
 import { UserAvatarMenu } from '@/components/auth/user-avatar-menu';
 import { HeaderAuthEntry } from '@/components/auth/header-auth-entry';
+import { HeaderSearchButton } from '@/components/layout/header-search-button';
 import { LanguageToggle } from '@/components/layout/language-toggle';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { getCurrentUser } from '@/server/auth';
@@ -18,13 +19,14 @@ export async function AppShell({
   const user = await getCurrentUser();
   const locale = await getServerLocale();
   const t = getMessages(locale);
-  const canSeeAdmin = user?.role === 'ADMIN' || user?.role === 'MANAGER';
-  const canSeeManager = user?.role === 'MANAGER';
+  const isHallAdminOnly = user?.role === 'ADMIN';
+  const isHallManager = user?.role === 'MANAGER';
+  const canSeeOwnerManagerPanel = user?.role === 'OWNER';
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-40 bg-transparent">
         <div className="container mx-auto flex flex-col gap-3 px-4 py-3">
-          <div className="relative isolate flex items-center justify-between gap-3 overflow-hidden rounded-2xl bg-surface/25 px-3 py-2.5 shadow-[0_8px_24px_rgba(28,28,28,0.08)] backdrop-blur-xl backdrop-saturate-150 sm:px-4">
+          <div className="relative isolate flex items-center justify-between gap-3 overflow-visible rounded-2xl bg-surface/25 px-3 py-2.5 shadow-[0_8px_24px_rgba(28,28,28,0.08)] backdrop-blur-xl backdrop-saturate-150 sm:px-4">
             <div
               aria-hidden="true"
               className="pointer-events-none absolute inset-0 rounded-2xl bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.06)_0%,rgba(255,255,255,0.06)_42%,rgba(255,255,255,0.18)_100%)] shadow-[inset_0_10px_26px_rgba(255,255,255,0.16),inset_0_-10px_22px_rgba(255,255,255,0.12)]"
@@ -53,6 +55,7 @@ export async function AppShell({
               </span>
             </Link>
             <div className="relative z-10 ml-auto flex items-center gap-2 sm:gap-3">
+              <HeaderSearchButton label={t.appShell.search} ariaLabel={t.appShell.searchAria} />
               <LanguageToggle locale={locale} ariaLabel={t.appShell.localeToggleAria} />
               <nav className="hidden items-center gap-2 md:flex">
                 <Link
@@ -65,15 +68,7 @@ export async function AppShell({
                   </svg>
                   {t.appShell.restaurants}
                 </Link>
-                {user ? (
-                  <Link
-                    href={ROUTES.myReservations}
-                    className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
-                  >
-                    {t.appShell.myReservations}
-                  </Link>
-                ) : null}
-                {canSeeAdmin ? (
+                {isHallAdminOnly ? (
                   <Link
                     href={ROUTES.adminDashboard}
                     className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
@@ -81,7 +76,15 @@ export async function AppShell({
                     {t.appShell.admin}
                   </Link>
                 ) : null}
-                {canSeeManager ? (
+                {isHallManager ? (
+                  <Link
+                    href={ROUTES.adminDashboard}
+                    className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
+                  >
+                    {t.appShell.manager}
+                  </Link>
+                ) : null}
+                {canSeeOwnerManagerPanel ? (
                   <Link
                     href={ROUTES.manager}
                     className="rounded-full px-3.5 py-2 text-sm font-medium text-foreground/80 transition-all duration-200 hover:bg-surface-soft hover:text-foreground"
@@ -91,7 +94,7 @@ export async function AppShell({
                 ) : null}
               </nav>
               {user ? (
-                <UserAvatarMenu user={user} />
+                <UserAvatarMenu user={user} myReservationsLabel={t.appShell.myReservations} />
               ) : (
                 <HeaderAuthEntry locale={locale} />
               )}

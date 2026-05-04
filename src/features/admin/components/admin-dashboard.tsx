@@ -4,7 +4,7 @@ export function AdminDashboard({ stats }: { stats: AdminDashboardStats }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Stat label="Брони сегодня" value={String(stats.todayReservations)} icon="📅" />
-      <Stat label="Заселено сегодня" value={String(stats.checkedInToday)} icon="✅" />
+      <Stat label="Посещений сегодня" value={String(stats.checkedInToday)} icon="✅" />
       <Stat label="Предстоящие брони" value={String(stats.upcomingReservations)} icon="⏳" />
       <Stat label="Привязанные рестораны" value={String(stats.adminRestaurants)} icon="🍽️" />
     </div>

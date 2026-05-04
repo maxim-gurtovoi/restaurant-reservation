@@ -1,16 +1,34 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { FloorPlanView } from '@/features/floor-plan/components/floor-plan-view';
+import { RestaurantHero } from '@/features/restaurants/components/restaurant-hero';
+import { RestaurantFeatureTags } from '@/features/restaurants/components/restaurant-feature-tags';
+import {
+  RestaurantActionsCard,
+  RestaurantAddressCard,
+  RestaurantQuickFactsCard,
+  RestaurantSocialLinksCard,
+  RestaurantWorkingHoursCard,
+} from '@/features/restaurants/components/restaurant-aside-cards';
 import { RestaurantPhotoGallery } from '@/features/restaurants/components/restaurant-photo-gallery';
-import { RestaurantInfoSidebar } from '@/features/restaurants/components/restaurant-info-sidebar';
+import { RestaurantExternalRatings } from '@/features/restaurants/components/restaurant-external-ratings';
+import { RestaurantSimilar } from '@/features/restaurants/components/restaurant-similar';
+import { RestaurantFloorPlanSection } from '@/features/restaurants/components/restaurant-floor-plan-section';
 import {
   RestaurantMenuPreviewBlock,
-  RestaurantPracticalInfoBlock,
   RestaurantReviewsPreviewBlock,
 } from '@/features/restaurants/components/restaurant-supporting-sections';
 import { getRestaurantDetailSupportingContent } from '@/features/restaurants/data/restaurant-detail-content';
-import { getRestaurantBySlug } from '@/features/restaurants/server/restaurants.service';
+import {
+  getRestaurantBySlug,
+  listSimilarRestaurants,
+} from '@/features/restaurants/server/restaurants.service';
+import {
+  buildWeeklyRows,
+  getOpenStatus,
+  type OpenStatusLabels,
+} from '@/features/restaurants/lib/open-status';
+import { getRestaurantIanaZone } from '@/lib/restaurant-time';
+import { getServerLocale } from '@/lib/i18n';
+import { getMessages } from '@/lib/messages';
 
 type RestaurantDetailsPageProps = {
   params: Promise<{ slug: string }>;
@@ -18,95 +36,123 @@ type RestaurantDetailsPageProps = {
 
 export default async function RestaurantDetailsPage({ params }: RestaurantDetailsPageProps) {
   const { slug } = await params;
-  const restaurant = await getRestaurantBySlug(slug);
+  const [restaurant, locale] = await Promise.all([
+    getRestaurantBySlug(slug),
+    getServerLocale(),
+  ]);
 
   if (!restaurant) {
     notFound();
   }
 
-  const galleryImages = restaurant.galleryImages;
+  const t = getMessages(locale).restaurantDetail;
   const supporting = getRestaurantDetailSupportingContent(restaurant.slug);
   const reserveHref = `/restaurants/${restaurant.slug}/reserve`;
-  const hasFloorData = restaurant.floorPlans.length > 0 && restaurant.tables.length > 0;
+  const zone = getRestaurantIanaZone({ timeZone: restaurant.timeZone ?? null });
+  const hoursLabels: OpenStatusLabels = {
+    open: t.hero.openNow,
+    closed: t.hero.closedNow,
+    unknown: t.hero.statusUnknown,
+    dayOff: t.hours.dayOff,
+    unavailable: t.hours.unavailable,
+    allDay: t.hours.allDay,
+    dayNames: t.hours.dayNames,
+  };
+  const openStatus = getOpenStatus(restaurant.workingHours, zone, hoursLabels);
+  const weeklyRows = buildWeeklyRows(restaurant.workingHours, zone, hoursLabels);
+  const seatsTotal = restaurant.tables
+    .filter((table) => table.isActive)
+    .reduce((sum, t2) => sum + t2.capacity, 0);
+  const similarRestaurants = await listSimilarRestaurants({
+    excludeSlug: restaurant.slug,
+    limit: 4,
+  });
 
   return (
-    <div className="space-y-8">
-      <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,2fr),minmax(280px,0.85fr)]">
+    <div className="space-y-10">
+      <RestaurantHero
+        name={restaurant.name}
+        city={restaurant.city}
+        cuisine={restaurant.cuisine}
+        priceLevel={restaurant.priceLevel}
+        rating={restaurant.rating}
+        reviewsCount={restaurant.reviewsCount}
+        coverImageUrl={restaurant.coverImageUrl}
+        reserveHref={reserveHref}
+        phone={restaurant.phone}
+        locale={locale}
+        openBadge={{ tone: openStatus.tone, label: openStatus.label }}
+      />
+
+      <RestaurantFeatureTags features={restaurant.features} locale={locale} />
+
+      <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
         <section className="min-w-0 space-y-6">
-          <header className="space-y-4 rounded-2xl border border-border/50 bg-surface p-6 shadow-card-strong">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-              {restaurant.name}
-            </h1>
-            <div className="flex flex-wrap items-center gap-2 text-sm text-muted">
-              <span className="rounded-full border border-accent-border/70 bg-accent-bg px-2.5 py-1 text-xs font-medium text-accent-text">
-                {'\u2605'} {supporting.ratingSummary}
-              </span>
-              <span>По отзывам гостей</span>
-              <span className="text-muted/60">·</span>
-              <span className="rounded-full border border-border/60 bg-surface-soft px-2.5 py-1 text-xs font-medium text-foreground/70">
-                {restaurant.city}
-              </span>
-            </div>
-            <Button asChild variant="primary" className="w-full sm:w-auto">
-              <Link href={reserveHref}>Забронировать столик</Link>
-            </Button>
-          </header>
-
-          <RestaurantPhotoGallery restaurantName={restaurant.name} imageUrls={galleryImages} />
-
-          <section className="max-w-3xl space-y-3 rounded-2xl border border-border/50 bg-surface p-5 shadow-card">
-            <h2 className="text-base font-semibold text-foreground">О заведении</h2>
+          <section className="space-y-3 rounded-2xl border border-border/50 bg-surface p-5 shadow-card">
+            <h2 className="text-base font-semibold text-foreground">{t.about.title}</h2>
             <p className="text-sm leading-relaxed text-foreground/90">
-              {supporting.aboutDescription ??
-                restaurant.description ??
-                'Уютное место для встреч с близкими. Выберите столик и удобное время.'}
+              {supporting.aboutDescription ?? restaurant.description ?? t.about.fallback}
             </p>
           </section>
 
-          <RestaurantPracticalInfoBlock content={supporting} />
+          <RestaurantPhotoGallery
+            restaurantName={restaurant.name}
+            imageUrls={restaurant.galleryImages}
+          />
 
-          <RestaurantMenuPreviewBlock items={supporting.menuPreview} />
+          <RestaurantMenuPreviewBlock items={supporting.menuPreview} locale={locale} />
 
-          <RestaurantReviewsPreviewBlock reviews={supporting.reviews} />
+          <RestaurantExternalRatings
+            ratings={supporting.externalRatings}
+            locale={locale}
+          />
+
+          <RestaurantReviewsPreviewBlock reviews={supporting.reviews} locale={locale} />
         </section>
 
-        <RestaurantInfoSidebar
-          address={restaurant.address}
-          phone={restaurant.phone}
-          email={restaurant.email}
-          workingHours={restaurant.workingHours}
-          timeZone={restaurant.timeZone}
-          reserveHref={reserveHref}
-        />
-      </div>
-
-      <div className="min-w-0 space-y-4 border-t border-border/60 pt-8">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
-            <h2 className="text-xl font-semibold text-foreground">План зала</h2>
-            <p className="text-sm text-muted">
-              Схема расстановки столов. Чтобы выбрать дату и свободный столик, перейдите к брони.
-            </p>
-          </div>
-          <Button asChild variant="primary" className="w-full shrink-0 sm:w-auto">
-            <Link href={reserveHref}>Забронировать столик</Link>
-          </Button>
-        </header>
-
-        {hasFloorData ? (
-          <FloorPlanView
-            floorPlans={restaurant.floorPlans}
-            tables={restaurant.tables}
-            elements={restaurant.floorPlanElements}
-            readOnly
-            headerEyebrow="Обзор · план зала"
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <RestaurantActionsCard
+            reserveHref={reserveHref}
+            phone={restaurant.phone}
+            openStatus={openStatus}
+            locale={locale}
           />
-        ) : (
-          <div className="rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">
-            План зала для этого заведения пока не настроен.
-          </div>
-        )}
+          <RestaurantQuickFactsCard
+            cuisine={restaurant.cuisine}
+            priceLevel={restaurant.priceLevel}
+            rating={restaurant.rating}
+            reviewsCount={restaurant.reviewsCount}
+            seatsTotal={seatsTotal}
+            floorsCount={restaurant.floorPlans.length}
+            locale={locale}
+          />
+          <RestaurantAddressCard
+            address={restaurant.address}
+            googleMapsUrl={restaurant.googleMapsUrl}
+            locale={locale}
+          />
+          <RestaurantWorkingHoursCard rows={weeklyRows} locale={locale} />
+          <RestaurantSocialLinksCard
+            websiteUrl={restaurant.websiteUrl}
+            instagramUrl={restaurant.instagramUrl}
+            facebookUrl={restaurant.facebookUrl}
+            googleMapsUrl={restaurant.googleMapsUrl}
+            phone={restaurant.phone}
+            email={restaurant.email}
+            locale={locale}
+          />
+        </aside>
       </div>
+
+      <RestaurantFloorPlanSection
+        floorPlans={restaurant.floorPlans}
+        tables={restaurant.tables}
+        floorPlanElements={restaurant.floorPlanElements}
+        reserveHref={reserveHref}
+        locale={locale}
+      />
+
+      <RestaurantSimilar restaurants={similarRestaurants} locale={locale} />
     </div>
   );
 }

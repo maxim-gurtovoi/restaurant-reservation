@@ -4,6 +4,7 @@ import {
   ReservationStatus,
   TableShape,
   FloorPlanElementType,
+  RestaurantFeature,
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -48,25 +49,45 @@ async function main() {
 
   // --- Users ----------------------------------------------------------------
 
-  // Top-tier MANAGER: platform operator / restaurant owner.
-  // Can edit floor plans (drag&drop), assign hall admins, + everything hall admins can do.
+  // Владелец платформы (OWNER): создание ресторанов, глобальный обзор в /manager.
+  const ownerUser = await prisma.user.create({
+    data: {
+      name: 'Владелец платформы',
+      email: 'owner@example.com',
+      passwordHash: demoPasswordHash,
+      phone: '+373-22-000-001',
+      role: UserRole.OWNER,
+    },
+  });
+
+  // Управляющий Gastrobar (MANAGER): один ресторан через Restaurant.managerUserId.
   const managerUser = await prisma.user.create({
     data: {
-      name: 'Platform Manager',
-      email: 'manager@example.com',
+      name: 'Управляющий Gastrobar',
+      email: 'manager.gastrobar@example.com',
       passwordHash: demoPasswordHash,
       phone: '+373-22-000-000',
       role: UserRole.MANAGER,
     },
   });
 
-  // Hall ADMIN: scans QR, updates reservation statuses, scoped to specific restaurants.
-  const adminUser = await prisma.user.create({
+  // Два администратора зала (ADMIN) — только Gastrobar (демо изоляции по ресторанам).
+  const adminUser1 = await prisma.user.create({
     data: {
-      name: 'Hall Admin Alice',
-      email: 'admin.alice@example.com',
+      name: 'Админ зала 1 (Gastrobar)',
+      email: 'admin1.gastrobar@example.com',
       passwordHash: demoPasswordHash,
-      phone: '+373-22-100-000',
+      phone: '+373-22-100-001',
+      role: UserRole.ADMIN,
+    },
+  });
+
+  const adminUser2 = await prisma.user.create({
+    data: {
+      name: 'Админ зала 2 (Gastrobar)',
+      email: 'admin2.gastrobar@example.com',
+      passwordHash: demoPasswordHash,
+      phone: '+373-22-100-002',
       role: UserRole.ADMIN,
     },
   });
@@ -100,8 +121,27 @@ async function main() {
       description:
         'Авторские коктейли и сезонные закуски в тёплом оживлённом баре Кишинёва. Подойдёт для неспешного ужина с друзьями.',
       address: 'Str. Alexandru Bernardazzi 66, Chișinău',
+      phone: '+373 68 906 545',
+      email: 'resta2014@list.ru',
       imageUrl: '/images/restaurants/gastrobar.png',
+      coverImageUrl: '/images/restaurants/gastrobar/cover.png',
+      cuisine: 'Гастробар · Авторская',
+      priceLevel: 3,
+      websiteUrl: null,
+      instagramUrl: 'https://www.instagram.com/gastrobarlivekitchen/',
+      facebookUrl: 'https://www.facebook.com/GastrobarLiveKitchen/',
+      googleMapsUrl: 'https://www.google.com/maps/place/Gastrobar/@47.0244,28.8294,17z',
+      rating: 4.6,
+      reviewsCount: 284,
+      features: [
+        RestaurantFeature.CARD_PAYMENT,
+        RestaurantFeature.WIFI,
+        RestaurantFeature.RESERVATIONS,
+        RestaurantFeature.LIVE_MUSIC,
+        RestaurantFeature.TAKEAWAY,
+      ],
       isActive: true,
+      managerUserId: managerUser.id,
     },
   });
 
@@ -112,7 +152,26 @@ async function main() {
       description:
         'Светлая терраса, внимательный сервис и блюда на компанию. Для долгих ланчей, спокойных разговоров и тёплых кишинёвских вечеров.',
       address: 'Str. Albișoara 20/1, Chișinău',
+      phone: '+373 78 800 600',
+      email: 'pegas_md@mail.ru',
       imageUrl: '/images/restaurants/pegas.png',
+      coverImageUrl: '/images/restaurants/pegas-terrace-restaurant/1.png',
+      cuisine: 'Европейская',
+      priceLevel: 2,
+      websiteUrl: 'https://pegasrestaurant.md',
+      instagramUrl: null,
+      facebookUrl: 'https://www.facebook.com/pegasrestaurant/',
+      googleMapsUrl: 'https://www.google.com/maps/place/Pegas/@47.0334,28.8369,17z',
+      rating: 4.4,
+      reviewsCount: 512,
+      features: [
+        RestaurantFeature.CARD_PAYMENT,
+        RestaurantFeature.TERRACE,
+        RestaurantFeature.PARKING,
+        RestaurantFeature.WIFI,
+        RestaurantFeature.FAMILY_FRIENDLY,
+        RestaurantFeature.RESERVATIONS,
+      ],
       isActive: true,
     },
   });
@@ -124,7 +183,26 @@ async function main() {
       description:
         'Мясо низкой коптильни, фирменные соусы BBQ и сытные гарниры. Для любителей насыщенного дымного вкуса и больших порций.',
       address: 'Bd. Ștefan cel Mare și Sfînt 128, Chișinău',
+      phone: '+373 60 619 777',
+      email: 'bbq@smokehouse.md',
       imageUrl: '/images/restaurants/smokehouse.png',
+      coverImageUrl: '/images/restaurants/smokehouse/1.png',
+      cuisine: 'BBQ · Американская',
+      priceLevel: 3,
+      websiteUrl: null,
+      instagramUrl: null,
+      facebookUrl: 'https://www.facebook.com/Smokehouse.Moldova',
+      googleMapsUrl: 'https://www.google.com/maps/place/Smokehouse/@47.0245,28.8348,17z',
+      rating: 4.7,
+      reviewsCount: 693,
+      features: [
+        RestaurantFeature.CARD_PAYMENT,
+        RestaurantFeature.TAKEAWAY,
+        RestaurantFeature.DELIVERY,
+        RestaurantFeature.WIFI,
+        RestaurantFeature.RESERVATIONS,
+        RestaurantFeature.FAMILY_FRIENDLY,
+      ],
       isActive: true,
     },
   });
@@ -136,7 +214,26 @@ async function main() {
       description:
         'Ужин на террасе на крыше: современные средиземноморские блюда и изящные коктейли. Для свиданий и особых случаев.',
       address: 'Str. Nicolae Dimo 32, Chișinău',
+      phone: '+373 68 454 555',
+      email: 'atticorestaurant@gmail.com',
       imageUrl: '/images/restaurants/attico.png',
+      coverImageUrl: '/images/restaurants/attico-terrace-restaurant/1.png',
+      cuisine: 'Средиземноморская',
+      priceLevel: 4,
+      websiteUrl: null,
+      instagramUrl: 'https://www.instagram.com/attico.terrace.restaurant/',
+      facebookUrl: 'https://www.facebook.com/AtticoTerraceRestaurant/',
+      googleMapsUrl: 'https://www.google.com/maps/place/Attico+Terrace+%26+Restaurant/@47.0628,28.8851,17z',
+      rating: 4.8,
+      reviewsCount: 421,
+      features: [
+        RestaurantFeature.CARD_PAYMENT,
+        RestaurantFeature.TERRACE,
+        RestaurantFeature.LIVE_MUSIC,
+        RestaurantFeature.WIFI,
+        RestaurantFeature.RESERVATIONS,
+        RestaurantFeature.PARKING,
+      ],
       isActive: true,
     },
   });
@@ -148,7 +245,26 @@ async function main() {
       description:
         'Кухня в духе сада на основе свежих сезонных продуктов. Светлый уютный зал для семейных ужинов и неспешных встреч.',
       address: 'Strada Vasile Alecsandri 8, Chișinău',
+      phone: '+373 79 803 803',
+      email: 'office@gardenpalace.md',
       imageUrl: '/images/restaurants/garden.png',
+      coverImageUrl: '/images/restaurants/garden-restaurant-terrace/1.png',
+      cuisine: 'Европейская · Fresh',
+      priceLevel: 2,
+      websiteUrl: 'https://gardenpalace.md',
+      instagramUrl: null,
+      facebookUrl: 'https://www.facebook.com/Garden.Palace.restaurant/',
+      googleMapsUrl: 'https://www.google.com/maps/place/Garden+Palace+Events+Restaurant/@47.0260,28.8260,17z',
+      rating: 4.5,
+      reviewsCount: 348,
+      features: [
+        RestaurantFeature.CARD_PAYMENT,
+        RestaurantFeature.TERRACE,
+        RestaurantFeature.PET_FRIENDLY,
+        RestaurantFeature.FAMILY_FRIENDLY,
+        RestaurantFeature.WIFI,
+        RestaurantFeature.RESERVATIONS,
+      ],
       isActive: true,
     },
   });
@@ -159,8 +275,28 @@ async function main() {
       slug: 'la-placinte-stefan-cel-mare',
       description:
         'Традиционная молдавская кухня с современным акцентом. Известны домашние пироги, местные блюда и уютная атмосфера.',
-      address: 'Chișinău, Bulevardul Ștefan cel Mare și Sfânt 182',
+      address: 'Bd. Ștefan cel Mare și Sfînt 3, Chișinău',
+      phone: '+373 60 777 633',
+      email: 'info@laplacinte.md',
       imageUrl: '/images/restaurants/la-placinte.png',
+      coverImageUrl: '/images/restaurants/la-placinte-stefan-cel-mare/1.png',
+      cuisine: 'Молдавская',
+      priceLevel: 2,
+      websiteUrl: 'https://laplacinte.md',
+      instagramUrl: 'https://www.instagram.com/laplacinte/',
+      facebookUrl: 'https://www.facebook.com/laplacinte.md',
+      googleMapsUrl: 'https://www.google.com/maps/place/La+Pl%C4%83cinte/@47.0244,28.8340,17z',
+      rating: 4.5,
+      reviewsCount: 1248,
+      features: [
+        RestaurantFeature.CARD_PAYMENT,
+        RestaurantFeature.DELIVERY,
+        RestaurantFeature.TAKEAWAY,
+        RestaurantFeature.FAMILY_FRIENDLY,
+        RestaurantFeature.WIFI,
+        RestaurantFeature.PARKING,
+        RestaurantFeature.RESERVATIONS,
+      ],
       isActive: true,
     },
   });
@@ -464,9 +600,11 @@ async function main() {
     ],
   });
 
-  // --- Working hours (7 days, all 6 restaurants) ---------------------------
-
-  const daysOfWeek = [0, 1, 2, 3, 4, 5, 6];
+  // --- Working hours (real schedules, per restaurant) ----------------------
+  // dayOfWeek: 0 = Sunday … 6 = Saturday.
+  // Note: the HH:MM pair must be same-day (close > open). Late-night venues
+  // that close past midnight are capped at 23:59 so the "open now" logic
+  // doesn't flip to "closed" right after midnight.
   const restaurantsForHours = [
     gastrobar,
     pegasTerrace,
@@ -476,35 +614,58 @@ async function main() {
     laPlacinte,
   ];
 
+  // Overnight shifts are stored with `close <= open` — validator/slot-generator
+  // treat them as spanning past midnight (e.g. "12:00 → 03:00" = until 3am next day).
+  // Near-24h shifts (>= 22h long) switch the reservation UI to manual time entry.
+  const workingHoursPlan: Record<string, Array<[string, string]>> = {
+    // Gastrobar: daily 12:00–23:00
+    [gastrobar.slug]: Array.from({ length: 7 }, () => ['12:00', '23:00'] as [string, string]),
+    // Pegas: true 24/7 → open=00:00, close=00:00 treated as a 24h overnight shift.
+    [pegasTerrace.slug]: Array.from({ length: 7 }, () => ['00:00', '00:00'] as [string, string]),
+    // Smokehouse: daily 11:00–23:00
+    [smokehouse.slug]: Array.from({ length: 7 }, () => ['11:00', '23:00'] as [string, string]),
+    // Attico: late-night terrace. Sun–Thu 12:00–03:00 (next day), Fri–Sat 12:00–05:00.
+    [atticoTerrace.slug]: [
+      ['12:00', '03:00'], // Sun
+      ['12:00', '03:00'], // Mon
+      ['12:00', '03:00'], // Tue
+      ['12:00', '03:00'], // Wed
+      ['12:00', '03:00'], // Thu
+      ['12:00', '05:00'], // Fri
+      ['12:00', '05:00'], // Sat
+    ],
+    // Garden: daily 08:30–23:00
+    [gardenTerrace.slug]: Array.from({ length: 7 }, () => ['08:30', '23:00'] as [string, string]),
+    // La Plăcinte: daily 10:00–22:00
+    [laPlacinte.slug]: Array.from({ length: 7 }, () => ['10:00', '22:00'] as [string, string]),
+  };
+
   await Promise.all(
-    daysOfWeek.flatMap((day) =>
-      restaurantsForHours.map((restaurant) =>
+    restaurantsForHours.flatMap((restaurant) => {
+      const plan = workingHoursPlan[restaurant.slug];
+      if (!plan) return [];
+      return plan.map((slot, dayOfWeek) =>
         prisma.workingHours.create({
           data: {
             restaurantId: restaurant.id,
-            dayOfWeek: day,
-            openTime: '11:00',
-            closeTime: '23:00',
+            dayOfWeek,
+            openTime: slot[0],
+            closeTime: slot[1],
             isClosed: false,
           },
         }),
-      ),
-    ),
+      );
+    }),
   );
 
-  // --- Admin-restaurant links: ADMIN + MANAGER both linked to all 6 -------
-  // Higher role inherits all lower perms, so MANAGER also has per-restaurant admin access.
+  // --- Admin-restaurant links: только Gastrobar, два админа (без дубля MANAGER в RestaurantAdmin).
   await Promise.all([
-    ...restaurantsForHours.map((restaurant) =>
-      prisma.restaurantAdmin.create({
-        data: { userId: adminUser.id, restaurantId: restaurant.id },
-      }),
-    ),
-    ...restaurantsForHours.map((restaurant) =>
-      prisma.restaurantAdmin.create({
-        data: { userId: managerUser.id, restaurantId: restaurant.id },
-      }),
-    ),
+    prisma.restaurantAdmin.create({
+      data: { userId: adminUser1.id, restaurantId: gastrobar.id },
+    }),
+    prisma.restaurantAdmin.create({
+      data: { userId: adminUser2.id, restaurantId: gastrobar.id },
+    }),
   ]);
 
   // --- Demo reservations ---------------------------------------------------
@@ -521,6 +682,7 @@ async function main() {
 
   const reservationDurationMinutes = 90;
 
+  // Демо-брони только в Gastrobar — QR / админ-панель согласованы с персоналом seed.
   await Promise.all([
     prisma.reservation.create({
       data: {
@@ -541,83 +703,15 @@ async function main() {
     }),
     prisma.reservation.create({
       data: {
-        userId: userBob.id,
-        restaurantId: pegasTerrace.id,
-        tableId: pegasTerraceFloor.tables[2].id,
-        guestCount: 4,
-        startAt: startOfWindow(20),
-        endAt: withDuration(startOfWindow(20), reservationDurationMinutes),
-        status: ReservationStatus.CONFIRMED,
-        qrToken: 'qr_pegas_1',
-        referenceCode: '7000002',
-        contactName: 'Bob Customer',
-        contactPhone: userBob.phone,
-        contactEmail: userBob.email,
-        notes: 'Demo reservation for QR check-in.',
-      },
-    }),
-    prisma.reservation.create({
-      data: {
-        userId: userBob.id,
-        restaurantId: smokehouse.id,
-        tableId: smokehouseFloor.tables[0].id,
-        guestCount: 8,
-        startAt: startOfWindow(18),
-        endAt: withDuration(startOfWindow(18), reservationDurationMinutes),
-        status: ReservationStatus.CONFIRMED,
-        qrToken: 'qr_smokehouse_1',
-        referenceCode: '7000003',
-        contactName: 'Bob Customer',
-        contactPhone: userBob.phone,
-        contactEmail: userBob.email,
-        notes: 'Demo reservation for QR check-in.',
-      },
-    }),
-    prisma.reservation.create({
-      data: {
-        userId: userBob.id,
-        restaurantId: atticoTerrace.id,
-        tableId: atticoTerraceFloor.tables[3].id,
-        guestCount: 4,
-        startAt: startOfWindow(19),
-        endAt: withDuration(startOfWindow(19), reservationDurationMinutes),
-        status: ReservationStatus.CONFIRMED,
-        qrToken: 'qr_attico_1',
-        referenceCode: '7000004',
-        contactName: 'Bob Customer',
-        contactPhone: userBob.phone,
-        contactEmail: userBob.email,
-        notes: 'Demo reservation for QR check-in.',
-      },
-    }),
-    prisma.reservation.create({
-      data: {
-        userId: userBob.id,
-        restaurantId: gardenTerrace.id,
-        tableId: gardenFloor.tables[2].id,
-        guestCount: 4,
-        startAt: startOfWindow(20),
-        endAt: withDuration(startOfWindow(20), reservationDurationMinutes),
-        status: ReservationStatus.CONFIRMED,
-        qrToken: 'qr_garden_1',
-        referenceCode: '7000005',
-        contactName: 'Bob Customer',
-        contactPhone: userBob.phone,
-        contactEmail: userBob.email,
-        notes: 'Demo reservation for QR check-in.',
-      },
-    }),
-    prisma.reservation.create({
-      data: {
         userId: userCarol.id,
-        restaurantId: laPlacinte.id,
-        tableId: laPlacinteFloor.tables[6].id,
-        guestCount: 6,
-        startAt: startOfWindow(18),
-        endAt: withDuration(startOfWindow(18), reservationDurationMinutes),
+        restaurantId: gastrobar.id,
+        tableId: gastrobarFloor.tables[2].id,
+        guestCount: 4,
+        startAt: startOfWindow(20),
+        endAt: withDuration(startOfWindow(20), reservationDurationMinutes),
         status: ReservationStatus.CONFIRMED,
-        qrToken: 'qr_la_placinte_1',
-        referenceCode: '7000006',
+        qrToken: 'qr_gastrobar_2',
+        referenceCode: '7000002',
         contactName: 'Carol Diner',
         contactPhone: userCarol.phone,
         contactEmail: userCarol.email,
@@ -630,6 +724,19 @@ async function main() {
   // are used only for typed referencing.
   void pegasIndoorFloor;
   void atticoLoungeFloor;
+
+  // eslint-disable-next-line no-console -- удобно при локальном `prisma db seed`
+  console.info(`
+╔══════════════════════════════════════════════════════════╗
+║  Демо-аккаунты (пароль для всех: ${DEMO_PASSWORD} )  ║
+╠══════════════════════════════════════════════════════════╣
+║  Владелец платформы: ${ownerUser.email}                  ║
+║  Управляющий Gastrobar: manager.gastrobar@example.com   ║
+║  Админ зала 1:       admin1.gastrobar@example.com         ║
+║  Админ зала 2:       admin2.gastrobar@example.com         ║
+║  Гости:              bob@example.com, carol@example.com   ║
+╚══════════════════════════════════════════════════════════╝
+`);
 }
 
 main()

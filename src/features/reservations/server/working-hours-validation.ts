@@ -56,9 +56,58 @@ function jsDayOfWeekInZone(startAt: Date, timeZone: string): number {
 }
 
 /**
+ * Build the [open, close] window in the given IANA zone, anchored on `anchorDate`.
+ * If the schedule is overnight (close <= open) the close side rolls into the
+ * next calendar day — otherwise it stays on the same day as `anchorDate`.
+ */
+function buildShiftWindow(
+  anchorDate: DateTime,
+  openMinutes: number,
+  closeMinutes: number,
+  timeZone: string,
+): { openDate: Date; closeDate: Date; isOvernight: boolean } {
+  const isOvernight = closeMinutes <= openMinutes;
+  const openWall = DateTime.fromObject(
+    {
+      year: anchorDate.year,
+      month: anchorDate.month,
+      day: anchorDate.day,
+      hour: Math.floor(openMinutes / 60),
+      minute: openMinutes % 60,
+      second: 0,
+      millisecond: 0,
+    },
+    { zone: timeZone },
+  );
+  let closeWall = DateTime.fromObject(
+    {
+      year: anchorDate.year,
+      month: anchorDate.month,
+      day: anchorDate.day,
+      hour: Math.floor(closeMinutes / 60),
+      minute: closeMinutes % 60,
+      second: 0,
+      millisecond: 0,
+    },
+    { zone: timeZone },
+  );
+  if (isOvernight) {
+    closeWall = closeWall.plus({ days: 1 });
+  }
+  return {
+    openDate: openWall.toUTC().toJSDate(),
+    closeDate: closeWall.toUTC().toJSDate(),
+    isOvernight,
+  };
+}
+
+/**
  * Pure working-hours check in a fixed IANA zone.
- * Reservation must lie fully inside [open, close] on the calendar day of `startAt` in that zone.
- * `dayOfWeek` on schedule rows matches JS: 0 = Sunday … 6 = Saturday.
+ *
+ * The reservation must lie fully inside some working shift. Two shifts are
+ * considered: the one starting on the calendar day of `startAt` (in the zone)
+ * and, if that day's predecessor is overnight (close <= open), its tail that
+ * extends past midnight. `dayOfWeek` matches JS: 0 = Sunday … 6 = Saturday.
  */
 export function validateReservationAgainstWorkingHours(input: {
   workingHours: WorkingHoursScheduleRow[];
@@ -76,86 +125,63 @@ export function validateReservationAgainstWorkingHours(input: {
     };
   }
 
-  const dayOfWeek = jsDayOfWeekInZone(startAt, timeZone);
-  const schedule = workingHours.find((wh) => wh.dayOfWeek === dayOfWeek);
+  const startWall = DateTime.fromJSDate(startAt, { zone: 'utc' }).setZone(timeZone);
+  const todayDow = startWall.weekday % 7;
+  const yesterdayDow = (todayDow + 6) % 7;
 
-  if (!schedule) {
+  const todaySchedule = workingHours.find((wh) => wh.dayOfWeek === todayDow);
+  const yesterdaySchedule = workingHours.find((wh) => wh.dayOfWeek === yesterdayDow);
+
+  // Try to fit the reservation into today's shift first (same-day or overnight).
+  if (todaySchedule && !todaySchedule.isClosed) {
+    const openM = tryParseHHmmToMinutes(todaySchedule.openTime);
+    const closeM = tryParseHHmmToMinutes(todaySchedule.closeTime);
+    if (openM === null || closeM === null) {
+      return {
+        valid: false,
+        code: WORKING_HOURS_ERROR_CODES.WORKING_HOURS_MISCONFIGURED,
+        message: 'Время работы ресторана задано некорректно.',
+      };
+    }
+    const { openDate, closeDate } = buildShiftWindow(startWall, openM, closeM, timeZone);
+    if (startAt >= openDate && endAt <= closeDate) {
+      return { valid: true };
+    }
+  }
+
+  // Otherwise the reservation might fall into the tail of yesterday's overnight shift.
+  if (yesterdaySchedule && !yesterdaySchedule.isClosed) {
+    const openM = tryParseHHmmToMinutes(yesterdaySchedule.openTime);
+    const closeM = tryParseHHmmToMinutes(yesterdaySchedule.closeTime);
+    if (openM !== null && closeM !== null && closeM <= openM) {
+      const yAnchor = startWall.minus({ days: 1 });
+      const { openDate, closeDate } = buildShiftWindow(yAnchor, openM, closeM, timeZone);
+      if (startAt >= openDate && endAt <= closeDate) {
+        return { valid: true };
+      }
+    }
+  }
+
+  // Nothing fits — pick the most informative error based on today's schedule.
+  if (!todaySchedule) {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.NO_WORKING_HOURS_FOR_DAY,
       message: 'На этот день не задано время работы; бронирование недоступно.',
     };
   }
-
-  if (schedule.isClosed) {
+  if (todaySchedule.isClosed) {
     return {
       valid: false,
       code: WORKING_HOURS_ERROR_CODES.RESTAURANT_CLOSED,
       message: 'В этот день ресторан закрыт.',
     };
   }
-
-  const openMinutes = tryParseHHmmToMinutes(schedule.openTime);
-  const closeMinutes = tryParseHHmmToMinutes(schedule.closeTime);
-  if (openMinutes === null || closeMinutes === null) {
-    return {
-      valid: false,
-      code: WORKING_HOURS_ERROR_CODES.WORKING_HOURS_MISCONFIGURED,
-      message: 'Время работы ресторана задано некорректно.',
-    };
-  }
-
-  if (closeMinutes <= openMinutes) {
-    return {
-      valid: false,
-      code: WORKING_HOURS_ERROR_CODES.OVERNIGHT_NOT_SUPPORTED,
-      message: 'Сквозное время работы (через полночь) для этого ресторана не поддерживается.',
-    };
-  }
-
-  const startWall = DateTime.fromJSDate(startAt, { zone: 'utc' }).setZone(timeZone);
-  const openH = Math.floor(openMinutes / 60);
-  const openM = openMinutes % 60;
-  const closeH = Math.floor(closeMinutes / 60);
-  const closeM = closeMinutes % 60;
-
-  const openWall = DateTime.fromObject(
-    {
-      year: startWall.year,
-      month: startWall.month,
-      day: startWall.day,
-      hour: openH,
-      minute: openM,
-      second: 0,
-      millisecond: 0,
-    },
-    { zone: timeZone },
-  );
-  const closeWall = DateTime.fromObject(
-    {
-      year: startWall.year,
-      month: startWall.month,
-      day: startWall.day,
-      hour: closeH,
-      minute: closeM,
-      second: 0,
-      millisecond: 0,
-    },
-    { zone: timeZone },
-  );
-
-  const openDate = openWall.toUTC().toJSDate();
-  const closeDate = closeWall.toUTC().toJSDate();
-
-  if (startAt < openDate || endAt > closeDate) {
-    return {
-      valid: false,
-      code: WORKING_HOURS_ERROR_CODES.OUTSIDE_WORKING_HOURS,
-      message: 'Выбранное время выходит за пределы часов работы ресторана.',
-    };
-  }
-
-  return { valid: true };
+  return {
+    valid: false,
+    code: WORKING_HOURS_ERROR_CODES.OUTSIDE_WORKING_HOURS,
+    message: 'Выбранное время выходит за пределы часов работы ресторана.',
+  };
 }
 
 /** Thrown when working-hours domain rules fail; carries a stable API code. */

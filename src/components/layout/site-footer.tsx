@@ -25,16 +25,25 @@ export function SiteFooter({ locale = 'ru' }: { locale?: Locale }) {
           <div className="space-y-3 lg:max-w-xs">
             <Link
               href={ROUTES.home}
-              className="inline-flex items-center"
+              className="group inline-flex items-center"
             >
-              <Image
-                src="/logo-mark.png"
-                alt="TableFlow"
-                width={276}
-                height={339}
-                sizes="40px"
-                className="h-10 w-auto object-contain"
-              />
+              <span className="relative block h-10 w-10">
+                <Image
+                  src="/logo-mark.png"
+                  alt="TableFlow"
+                  fill
+                  sizes="40px"
+                  className="object-contain transition-opacity duration-200 group-hover:opacity-0"
+                />
+                <Image
+                  src="/logo-mark-black.png"
+                  alt=""
+                  aria-hidden="true"
+                  fill
+                  sizes="40px"
+                  className="object-contain opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                />
+              </span>
             </Link>
             <p className="text-sm leading-relaxed text-muted">
               {t.footer.description}
@@ -91,9 +100,7 @@ export function SiteFooter({ locale = 'ru' }: { locale?: Locale }) {
                   ) : null}
                   {university ? <p className="leading-relaxed">{university}</p> : null}
                 </>
-              ) : (
-                <p className="text-xs leading-relaxed">{t.footer.educationalProject}</p>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

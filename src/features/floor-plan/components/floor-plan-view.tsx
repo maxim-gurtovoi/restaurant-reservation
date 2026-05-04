@@ -130,7 +130,7 @@ export function FloorPlanView({
           </p>
         </div>
 
-        <FloorPlanLegend hasElements={planElements.length > 0} />
+        <FloorPlanLegend elements={planElements} />
       </div>
 
       {floorPlans.length > 1 ? (
@@ -370,14 +370,24 @@ function FloorPlanElementBox({ element }: { element: FloorPlanViewElement }) {
   const presentation = getFloorPlanElementPresentation(element.type);
   const Icon = presentation.icon;
   const rotate = `rotate(${element.rotation}deg)`;
-  const label = element.label ?? presentation.label;
+  const a11yName = element.label?.trim() || presentation.label;
 
   const isThin = element.type === 'TERRACE_RAILING' || element.type === 'WALL';
 
+  // Size from the shorter plan side so flat strips (e.g. windows along a wall)
+  // don't inherit a tall min-height that clips the icon.
+  const shortSide = Math.min(element.width, element.height);
+  const fitRatio = element.type === 'WINDOW' ? 0.58 : 0.68;
+  const iconSize = Math.round(
+    Math.min(36, Math.max(10, shortSide * fitRatio)),
+  );
+
   return (
     <div
+      role="img"
+      aria-label={a11yName}
       className={cn(
-        'pointer-events-none absolute flex items-center justify-center gap-1.5 overflow-hidden border text-[10px] font-semibold uppercase tracking-widest',
+        'pointer-events-none absolute flex items-center justify-center overflow-hidden border',
         presentation.surface,
         presentation.border,
         presentation.text,
@@ -393,53 +403,67 @@ function FloorPlanElementBox({ element }: { element: FloorPlanViewElement }) {
       }}
     >
       {!isThin ? (
-        <>
-          <Icon className="h-4 w-4 shrink-0" aria-hidden />
-          {label ? (
-            <span className="truncate px-1 text-[10px] leading-tight">{label}</span>
-          ) : null}
-        </>
+        <Icon
+          className="shrink-0"
+          width={iconSize}
+          height={iconSize}
+          aria-hidden
+        />
       ) : null}
     </div>
   );
 }
 
-function FloorPlanLegend({ hasElements }: { hasElements: boolean }) {
-  return (
-    <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted">
-      <LegendSwatch shape="round" label="Круглый" />
-      <LegendSwatch shape="square" label="Квадратный" />
-      <LegendSwatch shape="rect" label="Прямоугольный" />
-      {hasElements ? <LegendSwatch shape="element" label="Интерьер" /> : null}
-    </div>
-  );
-}
+function FloorPlanLegend({ elements }: { elements: FloorPlanViewElement[] }) {
+  const uniqueTypes = useMemo(() => {
+    const seen = new Set<FloorPlanElementType>();
+    const order: FloorPlanElementType[] = [];
+    for (const el of elements) {
+      if (!seen.has(el.type)) {
+        seen.add(el.type);
+        order.push(el.type);
+      }
+    }
+    order.sort((a, b) => {
+      const la = getFloorPlanElementPresentation(a).label;
+      const lb = getFloorPlanElementPresentation(b).label;
+      return la.localeCompare(lb, 'ru', { sensitivity: 'base' });
+    });
+    return order;
+  }, [elements]);
 
-function LegendSwatch({
-  shape,
-  label,
-}: {
-  shape: 'round' | 'square' | 'rect' | 'element';
-  label: string;
-}) {
-  const shapeClass =
-    shape === 'round'
-      ? 'rounded-full w-3 h-3'
-      : shape === 'square'
-        ? 'rounded-sm w-3 h-3'
-        : shape === 'rect'
-          ? 'rounded-[3px] w-4 h-2.5'
-          : 'rounded-sm w-3 h-3 bg-surface-soft border-foreground/30';
-
-  const background =
-    shape === 'element'
-      ? undefined
-      : 'bg-[#fff2d6] border border-[#d9b47a]';
+  if (!uniqueTypes.length) {
+    return null;
+  }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span className={cn('inline-block border', shapeClass, background)} />
-      <span>{label}</span>
+    <div className="max-w-full text-right" aria-label="Обозначения на плане">
+      <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted">
+        Обозначения
+      </p>
+      <ul className="flex flex-row flex-wrap items-center justify-end gap-x-3 gap-y-2">
+        {uniqueTypes.map((type) => {
+          const p = getFloorPlanElementPresentation(type);
+          const Icon = p.icon;
+          return (
+            <li key={type} className="flex items-center gap-1.5">
+              <span
+                className={cn(
+                  'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border',
+                  p.surface,
+                  p.border,
+                  p.text,
+                )}
+              >
+                <Icon className="h-4 w-4" aria-hidden />
+              </span>
+              <span className="max-w-36 text-left text-[11px] font-medium leading-snug text-foreground/90">
+                {p.label}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

@@ -27,14 +27,14 @@ export function CheckInConfirmButton({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(typeof json?.error === 'string' ? json.error : 'Не удалось выполнить заселение');
+        throw new Error(typeof json?.error === 'string' ? json.error : 'Не удалось подтвердить посещение');
       }
-      setSuccess('Заселение гостей подтверждено.');
+      setSuccess('Посещение отмечено.');
       router.refresh();
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Не удалось выполнить заселение';
+      const message = e instanceof Error ? e.message : 'Не удалось подтвердить посещение';
       if (message.includes('CHECKED_IN')) {
-        setError('Эта бронь уже отмечена как заселение.');
+        setError('Посещение по этой брони уже отмечено.');
       } else {
         setError(message);
       }
@@ -46,7 +46,7 @@ export function CheckInConfirmButton({
   return (
     <div className="space-y-2">
       <Button type="button" className="w-full" onClick={onConfirm} disabled={disabled || loading}>
-        {loading ? 'Подтверждение…' : 'Подтвердить заселение'}
+        {loading ? 'Подтверждение…' : 'Подтвердить посещение'}
       </Button>
       {error ? <p className="text-xs text-error">{error}</p> : null}
       {success ? <p className="text-xs text-accent-text">{success}</p> : null}
