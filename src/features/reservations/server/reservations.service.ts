@@ -1,5 +1,5 @@
 import 'server-only';
-import type { ApiError, ApiResult } from '@/types/common';
+import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 import { checkTableAvailability } from './check-table-availability';
 import { createReservation as createReservationInDb } from './create-reservation';
@@ -9,69 +9,53 @@ export type UserReservationListItem = {
   id: string;
   referenceCode: string;
   status: string;
-  guestCount: number;
   startAt: string;
   endAt: string;
-  createdAt: string;
-  restaurant: {
-    name: string;
-    slug: string;
-  };
-  table: {
-    label: string;
-  };
+  guestCount: number;
+  restaurant: { name: string };
+  table: { label: string };
 };
+
+const USER_RESERVATIONS_MAX = 200;
 
 export async function listUserReservations(input: {
   userId: string;
+  /** 1-based page number, defaults to 1 */
+  page?: number;
 }): Promise<ApiResult<UserReservationListItem[]>> {
-  const reservations = await prisma.reservation.findMany({
-    where: {
-      userId: input.userId,
-    },
-    orderBy: [
-      { startAt: 'desc' },
-      { createdAt: 'desc' },
-    ],
-    select: {
-      id: true,
-      referenceCode: true,
-      status: true,
-      guestCount: true,
-      startAt: true,
-      endAt: true,
-      createdAt: true,
-      restaurant: {
-        select: {
-          name: true,
-          slug: true,
-        },
-      },
-      table: {
-        select: {
-          label: true,
-        },
-      },
-    },
-  });
+  const take = USER_RESERVATIONS_MAX;
+  const skip = ((input.page ?? 1) - 1) * take;
 
-  const dto: UserReservationListItem[] = reservations.map((r) => ({
-    id: r.id,
-    referenceCode: r.referenceCode,
-    status: r.status,
-    guestCount: r.guestCount,
-    startAt: r.startAt.toISOString(),
-    endAt: r.endAt.toISOString(),
-    createdAt: r.createdAt.toISOString(),
-    restaurant: r.restaurant,
-    table: r.table,
-  }));
+  try {
+    const reservations = await prisma.reservation.findMany({
+      where: { userId: input.userId },
+      orderBy: { startAt: 'desc' },
+      skip,
+      take,
+      select: {
+        id: true,
+        referenceCode: true,
+        status: true,
+        startAt: true,
+        endAt: true,
+        guestCount: true,
+        restaurant: { select: { name: true } },
+        table: { select: { label: true } },
+      },
+    });
 
-  return { status: 200, body: dto };
+    return { status: 200, body: reservations };
+  } catch (error) {
+    console.error('Error loading user reservations:', error);
+    return {
+      status: 500,
+      body: { error: 'Не удалось загрузить бронирования' } as any,
+    };
+  }
 }
 
 export async function createReservation(input: {
-  userId: string | null;
+  userId: string;
   restaurantId: string;
   tableId: string;
   date: string;
@@ -84,7 +68,6 @@ export async function createReservation(input: {
   ApiResult<{
     id: string;
     qrToken: string;
-    referenceCode: string;
     startAt: string;
     endAt: string;
     tableLabel: string;
@@ -95,16 +78,14 @@ export async function createReservation(input: {
     const result = await createReservationInDb(input);
     return { status: 201, body: result };
   } catch (error) {
-    if (error instanceof WorkingHoursDomainError) {
-      return {
-        status: 400,
-        body: { error: error.message, code: error.code },
-      };
-    }
-    const message = error instanceof Error ? error.message : 'Не удалось создать бронь';
     console.error('Error creating reservation:', error);
-    const err: ApiError = { status: 400, body: { error: message } };
-    return err;
+    if (error instanceof WorkingHoursDomainError) {
+      return { status: 422, body: { error: error.message, code: error.code } as any };
+    }
+    if (error instanceof Error) {
+      return { status: 400, body: { error: error.message } as any };
+    }
+    return { status: 500, body: { error: 'Failed to create reservation' } as any };
   }
 }
 
@@ -120,17 +101,15 @@ export async function getAvailability(input: {
   }>
 > {
   try {
-    const result = await checkTableAvailability(input);
+    const result = await checkTableAvailability(
+      input as Parameters<typeof checkTableAvailability>[0],
+    );
     return { status: 200, body: result };
   } catch (error) {
-    if (error instanceof WorkingHoursDomainError) {
-      return { status: 400, body: { error: error.message, code: error.code } };
-    }
     console.error('Error checking availability:', error);
-    const err: ApiError = {
+    return {
       status: 500,
-      body: { error: 'Не удалось проверить доступность' },
+      body: { error: 'Failed to check availability' } as any,
     };
-    return err;
   }
 }

@@ -9,7 +9,6 @@ export const WORKING_HOURS_ERROR_CODES = {
   NO_WORKING_HOURS_FOR_DAY: 'NO_WORKING_HOURS_FOR_DAY',
   RESTAURANT_CLOSED: 'RESTAURANT_CLOSED',
   OUTSIDE_WORKING_HOURS: 'OUTSIDE_WORKING_HOURS',
-  OVERNIGHT_NOT_SUPPORTED: 'OVERNIGHT_NOT_SUPPORTED',
   WORKING_HOURS_MISCONFIGURED: 'WORKING_HOURS_MISCONFIGURED',
   INVALID_TIME_WINDOW: 'INVALID_TIME_WINDOW',
 } as const;
@@ -47,12 +46,6 @@ function tryParseHHmmToMinutes(value: string): number | null {
     return null;
   }
   return hours * 60 + minutes;
-}
-
-/** JS getDay(): 0 Sunday … 6 Saturday — same convention as Prisma seed `dayOfWeek`. */
-function jsDayOfWeekInZone(startAt: Date, timeZone: string): number {
-  const wall = DateTime.fromJSDate(startAt, { zone: 'utc' }).setZone(timeZone);
-  return wall.weekday % 7;
 }
 
 /**
@@ -196,12 +189,15 @@ export class WorkingHoursDomainError extends Error {
 }
 
 /**
- * Loads WorkingHours + restaurant TZ and applies the same validation as availability/create.
+ * Loads WorkingHours and applies the same validation as availability/create.
+ * Pass `timeZone` when it was already fetched upstream to avoid an extra DB round-trip.
  */
 export async function ensureWorkingHoursAllowReservation(input: {
   restaurantId: string;
   startAt: Date;
   endAt: Date;
+  /** Pre-resolved IANA zone — skips the restaurant SELECT when provided. */
+  timeZone?: string;
 }): Promise<void> {
   const [rows, restaurant] = await Promise.all([
     prisma.workingHours.findMany({
@@ -213,13 +209,15 @@ export async function ensureWorkingHoursAllowReservation(input: {
         closeTime: true,
       },
     }),
-    prisma.restaurant.findUnique({
-      where: { id: input.restaurantId },
-      select: { timeZone: true },
-    }),
+    input.timeZone
+      ? Promise.resolve(null)
+      : prisma.restaurant.findUnique({
+          where: { id: input.restaurantId },
+          select: { timeZone: true },
+        }),
   ]);
 
-  const timeZone = getRestaurantIanaZone(restaurant ?? { timeZone: null });
+  const timeZone = input.timeZone ?? getRestaurantIanaZone(restaurant ?? { timeZone: null });
 
   const result = validateReservationAgainstWorkingHours({
     workingHours: rows,

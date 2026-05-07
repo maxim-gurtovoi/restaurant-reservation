@@ -1,44 +1,41 @@
 import 'server-only';
-import { randomInt, randomUUID } from 'crypto';
 import { Prisma } from '@prisma/client';
-import { DateTime } from 'luxon';
+import { randomInt, randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
+import { getRestaurantIanaZone } from '@/lib/restaurant-time';
 import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
-import { getRestaurantIanaZoneById } from '@/features/reservations/server/restaurant-timezone.repository';
-import { prismaWhereBlockingReservationOverlap } from '@/features/reservations/server/reservation-blocking';
 import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
-import { isReservationStartBeforeMinBookable } from '@/features/reservations/lib/reservation-lifecycle-policy';
-import { BOOKING_LEAD_MINUTES } from '@/features/reservations/reservation-window';
-import { ReservationLifecycleError } from '@/features/reservations/server/reservation-lifecycle-error';
-import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
+import { prismaWhereBlockingReservationOverlap } from '@/features/reservations/server/reservation-blocking';
 
-function generateQRToken(): string {
-  return randomUUID();
-}
+const MAX_ATTEMPTS = 8;
 
-/** 7-digit numeric code: 1_000_000 .. 9_999_999. No leading zero so length is stable. */
 function generateReferenceCode(): string {
   return String(randomInt(1_000_000, 10_000_000));
 }
 
-const MAX_REFERENCE_CODE_RETRIES = 5;
+function isReferenceCodeUniqueViolation(error: unknown): boolean {
+  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
+  return (
+    error.code === 'P2002' &&
+    (Array.isArray(error.meta?.target)
+      ? error.meta.target.includes('referenceCode')
+      : String(error.meta?.target).includes('referenceCode'))
+  );
+}
 
 /**
- * Detects Postgres unique-violation (P2002) on the Reservation.referenceCode column.
- * Prisma exposes conflicting targets in `meta.target`.
+ * P2034 — the DB rolled back the transaction due to a serialization conflict with a
+ * concurrent booking.  We retry so that the overlap check re-runs and returns the
+ * correct user-facing error ("table no longer available") instead of a raw DB error.
  */
-function isReferenceCodeCollision(error: unknown): boolean {
-  if (!(error instanceof Prisma.PrismaClientKnownRequestError)) return false;
-  if (error.code !== 'P2002') return false;
-  const target = (error.meta as { target?: unknown } | undefined)?.target;
-  if (typeof target === 'string') return target.includes('referenceCode');
-  if (Array.isArray(target)) return target.some((t) => String(t).includes('referenceCode'));
-  // If target is missing (rare, depending on driver), allow retry — we generate a new code anyway.
-  return true;
+function isSerializationFailure(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2034'
+  );
 }
 
 export async function createReservation(input: {
-  userId: string | null;
+  userId: string;
   restaurantId: string;
   tableId: string;
   date: string;
@@ -50,7 +47,6 @@ export async function createReservation(input: {
 }): Promise<{
   id: string;
   qrToken: string;
-  referenceCode: string;
   startAt: string;
   endAt: string;
   tableLabel: string;
@@ -58,193 +54,95 @@ export async function createReservation(input: {
 }> {
   const { userId, restaurantId, tableId, date, time, guestCount } = input;
 
-  const contactNameTrim = (input.contactName ?? '').trim();
-  const phoneRaw = (input.contactPhone ?? '').trim();
-  const phoneNorm = phoneRaw ? normalizePhoneDigits(phoneRaw) : '';
+  // Single restaurant fetch: result is reused for timezone resolution and
+  // passed into ensureWorkingHoursAllowReservation to skip a second SELECT.
+  const restaurantRow = await prisma.restaurant.findUnique({
+    where: { id: restaurantId },
+    select: { timeZone: true },
+  });
+  const timeZone = getRestaurantIanaZone(restaurantRow ?? { timeZone: null });
 
-  if (!userId) {
-    if (contactNameTrim.length < 2) {
-      throw new ReservationLifecycleError('VALIDATION', 'Укажите имя для брони');
-    }
-    if (!phoneNorm || !isValidBookingPhone(phoneNorm)) {
-      throw new ReservationLifecycleError('VALIDATION', 'Укажите корректный номер телефона');
-    }
-  } else {
-    if (contactNameTrim.length < 2) {
-      throw new ReservationLifecycleError('VALIDATION', 'Укажите имя для брони');
-    }
-    if (!phoneNorm || !isValidBookingPhone(phoneNorm)) {
-      throw new ReservationLifecycleError('VALIDATION', 'Укажите телефон для связи по брони');
-    }
-  }
-
-  const timeZone = await getRestaurantIanaZoneById(restaurantId);
   const { startAt, endAt } = computeReservationWindow({ date, time, timeZone });
-  const minBookableUtc = DateTime.now()
-    .setZone(timeZone)
-    .plus({ minutes: BOOKING_LEAD_MINUTES })
-    .toUTC()
-    .toJSDate();
-  if (isReservationStartBeforeMinBookable(startAt, minBookableUtc)) {
-    throw new ReservationLifecycleError(
-      'TOO_SOON',
-      `Бронь можно создать минимум за ${BOOKING_LEAD_MINUTES} минут до начала`,
-    );
-  }
 
   await ensureWorkingHoursAllowReservation({
     restaurantId,
     startAt,
     endAt,
+    timeZone,
   });
 
-  const contactEmailTrim = (input.contactEmail ?? '').trim() || null;
+  const table = await prisma.restaurantTable.findFirst({
+    where: { id: tableId, restaurantId, isActive: true },
+    include: { restaurant: { select: { name: true } } },
+  });
 
-  // Retry the whole transaction on referenceCode unique-violation.
-  // Collisions are rare (random 7-digit space is 9_000_000) but possible at scale;
-  // Postgres aborts the current tx on unique violation, so we cannot retry the
-  // INSERT inline without SAVEPOINTs — retrying the tx is simpler and safe here
-  // (availability + locking checks are repeated with fresh data).
-  let lastError: unknown = null;
-  for (let attempt = 0; attempt < MAX_REFERENCE_CODE_RETRIES; attempt += 1) {
+  if (!table) {
+    throw new Error('Table not found or inactive');
+  }
+
+  if (guestCount > table.capacity) {
+    throw new Error('Guest count exceeds table capacity');
+  }
+
+  const qrToken = randomUUID();
+
+  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
     const referenceCode = generateReferenceCode();
     try {
-      const reservation = await prisma.$transaction(async (tx) => {
-        // Lock the table row to serialize concurrent bookings for the same table.
-        await tx.$executeRaw`
-          SELECT 1
-          FROM "RestaurantTable"
-          WHERE "id" = ${tableId}::uuid
-          FOR UPDATE
-        `;
+      // Serializable isolation makes the overlap check and the insert atomic:
+      // a concurrent booking on the same slot will cause one of the two
+      // transactions to fail with P2034, which we retry below.
+      const reservation = await prisma.$transaction(
+        async (tx) => {
+          const blocking = await tx.reservation.findMany({
+            where: prismaWhereBlockingReservationOverlap({
+              restaurantId,
+              requestedStartAt: startAt,
+              requestedEndAt: endAt,
+              now: new Date(),
+              tableId,
+            }),
+            select: { id: true },
+          });
 
-        const table = await tx.restaurantTable.findFirst({
-          where: {
-            id: tableId,
-            restaurantId,
-            isActive: true,
-          },
-          include: {
-            restaurant: {
-              select: {
-                id: true,
-                name: true,
-              },
+          if (blocking.length > 0) {
+            throw new Error('Table is no longer available for the requested time');
+          }
+
+          return tx.reservation.create({
+            data: {
+              userId,
+              restaurantId,
+              tableId,
+              startAt,
+              endAt,
+              guestCount,
+              status: 'CONFIRMED',
+              qrToken,
+              referenceCode,
+              contactName: input.contactName?.trim() || '',
+              contactPhone: input.contactPhone?.trim() || null,
+              contactEmail: input.contactEmail?.trim() || null,
             },
-          },
-        });
-
-        if (!table) {
-          throw new ReservationLifecycleError('NOT_FOUND', 'Столик не найден или неактивен');
-        }
-
-        if (guestCount > table.capacity) {
-          throw new ReservationLifecycleError(
-            'VALIDATION',
-            'Число гостей превышает вместимость столика',
-          );
-        }
-
-        const now = new Date();
-        const blockingReservations = await tx.reservation.count({
-          where: prismaWhereBlockingReservationOverlap({
-            restaurantId,
-            requestedStartAt: startAt,
-            requestedEndAt: endAt,
-            now,
-            tableId,
-          }),
-        });
-
-        if (blockingReservations > 0) {
-          throw new ReservationLifecycleError('CONFLICT', 'Столик уже занят на выбранное время');
-        }
-
-        const qrToken = generateQRToken();
-        const reservationId = randomUUID();
-        const userIdSql =
-          userId != null && userId.length > 0
-            ? Prisma.sql`${userId}::uuid`
-            : Prisma.sql`NULL`;
-        const contactEmailSql = contactEmailTrim
-          ? Prisma.sql`${contactEmailTrim}`
-          : Prisma.sql`NULL`;
-
-        // Prisma 6.x в ряде случаев ошибочно требует nested `user` при `create`, хотя `userId` в схеме optional.
-        // Параметризованный INSERT обходит клиентскую валидацию и сохраняет `userId` = NULL для гостевой брони.
-        const inserted = await tx.$queryRaw<
-          { id: string; qrToken: string; referenceCode: string; startAt: Date; endAt: Date }[]
-        >(Prisma.sql`
-          INSERT INTO "Reservation" (
-            "id",
-            "userId",
-            "restaurantId",
-            "tableId",
-            "guestCount",
-            "startAt",
-            "endAt",
-            "status",
-            "qrToken",
-            "referenceCode",
-            "contactName",
-            "contactPhone",
-            "contactEmail",
-            "createdAt",
-            "updatedAt"
-          ) VALUES (
-            ${reservationId}::uuid,
-            ${userIdSql},
-            ${restaurantId}::uuid,
-            ${tableId}::uuid,
-            ${guestCount},
-            ${startAt},
-            ${endAt},
-            'CONFIRMED'::"ReservationStatus",
-            ${qrToken},
-            ${referenceCode},
-            ${contactNameTrim},
-            ${phoneNorm},
-            ${contactEmailSql},
-            NOW(),
-            NOW()
-          )
-          RETURNING "id", "qrToken", "referenceCode", "startAt", "endAt"
-        `);
-
-        const created = inserted[0];
-        if (!created) {
-          throw new ReservationLifecycleError('CONFLICT', 'Не удалось сохранить бронь');
-        }
-
-        return {
-          reservation: created,
-          tableLabel: table.label,
-          restaurantName: table.restaurant.name,
-        };
-      });
+          });
+        },
+        { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+      );
 
       return {
-        id: reservation.reservation.id,
-        qrToken: reservation.reservation.qrToken,
-        referenceCode: reservation.reservation.referenceCode,
-        startAt: reservation.reservation.startAt.toISOString(),
-        endAt: reservation.reservation.endAt.toISOString(),
-        tableLabel: reservation.tableLabel,
-        restaurantName: reservation.restaurantName,
+        id: reservation.id,
+        qrToken: reservation.qrToken,
+        startAt: reservation.startAt.toISOString(),
+        endAt: reservation.endAt.toISOString(),
+        tableLabel: table.label,
+        restaurantName: table.restaurant.name,
       };
     } catch (error) {
-      lastError = error;
-      if (isReferenceCodeCollision(error)) {
-        // Unique collision on referenceCode — generate a new one and retry.
-        continue;
-      }
+      if (isReferenceCodeUniqueViolation(error)) continue;
+      if (isSerializationFailure(error)) continue;
       throw error;
     }
   }
 
-  // All retries exhausted — propagate last error with context.
-  throw new Error(
-    'Не удалось сгенерировать уникальный код брони. Попробуйте ещё раз.',
-    { cause: lastError instanceof Error ? lastError : undefined },
-  );
+  throw new Error('Не удалось создать уникальный код брони. Попробуйте снова.');
 }
