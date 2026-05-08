@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { RestaurantReserveFlow } from '@/features/reservations/components/restaurant-reserve-flow';
 import { getRestaurantBySlug } from '@/features/restaurants/server/restaurants.service';
 import { getRestaurantIanaZone } from '@/lib/restaurant-time';
@@ -10,9 +10,21 @@ type RestaurantReservePageProps = {
   params: Promise<{ slug: string }>;
 };
 
+const LEGACY_SLUG_REDIRECTS: Record<string, string> = {
+  'la-placinte-stefan-cel-mare': 'la-placinte',
+};
+
 export default async function RestaurantReservePage({ params }: RestaurantReservePageProps) {
   const { slug } = await params;
   const restaurant = await getRestaurantBySlug(slug);
+
+  if (!restaurant && LEGACY_SLUG_REDIRECTS[slug]) {
+    const canonicalSlug = LEGACY_SLUG_REDIRECTS[slug];
+    const canonicalRestaurant = await getRestaurantBySlug(canonicalSlug);
+    if (canonicalRestaurant) {
+      redirect(`/restaurants/${canonicalSlug}/reserve`);
+    }
+  }
 
   if (!restaurant) {
     notFound();

@@ -91,6 +91,9 @@ export type RestaurantDetails = {
 };
 
 const GALLERY_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+const LEGACY_GALLERY_SLUGS: Record<string, string[]> = {
+  'la-placinte': ['la-placinte-stefan-cel-mare'],
+};
 
 function deriveCity(address: string | null | undefined): string {
   if (!address) {
@@ -117,23 +120,26 @@ async function resolveRestaurantGalleryImages(input: {
   slug: string;
   fallbackImageUrl: string | null;
 }): Promise<string[]> {
-  const folderPath = path.join(process.cwd(), 'public', 'images', 'restaurants', input.slug);
-  try {
-    const entries = await readdir(folderPath, { withFileTypes: true });
-    const imageFiles = entries
-      .filter((entry) => entry.isFile())
-      .map((entry) => entry.name)
-      .filter((name) => GALLERY_EXTENSIONS.has(path.extname(name).toLowerCase()))
-      // Reserve "cover.*" for the hero — it's not shown in the gallery.
-      .filter((name) => !/^cover\./i.test(name))
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
-      .slice(0, 6);
+  const slugCandidates = [input.slug, ...(LEGACY_GALLERY_SLUGS[input.slug] ?? [])];
+  for (const slugCandidate of slugCandidates) {
+    const folderPath = path.join(process.cwd(), 'public', 'images', 'restaurants', slugCandidate);
+    try {
+      const entries = await readdir(folderPath, { withFileTypes: true });
+      const imageFiles = entries
+        .filter((entry) => entry.isFile())
+        .map((entry) => entry.name)
+        .filter((name) => GALLERY_EXTENSIONS.has(path.extname(name).toLowerCase()))
+        // Reserve "cover.*" for the hero — it's not shown in the gallery.
+        .filter((name) => !/^cover\./i.test(name))
+        .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+        .slice(0, 6);
 
-    if (imageFiles.length > 0) {
-      return imageFiles.map((name) => `/images/restaurants/${input.slug}/${name}`);
+      if (imageFiles.length > 0) {
+        return imageFiles.map((name) => `/images/restaurants/${slugCandidate}/${name}`);
+      }
+    } catch {
+      // Candidate folder may not exist; try next alias.
     }
-  } catch {
-    // If folder is missing, we simply fall back to preview image.
   }
 
   return input.fallbackImageUrl ? [input.fallbackImageUrl] : [];

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Locale } from '@/lib/i18n';
 import { getMessages } from '@/lib/messages';
@@ -219,29 +219,6 @@ export function RestaurantFiltersBar({
   const activeFeatures = parseList(searchParams.get('feat'));
   const openNow = searchParams.get('open') === '1';
 
-  const [inputValue, setInputValue] = useState(qFromURL);
-  const skipDebounce = useRef(false);
-
-  useEffect(() => {
-    if (qFromURL !== inputValue) {
-      skipDebounce.current = true;
-      setInputValue(qFromURL);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qFromURL]);
-
-  useEffect(() => {
-    if (skipDebounce.current) {
-      skipDebounce.current = false;
-      return;
-    }
-    const timer = setTimeout(() => {
-      router.replace(buildURL(searchParams, { q: inputValue }), { scroll: false });
-    }, 300);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inputValue]);
-
   function setSort(value: SortOption) {
     router.replace(
       buildURL(searchParams, { sort: value === 'rating' ? null : value }),
@@ -281,7 +258,7 @@ export function RestaurantFiltersBar({
   }
 
   const hasActiveFilters =
-    inputValue !== '' ||
+    qFromURL !== '' ||
     sort !== 'rating' ||
     priceMin > 1 ||
     priceMax < 4 ||
@@ -294,62 +271,6 @@ export function RestaurantFiltersBar({
     { value: 'price_asc', label: t.sort.price_asc },
     { value: 'price_desc', label: t.sort.price_desc },
   ];
-
-  /* ── Shared sidebar filter blocks ─────────────────────────────────── */
-  const OpenNowButton = ({ compact = false }: { compact?: boolean }) => (
-    <button
-      type="button"
-      onClick={toggleOpenNow}
-      aria-pressed={openNow}
-      className={[
-        'flex items-center gap-2 transition-colors',
-        compact
-          ? 'h-8 rounded-full border px-3 text-[13px] font-medium'
-          : 'w-full rounded-xl border px-3 py-2 text-sm font-medium',
-        openNow
-          ? 'border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
-          : 'border-border/45 bg-surface/80 text-foreground/80 hover:border-accent-border/70 hover:bg-accent-bg hover:text-accent-text',
-      ].join(' ')}
-    >
-      <span
-        className={`shrink-0 rounded-full ${compact ? 'h-1.5 w-1.5' : 'h-2 w-2'} ${openNow ? 'bg-emerald-500' : 'bg-muted'}`}
-        aria-hidden="true"
-      />
-      {t.openNow}
-    </button>
-  );
-
-  const FeatureChips = ({ compact = false }: { compact?: boolean }) => (
-    <>
-      {FILTERABLE_FEATURES.map((feature) => {
-        const label = t.features[feature] ?? feature;
-        const icon = FEATURE_ICONS[feature];
-        const active = activeFeatures.includes(feature);
-        return (
-          <button
-            key={feature}
-            type="button"
-            onClick={() => toggleFeature(feature)}
-            aria-pressed={active}
-            className={[
-              'flex items-center gap-1.5 transition-colors',
-              compact
-                ? 'h-8 rounded-full border px-3 text-[13px] font-medium'
-                : 'rounded-lg border px-3 py-1.5 text-left text-[13px] font-medium',
-              active
-                ? 'border-accent-border/80 bg-accent-bg text-accent-text'
-                : compact
-                ? 'border-border/45 bg-surface/90 text-foreground/85 hover:border-accent-border/70 hover:bg-accent-bg hover:text-accent-text'
-                : 'border-transparent text-foreground/75 hover:border-accent-border/50 hover:bg-accent-bg/60 hover:text-accent-text',
-            ].join(' ')}
-          >
-            {icon && <span aria-hidden="true">{icon}</span>}
-            {label}
-          </button>
-        );
-      })}
-    </>
-  );
 
   return (
     <div className="space-y-4">
@@ -372,16 +293,23 @@ export function RestaurantFiltersBar({
           </svg>
           <input
             type="search"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            value={qFromURL}
+            onChange={(e) =>
+              router.replace(
+                buildURL(searchParams, { q: e.target.value }),
+                { scroll: false },
+              )
+            }
             placeholder={t.searchPlaceholder}
             aria-label={t.searchPlaceholder}
             className="h-10 w-full rounded-xl border border-border/60 bg-surface pl-10 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
           />
-          {inputValue && (
+          {qFromURL && (
             <button
               type="button"
-              onClick={() => setInputValue('')}
+              onClick={() =>
+                router.replace(buildURL(searchParams, { q: null }), { scroll: false })
+              }
               aria-label="Очистить поиск"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
             >
@@ -394,11 +322,19 @@ export function RestaurantFiltersBar({
 
         {/* Sort dropdown */}
         <div className="relative shrink-0">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted"
+            aria-hidden="true"
+          >
+            <path d="M4 7h10M4 12h16M4 17h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value as SortOption)}
             aria-label={t.sortLabel}
-            className="h-10 cursor-pointer appearance-none rounded-xl border border-border/60 bg-surface py-0 pl-3 pr-8 text-sm font-medium text-foreground/85 outline-none transition hover:border-border hover:bg-surface-soft focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
+            className="h-10 cursor-pointer appearance-none rounded-xl border border-border/60 bg-surface py-0 pl-7 pr-8 text-sm font-medium text-foreground/85 outline-none transition hover:border-border hover:bg-surface-soft focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
           >
             {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -436,7 +372,23 @@ export function RestaurantFiltersBar({
         <aside className="hidden w-48 shrink-0 space-y-5 rounded-2xl border border-border/30 bg-surface-soft/50 p-4 lg:block lg:sticky lg:top-20">
 
           {/* Open now */}
-          <OpenNowButton />
+          <button
+            type="button"
+            onClick={toggleOpenNow}
+            aria-pressed={openNow}
+            className={[
+              'flex w-full items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+              openNow
+                ? 'border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                : 'border-border/45 bg-surface/80 text-foreground/80 hover:border-accent-border/70 hover:bg-accent-bg hover:text-accent-text',
+            ].join(' ')}
+          >
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${openNow ? 'bg-emerald-500' : 'bg-muted'}`}
+              aria-hidden="true"
+            />
+            {t.openNow}
+          </button>
 
           {/* Price range */}
           <div className="space-y-2">
@@ -456,7 +408,28 @@ export function RestaurantFiltersBar({
               {t.featuresLabel}
             </p>
             <div className="flex flex-col gap-0.5">
-              <FeatureChips />
+              {FILTERABLE_FEATURES.map((feature) => {
+                const label = t.features[feature] ?? feature;
+                const icon = FEATURE_ICONS[feature];
+                const active = activeFeatures.includes(feature);
+                return (
+                  <button
+                    key={feature}
+                    type="button"
+                    onClick={() => toggleFeature(feature)}
+                    aria-pressed={active}
+                    className={[
+                      'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-left text-[13px] font-medium transition-colors',
+                      active
+                        ? 'border-accent-border/80 bg-accent-bg text-accent-text'
+                        : 'border-transparent text-foreground/75 hover:border-accent-border/50 hover:bg-accent-bg/60 hover:text-accent-text',
+                    ].join(' ')}
+                  >
+                    {icon && <span aria-hidden="true">{icon}</span>}
+                    {label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -469,8 +442,45 @@ export function RestaurantFiltersBar({
           <div className="space-y-2 lg:hidden">
             {/* Open now + feature chips row */}
             <div className="flex flex-wrap gap-2">
-              <OpenNowButton compact />
-              <FeatureChips compact />
+              <button
+                type="button"
+                onClick={toggleOpenNow}
+                aria-pressed={openNow}
+                className={[
+                  'flex h-8 items-center gap-2 rounded-full border px-3 text-[13px] font-medium transition-colors',
+                  openNow
+                    ? 'border-emerald-500/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                    : 'border-border/45 bg-surface/80 text-foreground/80 hover:border-accent-border/70 hover:bg-accent-bg hover:text-accent-text',
+                ].join(' ')}
+              >
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${openNow ? 'bg-emerald-500' : 'bg-muted'}`}
+                  aria-hidden="true"
+                />
+                {t.openNow}
+              </button>
+              {FILTERABLE_FEATURES.map((feature) => {
+                const label = t.features[feature] ?? feature;
+                const icon = FEATURE_ICONS[feature];
+                const active = activeFeatures.includes(feature);
+                return (
+                  <button
+                    key={feature}
+                    type="button"
+                    onClick={() => toggleFeature(feature)}
+                    aria-pressed={active}
+                    className={[
+                      'flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-medium transition-colors',
+                      active
+                        ? 'border-accent-border/80 bg-accent-bg text-accent-text'
+                        : 'border-border/45 bg-surface/90 text-foreground/85 hover:border-accent-border/70 hover:bg-accent-bg hover:text-accent-text',
+                    ].join(' ')}
+                  >
+                    {icon && <span aria-hidden="true">{icon}</span>}
+                    {label}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Price range slider row */}

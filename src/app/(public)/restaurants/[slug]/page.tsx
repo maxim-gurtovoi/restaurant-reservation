@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { RestaurantHero } from '@/features/restaurants/components/restaurant-hero';
 import { RestaurantFeatureTags } from '@/features/restaurants/components/restaurant-feature-tags';
 import {
@@ -34,12 +34,22 @@ type RestaurantDetailsPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+const LEGACY_SLUG_REDIRECTS: Record<string, string> = {
+  'la-placinte-stefan-cel-mare': 'la-placinte',
+};
+
 export default async function RestaurantDetailsPage({ params }: RestaurantDetailsPageProps) {
   const { slug } = await params;
-  const [restaurant, locale] = await Promise.all([
-    getRestaurantBySlug(slug),
-    getServerLocale(),
-  ]);
+  const locale = await getServerLocale();
+  const restaurant = await getRestaurantBySlug(slug);
+
+  if (!restaurant && LEGACY_SLUG_REDIRECTS[slug]) {
+    const canonicalSlug = LEGACY_SLUG_REDIRECTS[slug];
+    const canonicalRestaurant = await getRestaurantBySlug(canonicalSlug);
+    if (canonicalRestaurant) {
+      redirect(`/restaurants/${canonicalSlug}`);
+    }
+  }
 
   if (!restaurant) {
     notFound();

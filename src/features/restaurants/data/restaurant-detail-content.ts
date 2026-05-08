@@ -151,6 +151,26 @@ export const RESTAURANT_DETAIL_CONTENT_BY_SLUG: Record<string, RestaurantDetailS
       { source: 'relax', rating: 4.5, reviewsCount: 91 },
     ],
   },
+  'la-placinte': {
+    aboutDescription:
+      'Традиционная молдавская кухня с современным акцентом. Домашние плацинды, местные блюда и по-настоящему уютная атмосфера.',
+    reviews: [
+      { author: 'Виктория Р.', rating: 5, text: 'Плацинды и зама — как дома, очень рекомендую.' },
+      { author: 'Ион Б.', rating: 5, text: 'Доступно, сытно и стабильное качество.' },
+      { author: 'Кэтэлина М.', rating: 4, text: 'В ланч бывает шумно, но того стоит — порции большие.' },
+    ],
+    menuPreview: [
+      { name: 'Плацинды с брынзой', price: 'MDL 45' },
+      { name: 'Традиционная зама', price: 'MDL 75' },
+      { name: 'Сармале с мамалыгой', price: 'MDL 95' },
+      { name: 'Плацинда с яблоками', price: 'MDL 40' },
+    ],
+    externalRatings: [
+      { source: 'google', rating: 4.6, reviewsCount: 1382 },
+      { source: 'tripadvisor', rating: 4.5, reviewsCount: 612 },
+      { source: 'relax', rating: 4.7, reviewsCount: 284 },
+    ],
+  },
   'la-placinte-stefan-cel-mare': {
     aboutDescription:
       'Традиционная молдавская кухня с современным акцентом. Домашние плацинды, местные блюда и по-настоящему уютная атмосфера.',

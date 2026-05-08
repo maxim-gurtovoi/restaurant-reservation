@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { FloorPlanElementType, TableShape } from '@prisma/client';
 import { DateTime } from 'luxon';
@@ -102,6 +102,101 @@ function tryShowPicker(el: HTMLInputElement | null) {
   extended?.showPicker?.();
 }
 
+function readReserveDraft(params: {
+  restaurant: ReserveRestaurant;
+  bookingTimeZone: string;
+}) {
+  const { restaurant, bookingTimeZone } = params;
+  const key = reserveDraftStorageKey(restaurant.slug);
+  try {
+    const raw = sessionStorage.getItem(key);
+    if (!raw) return null;
+    const p = JSON.parse(raw) as {
+      v?: number;
+      restaurantId?: string;
+      step?: number;
+      selectedTableId?: string | null;
+      date?: string;
+      time?: string;
+      showCustomTime?: boolean;
+      guests?: number;
+      contactName?: string;
+      contactPhone?: string;
+      contactEmail?: string;
+    };
+    if (p.v !== RESERVE_DRAFT_VERSION || p.restaurantId !== restaurant.id) return null;
+
+    const maxBookingYmdLocal = ymdInZone(
+      bookingTimeZone,
+      DateTime.now().setZone(bookingTimeZone).plus({ days: 90 }),
+    );
+    const caps = restaurant.tables.filter((t) => t.isActive).map((t) => t.capacity);
+    const maxTableCap = caps.length > 0 ? Math.max(...caps) : 8;
+    const maxGuestOpt = Math.min(20, Math.max(10, maxTableCap));
+    const activeTables = restaurant.tables.filter((t) => t.isActive).length;
+
+    let dateVal = typeof p.date === 'string' ? p.date : '';
+    let timeVal = typeof p.time === 'string' ? p.time : '';
+    if (timeVal && !/^\d{1,2}:\d{2}$/.test(timeVal)) {
+      timeVal = '';
+    } else if (timeVal) {
+      const [hh, mm] = timeVal.split(':').map((n) => Number(n));
+      if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
+        timeVal = '';
+      }
+    }
+
+    const d = DateTime.fromISO(dateVal, { zone: bookingTimeZone });
+    const todayStart = DateTime.now().setZone(bookingTimeZone).startOf('day');
+    const maxD = DateTime.fromISO(maxBookingYmdLocal, { zone: bookingTimeZone });
+    if (!dateVal || !d.isValid || d < todayStart || d > maxD) {
+      dateVal = '';
+      timeVal = '';
+    }
+
+    let guestsVal =
+      typeof p.guests === 'number' && Number.isFinite(p.guests) ? Math.round(p.guests) : 2;
+    guestsVal = Math.min(Math.max(1, guestsVal), maxGuestOpt);
+
+    let tableId =
+      typeof p.selectedTableId === 'string' && p.selectedTableId
+        ? p.selectedTableId
+        : null;
+    if (
+      tableId &&
+      !restaurant.tables.some((t) => t.id === tableId && t.isActive)
+    ) {
+      tableId = null;
+    }
+
+    let stepVal: 1 | 2 | 3 = 1;
+    if (p.step === 2 || p.step === 3) stepVal = p.step;
+
+    const canTable = Boolean(dateVal && timeVal && guestsVal >= 1);
+    if (stepVal >= 2 && !canTable) stepVal = 1;
+
+    const sel = tableId ? restaurant.tables.find((t) => t.id === tableId) : null;
+    const exceeds = sel != null && guestsVal > sel.capacity;
+    const canConfirm = Boolean(sel && !exceeds && dateVal && timeVal) && activeTables > 0;
+    if (stepVal >= 3 && !canConfirm) stepVal = 2;
+    if (stepVal >= 2 && !canTable) stepVal = 1;
+
+    return {
+      stepVal,
+      tableId,
+      dateVal,
+      timeVal,
+      showCustomTimeVal: Boolean(p.showCustomTime),
+      guestsVal,
+      contactName: typeof p.contactName === 'string' ? p.contactName : null,
+      contactPhone: typeof p.contactPhone === 'string' ? p.contactPhone : null,
+      contactEmail: typeof p.contactEmail === 'string' ? p.contactEmail : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function RestaurantReserveFlow({
   restaurant,
   bookingTimeZone,
@@ -132,107 +227,35 @@ export function RestaurantReserveFlow({
     isLoggedIn && accountProfile ? (accountProfile.phone?.trim() ?? '') : '',
   );
   const [contactEmail, setContactEmail] = useState('');
-  /** 0 until the first layout pass finishes (restore or noop); avoids clobbering the draft before read. */
-  const [persistVersion, setPersistVersion] = useState(0);
-
-  useLayoutEffect(() => {
-    const key = reserveDraftStorageKey(restaurant.slug);
-    try {
-      const raw = sessionStorage.getItem(key);
-      if (!raw) {
-        setPersistVersion(1);
-        return;
-      }
-      const p = JSON.parse(raw) as {
-        v?: number;
-        restaurantId?: string;
-        step?: number;
-        selectedTableId?: string | null;
-        date?: string;
-        time?: string;
-        showCustomTime?: boolean;
-        guests?: number;
-        contactName?: string;
-        contactPhone?: string;
-        contactEmail?: string;
-      };
-      if (p.v !== RESERVE_DRAFT_VERSION || p.restaurantId !== restaurant.id) {
-        setPersistVersion(1);
-        return;
-      }
-
-      const maxBookingYmdLocal = ymdInZone(
-        bookingTimeZone,
-        DateTime.now().setZone(bookingTimeZone).plus({ days: 90 }),
-      );
-      const caps = restaurant.tables.filter((t) => t.isActive).map((t) => t.capacity);
-      const maxTableCap = caps.length > 0 ? Math.max(...caps) : 8;
-      const maxGuestOpt = Math.min(20, Math.max(10, maxTableCap));
-      const activeTables = restaurant.tables.filter((t) => t.isActive).length;
-
-      let dateVal = typeof p.date === 'string' ? p.date : '';
-      let timeVal = typeof p.time === 'string' ? p.time : '';
-      if (timeVal && !/^\d{1,2}:\d{2}$/.test(timeVal)) {
-        timeVal = '';
-      } else if (timeVal) {
-        const [hh, mm] = timeVal.split(':').map((n) => Number(n));
-        if (!Number.isFinite(hh) || !Number.isFinite(mm) || hh < 0 || hh > 23 || mm < 0 || mm > 59) {
-          timeVal = '';
-        }
-      }
-
-      const d = DateTime.fromISO(dateVal, { zone: bookingTimeZone });
-      const todayStart = DateTime.now().setZone(bookingTimeZone).startOf('day');
-      const maxD = DateTime.fromISO(maxBookingYmdLocal, { zone: bookingTimeZone });
-      if (!dateVal || !d.isValid || d < todayStart || d > maxD) {
-        dateVal = '';
-        timeVal = '';
-      }
-
-      let guestsVal =
-        typeof p.guests === 'number' && Number.isFinite(p.guests) ? Math.round(p.guests) : 2;
-      guestsVal = Math.min(Math.max(1, guestsVal), maxGuestOpt);
-
-      let tableId =
-        typeof p.selectedTableId === 'string' && p.selectedTableId
-          ? p.selectedTableId
-          : null;
-      if (
-        tableId &&
-        !restaurant.tables.some((t) => t.id === tableId && t.isActive)
-      ) {
-        tableId = null;
-      }
-
-      let stepVal: 1 | 2 | 3 = 1;
-      if (p.step === 2 || p.step === 3) stepVal = p.step;
-
-      const canTable = Boolean(dateVal && timeVal && guestsVal >= 1);
-      if (stepVal >= 2 && !canTable) stepVal = 1;
-
-      const sel = tableId ? restaurant.tables.find((t) => t.id === tableId) : null;
-      const exceeds = sel != null && guestsVal > sel.capacity;
-      const canConfirm = Boolean(sel && !exceeds && dateVal && timeVal) && activeTables > 0;
-      if (stepVal >= 3 && !canConfirm) stepVal = 2;
-      if (stepVal >= 2 && !canTable) stepVal = 1;
-
-      setStep(stepVal);
-      setSelectedTableId(tableId);
-      setDate(dateVal);
-      setTime(timeVal);
-      setShowCustomTime(Boolean(p.showCustomTime));
-      setGuests(guestsVal);
-      if (typeof p.contactName === 'string') setContactName(p.contactName);
-      if (typeof p.contactPhone === 'string') setContactPhone(p.contactPhone);
-      if (typeof p.contactEmail === 'string') setContactEmail(p.contactEmail);
-    } catch {
-      /* ignore corrupt draft */
+  const restoreSignature = `${restaurant.id}|${restaurant.slug}|${bookingTimeZone}`;
+  const [appliedRestoreSignature, setAppliedRestoreSignature] = useState('');
+  if (appliedRestoreSignature !== restoreSignature) {
+    setAppliedRestoreSignature(restoreSignature);
+    const draft = readReserveDraft({ restaurant, bookingTimeZone });
+    if (draft) {
+      setStep(draft.stepVal);
+      setSelectedTableId(draft.tableId);
+      setDate(draft.dateVal);
+      setTime(draft.timeVal);
+      setShowCustomTime(draft.showCustomTimeVal);
+      setGuests(draft.guestsVal);
+      if (draft.contactName !== null) setContactName(draft.contactName);
+      if (draft.contactPhone !== null) setContactPhone(draft.contactPhone);
+      if (draft.contactEmail !== null) setContactEmail(draft.contactEmail);
+    } else {
+      setStep(1);
+      setSelectedTableId(null);
+      setDate('');
+      setTime('');
+      setShowCustomTime(false);
+      setGuests(2);
+      setContactName(isLoggedIn && accountProfile ? accountProfile.name.trim() : '');
+      setContactPhone(isLoggedIn && accountProfile ? (accountProfile.phone?.trim() ?? '') : '');
+      setContactEmail('');
     }
-    setPersistVersion(1);
-  }, [restaurant.id, restaurant.slug, bookingTimeZone]);
+  }
 
   useEffect(() => {
-    if (persistVersion === 0) return;
     const key = reserveDraftStorageKey(restaurant.slug);
     try {
       sessionStorage.setItem(
@@ -255,7 +278,6 @@ export function RestaurantReserveFlow({
       /* quota / private mode */
     }
   }, [
-    persistVersion,
     restaurant.id,
     restaurant.slug,
     step,

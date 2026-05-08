@@ -28,8 +28,12 @@ const RO_TRANSLATIONS: LocaleDictionary = {
     name: 'Smokehouse',
     description: 'Carne maturată, grătar pe foc și porții generoase pentru iubitorii de gust intens.',
   },
+  'la-placinte': {
+    name: 'La Plăcinte',
+    description: 'Bucătărie moldovenească reinterpretată, plăcinte și preparate tradiționale pentru toată familia.',
+  },
   'la-placinte-stefan-cel-mare': {
-    name: 'La Plăcinte Ștefan cel Mare',
+    name: 'La Plăcinte',
     description: 'Bucătărie moldovenească reinterpretată, plăcinte și preparate tradiționale pentru toată familia.',
   },
 };
@@ -55,8 +59,12 @@ const RU_TRANSLATIONS: LocaleDictionary = {
     name: 'Smokehouse',
     description: 'Выдержанное мясо, огонь и гриль, большие порции для любителей насыщенного вкуса.',
   },
+  'la-placinte': {
+    name: 'La Plăcinte',
+    description: 'Современная молдавская кухня, плацинды и традиционные блюда для всей семьи.',
+  },
   'la-placinte-stefan-cel-mare': {
-    name: 'La Plăcinte Ștefan cel Mare',
+    name: 'La Plăcinte',
     description: 'Современная молдавская кухня, плацинды и традиционные блюда для всей семьи.',
   },
 };

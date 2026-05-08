@@ -272,7 +272,7 @@ async function main() {
   const laPlacinte = await prisma.restaurant.create({
     data: {
       name: 'La Plăcinte',
-      slug: 'la-placinte-stefan-cel-mare',
+      slug: 'la-placinte',
       description:
         'Традиционная молдавская кухня с современным акцентом. Известны домашние пироги, местные блюда и уютная атмосфера.',
       address: 'Bd. Ștefan cel Mare și Sfînt 3, Chișinău',
