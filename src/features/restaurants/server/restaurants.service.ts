@@ -4,6 +4,12 @@ import path from 'node:path';
 import type { FloorPlanElementType, RestaurantFeature, TableShape } from '@prisma/client';
 import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
+import { getRestaurantIanaZone } from '@/lib/restaurant-time';
+import { getOpenStatus } from '@/features/restaurants/lib/open-status';
+import type { SortOption } from '@/features/restaurants/constants';
+
+export type { SortOption } from '@/features/restaurants/constants';
+export { FILTERABLE_FEATURES } from '@/features/restaurants/constants';
 
 export type RestaurantListItem = {
   id: string;
@@ -17,6 +23,9 @@ export type RestaurantListItem = {
   priceLevel: number | null;
   rating: number | null;
   reviewsCount: number;
+  features: RestaurantFeature[];
+  workingHours: { dayOfWeek: number; openTime: string; closeTime: string; isClosed: boolean }[];
+  timeZone: string | null;
 };
 
 export type RestaurantDetails = {
@@ -130,16 +139,26 @@ async function resolveRestaurantGalleryImages(input: {
   return input.fallbackImageUrl ? [input.fallbackImageUrl] : [];
 }
 
+/** Minimal labels required only to read `.tone` from getOpenStatus. */
+const OPEN_STATUS_LABELS_STUB = {
+  open: '', closed: '', unknown: '',
+  dayOff: '', unavailable: '', allDay: '',
+  dayNames: {} as Record<number, string>,
+};
+
 export async function listRestaurants(input: {
   city?: string;
+  q?: string;
+  sort?: SortOption;
+  priceMin?: number;
+  priceMax?: number;
+  features?: RestaurantFeature[];
+  openNow?: boolean;
 }): Promise<ApiResult<RestaurantListItem[]>> {
   const records = await prisma.restaurant.findMany({
-    where: {
-      isActive: true,
-    },
-    orderBy: {
-      name: 'asc',
-    },
+    where: { isActive: true },
+    orderBy: { name: 'asc' },
+    include: { workingHours: true },
   });
 
   let items: RestaurantListItem[] = records.map((r) => ({
@@ -154,12 +173,83 @@ export async function listRestaurants(input: {
     priceLevel: r.priceLevel ?? null,
     rating: r.rating ?? null,
     reviewsCount: r.reviewsCount,
+    features: r.features,
+    workingHours: r.workingHours.map((wh) => ({
+      dayOfWeek: wh.dayOfWeek,
+      openTime: wh.openTime,
+      closeTime: wh.closeTime,
+      isClosed: wh.isClosed,
+    })),
+    timeZone: r.timeZone ?? null,
   }));
 
+  // ── city filter (legacy) ─────────────────────────────────────────────
   if (input.city) {
     const target = input.city.toLowerCase();
     items = items.filter((item) => item.city.toLowerCase() === target);
   }
+
+  // ── text search ──────────────────────────────────────────────────────
+  if (input.q && input.q.trim()) {
+    const needle = input.q.trim().toLowerCase();
+    items = items.filter(
+      (item) =>
+        item.name.toLowerCase().includes(needle) ||
+        (item.cuisine?.toLowerCase().includes(needle) ?? false),
+    );
+  }
+
+  // ── price range ───────────────────────────────────────────────────────
+  const priceMin = input.priceMin ?? 1;
+  const priceMax = input.priceMax ?? 4;
+  if (priceMin > 1 || priceMax < 4) {
+    items = items.filter(
+      (item) => item.priceLevel !== null && item.priceLevel >= priceMin && item.priceLevel <= priceMax,
+    );
+  }
+
+  // ── features (all selected must be present) ──────────────────────────
+  if (input.features && input.features.length > 0) {
+    items = items.filter((item) =>
+      input.features!.every((f) => item.features.includes(f)),
+    );
+  }
+
+  // ── open now ─────────────────────────────────────────────────────────
+  if (input.openNow) {
+    items = items.filter((item) => {
+      const tz = getRestaurantIanaZone({ timeZone: item.timeZone });
+      return getOpenStatus(item.workingHours, tz, OPEN_STATUS_LABELS_STUB).tone === 'open';
+    });
+  }
+
+  // ── sort ─────────────────────────────────────────────────────────────
+  const sort = input.sort ?? 'rating';
+  items.sort((a, b) => {
+    switch (sort) {
+      case 'name':
+        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+      case 'price_asc': {
+        if (a.priceLevel === null && b.priceLevel === null) return 0;
+        if (a.priceLevel === null) return 1;
+        if (b.priceLevel === null) return -1;
+        return a.priceLevel - b.priceLevel;
+      }
+      case 'price_desc': {
+        if (a.priceLevel === null && b.priceLevel === null) return 0;
+        if (a.priceLevel === null) return 1;
+        if (b.priceLevel === null) return -1;
+        return b.priceLevel - a.priceLevel;
+      }
+      case 'rating':
+      default: {
+        if (a.rating === null && b.rating === null) return b.reviewsCount - a.reviewsCount;
+        if (a.rating === null) return 1;
+        if (b.rating === null) return -1;
+        return b.rating - a.rating || b.reviewsCount - a.reviewsCount;
+      }
+    }
+  });
 
   return { status: 200, body: items };
 }
@@ -270,6 +360,7 @@ export async function listSimilarRestaurants(input: {
       { name: 'asc' },
     ],
     take: limit,
+    include: { workingHours: true },
   });
 
   return records.map((r) => ({
@@ -284,5 +375,13 @@ export async function listSimilarRestaurants(input: {
     priceLevel: r.priceLevel ?? null,
     rating: r.rating ?? null,
     reviewsCount: r.reviewsCount,
+    features: r.features,
+    workingHours: r.workingHours.map((wh) => ({
+      dayOfWeek: wh.dayOfWeek,
+      openTime: wh.openTime,
+      closeTime: wh.closeTime,
+      isClosed: wh.isClosed,
+    })),
+    timeZone: r.timeZone ?? null,
   }));
 }

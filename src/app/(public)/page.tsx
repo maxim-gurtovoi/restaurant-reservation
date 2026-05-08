@@ -1,8 +1,13 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { RegisterModalTrigger } from '@/components/auth/register-modal-trigger';
-import { RestaurantCard } from '@/features/restaurants/components/restaurant-card';
+import { RestaurantList } from '@/features/restaurants/components/restaurant-list';
+import { RestaurantFiltersBar } from '@/features/restaurants/components/restaurant-filters-bar';
 import { listRestaurants } from '@/features/restaurants/server/restaurants.service';
+import type { SortOption } from '@/features/restaurants/constants';
+import type { RestaurantFeature } from '@prisma/client';
+import { getCurrentUser } from '@/server/auth';
 import { getServerLocale } from '@/lib/i18n';
 import { getMessages } from '@/lib/messages';
 
@@ -108,6 +113,7 @@ const PLATFORM_HIGHLIGHTS_RU = [
     desc: 'Один аккаунт — бронирование в разных заведениях платформы.',
   },
 ];
+
 const PLATFORM_HIGHLIGHTS_RO = [
   {
     title: 'Plan interactiv al sălii',
@@ -127,18 +133,43 @@ const PLATFORM_HIGHLIGHTS_RO = [
   },
 ];
 
-export default async function HomePage() {
+const VALID_SORT_OPTIONS = new Set(['rating', 'name', 'price_asc', 'price_desc']);
+
+function getString(v: string | string[] | undefined): string {
+  return typeof v === 'string' ? v : '';
+}
+
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const locale = await getServerLocale();
   const t = getMessages(locale);
-  const result = await listRestaurants({});
-  const featured = 'error' in result.body ? [] : result.body.slice(0, 6);
+  const user = await getCurrentUser();
+  const params = await searchParams;
+
+  const q = getString(params.q);
+  const rawSort = getString(params.sort);
+  const sort: SortOption = VALID_SORT_OPTIONS.has(rawSort) ? (rawSort as SortOption) : 'rating';
+  const priceMin = Math.max(1, Math.min(4, parseInt(getString(params.pmin)) || 1));
+  const priceMax = Math.max(1, Math.min(4, parseInt(getString(params.pmax)) || 4));
+  const features = getString(params.feat)
+    .split(',')
+    .filter(Boolean) as RestaurantFeature[];
+  const openNow = params.open === '1';
+
+  const result = await listRestaurants({ q, sort, priceMin, priceMax, features, openNow });
+  const restaurants = 'error' in result.body ? [] : result.body;
+
   const howItWorks = locale === 'ro' ? HOW_IT_WORKS_RO : HOW_IT_WORKS_RU;
   const highlights = locale === 'ro' ? PLATFORM_HIGHLIGHTS_RO : PLATFORM_HIGHLIGHTS_RU;
 
   return (
     <div className="flex flex-col gap-12 pb-16 pt-1 sm:gap-16 sm:pb-20 md:gap-20">
-      {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden rounded-2xl bg-surface/58 p-7 shadow-elev-2 backdrop-blur-xl sm:p-10 lg:p-14">
+
+      {/* ── Compact intro ─────────────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden rounded-2xl bg-surface/58 px-6 py-5 shadow-elev-2 backdrop-blur-xl sm:px-8 sm:py-6">
         <div
           className="pointer-events-none absolute inset-0 -z-10 opacity-58"
           aria-hidden="true"
@@ -151,65 +182,54 @@ export default async function HomePage() {
         />
         <div className="pointer-events-none absolute inset-0 -z-10 bg-white/24" aria-hidden="true" />
 
-        <div className="relative max-w-4xl space-y-6 sm:space-y-7">
-          <div className="space-y-4 sm:space-y-5">
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+          <div className="space-y-1">
             <p className="inline-flex rounded-full border border-border/60 bg-surface/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
               {t.home.badge}
             </p>
-            <h1 className="max-w-3xl text-4xl font-extrabold leading-[1.04] tracking-tight text-foreground sm:text-5xl lg:text-[3.6rem]">
+            <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
               {t.home.heroTitle}
             </h1>
-            <p className="max-w-2xl text-sm leading-relaxed text-foreground/75 sm:text-base">
+            <p className="text-sm leading-relaxed text-foreground/75">
               {t.home.heroDescription}
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="hero" size="lg">
-              <Link href="/restaurants">{t.home.restaurantsCta}</Link>
+          {!user && (
+            <div className="shrink-0">
+              <RegisterModalTrigger
+                locale={locale}
+                label={t.home.registerCta}
+                className="border-white bg-white/20 font-semibold text-white hover:border-white hover:bg-white hover:text-foreground"
+              />
+            </div>
+          )}
+          {user && (
+            <Button asChild variant="primary" className="shrink-0 shadow-none hover:shadow-none">
+              <Link href="/my-reservations">{t.appShell.myReservations}</Link>
             </Button>
-            <RegisterModalTrigger
-              locale={locale}
-              label={t.home.registerCta}
-              className="border-white bg-white/20 font-semibold text-white hover:border-white hover:bg-white hover:text-foreground"
-            />
-          </div>
+          )}
         </div>
       </section>
 
-      {/* ── Featured restaurants (primary content anchor) ─────────── */}
-      {featured.length > 0 && (
-        <section className="space-y-6 sm:space-y-8">
-          <div className="rounded-3xl border border-border-strong/35 bg-surface-soft/60 p-5 shadow-card-soft sm:p-6 md:p-8">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-              <div className="min-w-0 space-y-1.5">
-                <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.home.featuredLabel}</p>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl md:text-[1.875rem]">
-                  {t.home.featuredTitle}
-                </h2>
-                <p className="max-w-xl text-sm leading-relaxed text-muted">
-                  {t.home.featuredDescription}
-                </p>
+      {/* ── Restaurants ───────────────────────────────────────────── */}
+      <section>
+        <Suspense fallback={<div className="h-10 rounded-xl border border-border/60 bg-surface" />}>
+          <RestaurantFiltersBar locale={locale}>
+            {'error' in result.body ? (
+              <p className="text-sm text-error">{result.body.error}</p>
+            ) : restaurants.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 py-16 text-center">
+                <p className="text-base font-semibold text-foreground">{t.home.filters.noResults}</p>
+                <p className="text-sm text-muted">{t.home.filters.noResultsHint}</p>
               </div>
-              <Link
-                href="/restaurants"
-                className="inline-flex shrink-0 items-center gap-1 self-start rounded-lg px-1 py-1 text-sm font-semibold text-accent-text underline-offset-4 transition-colors hover:underline sm:self-auto"
-              >
-                {t.home.allRestaurants}
-                <span aria-hidden="true" className="text-base leading-none">
-                  →
-                </span>
-              </Link>
-            </div>
-            <div className="mt-6 grid gap-5 sm:mt-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-7">
-              {featured.map((r) => (
-                <RestaurantCard key={r.id} restaurant={r} locale={locale} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+            ) : (
+              <RestaurantList restaurants={restaurants} locale={locale} />
+            )}
+          </RestaurantFiltersBar>
+        </Suspense>
+      </section>
 
-      {/* ── How it works (secondary — calmer surfaces) ────────────── */}
+      {/* ── How it works ──────────────────────────────────────────── */}
       <section id="how-it-works" className="scroll-mt-24 space-y-4 sm:space-y-5">
         <div className="max-w-2xl space-y-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.home.processLabel}</p>
@@ -239,8 +259,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Key advantages (tertiary — compact) ───────────────────── */}
-      <section className="space-y-4 sm:space-y-4">
+      {/* ── Key advantages ────────────────────────────────────────── */}
+      <section className="space-y-4">
         <div className="max-w-2xl space-y-1">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted">{t.home.advantagesLabel}</p>
           <h2 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">{t.home.advantagesTitle}</h2>
@@ -258,27 +278,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Bottom CTA (closing block — stronger emphasis) ────────── */}
-      <section className="overflow-hidden rounded-3xl bg-surface/55 p-8 backdrop-blur-xl sm:p-10 md:p-12">
-        <div className="flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-center sm:gap-10">
-          <div className="max-w-xl space-y-2 sm:space-y-2.5">
-            <h2 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-              {t.home.bottomTitle}
-            </h2>
-            <p className="text-sm leading-relaxed text-muted sm:text-base">
-              {t.home.bottomDescription}
-            </p>
-          </div>
-          <div className="flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap">
-            <Button asChild variant="primary" className="w-full shadow-none hover:shadow-none sm:w-auto">
-              <Link href="/restaurants">{t.home.restaurantsCta}</Link>
-            </Button>
-            <Button asChild variant="outline" className="w-full sm:w-auto">
-              <Link href="/auth/register">{t.home.bottomRegister}</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

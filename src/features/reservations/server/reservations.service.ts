@@ -9,8 +9,8 @@ export type UserReservationListItem = {
   id: string;
   referenceCode: string;
   status: string;
-  startAt: string;
-  endAt: string;
+  startAt: Date;
+  endAt: Date;
   guestCount: number;
   restaurant: { name: string };
   table: { label: string };

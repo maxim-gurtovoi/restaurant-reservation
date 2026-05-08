@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
   const parsed = createReservationSchema.safeParse(payload);
   if (!parsed.success) {
     return NextResponse.json(
-      { error: 'Invalid reservation payload', details: parsed.error.errors },
+      { error: 'Invalid reservation payload', details: parsed.error.issues },
       { status: 400 },
     );
   }

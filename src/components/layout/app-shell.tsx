@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ROUTES } from '@/lib/constants';
@@ -55,7 +55,9 @@ export async function AppShell({
               </span>
             </Link>
             <div className="relative z-10 ml-auto flex items-center gap-2 sm:gap-3">
-              <HeaderSearchButton label={t.appShell.search} ariaLabel={t.appShell.searchAria} />
+              <Suspense fallback={<div className="hidden h-10 w-56 rounded-full border border-border/75 bg-surface md:block" />}>
+                <HeaderSearchButton label={t.appShell.search} ariaLabel={t.appShell.searchAria} />
+              </Suspense>
               <LanguageToggle locale={locale} ariaLabel={t.appShell.localeToggleAria} />
               <nav className="hidden items-center gap-2 md:flex">
                 <Link
