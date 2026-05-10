@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { Locale } from '@/lib/i18n';
 import { getMessages } from '@/lib/messages';
@@ -28,6 +28,9 @@ function buildURL(
   updates: Record<string, string | null>,
 ): string {
   const next = new URLSearchParams(current.toString());
+  if (!Object.prototype.hasOwnProperty.call(updates, 'page')) {
+    next.delete('page');
+  }
   for (const [key, val] of Object.entries(updates)) {
     if (val === null || val === '') next.delete(key);
     else next.set(key, val);
@@ -50,25 +53,51 @@ function PriceRangeSlider({
   const trackRef = useRef<HTMLDivElement | null>(null);
   const draggingRef = useRef<'min' | 'max' | null>(null);
   const cleanupDragRef = useRef<(() => void) | null>(null);
+  /** During drag: local UI only; URL updates once on pointerup. */
+  const isDraggingRef = useRef(false);
+  const rangeRef = useRef({ min, max });
+  const [range, setRange] = useState({ min, max });
+
+  useEffect(() => {
+    if (!isDraggingRef.current) {
+      const next = { min, max };
+      rangeRef.current = next;
+      setRange(next);
+    }
+  }, [min, max]);
+
+  function applyRange(nextMin: number, nextMax: number) {
+    const next = { min: nextMin, max: nextMax };
+    rangeRef.current = next;
+    setRange(next);
+  }
 
   function moveMinHandle(v: number) {
-    onChange(Math.min(v, max), max);
+    applyRange(Math.min(v, rangeRef.current.max), rangeRef.current.max);
   }
 
   function moveMaxHandle(v: number) {
-    onChange(min, Math.max(v, min));
+    applyRange(rangeRef.current.min, Math.max(v, rangeRef.current.min));
   }
 
   function moveNearestHandle(v: number) {
-    const dMin = Math.abs(v - min);
-    const dMax = Math.abs(v - max);
-    if (dMin <= dMax) moveMinHandle(v);
-    else moveMaxHandle(v);
+    const { min: curMin, max: curMax } = rangeRef.current;
+    const dMin = Math.abs(v - curMin);
+    const dMax = Math.abs(v - curMax);
+    if (dMin <= dMax) {
+      const newMin = Math.min(v, curMax);
+      applyRange(newMin, curMax);
+      onChange(newMin, curMax);
+    } else {
+      const newMax = Math.max(v, curMin);
+      applyRange(curMin, newMax);
+      onChange(curMin, newMax);
+    }
   }
 
   function valueFromClientX(clientX: number): number {
     const rect = trackRef.current?.getBoundingClientRect();
-    if (!rect || rect.width <= 0) return min;
+    if (!rect || rect.width <= 0) return rangeRef.current.min;
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     return Math.min(4, Math.max(1, Math.round(1 + ratio * 3)));
   }
@@ -76,6 +105,9 @@ function PriceRangeSlider({
   function startDrag(handle: 'min' | 'max', clientX: number) {
     cleanupDragRef.current?.();
     draggingRef.current = handle;
+    isDraggingRef.current = true;
+    const urlMin = min;
+    const urlMax = max;
     const nextValue = valueFromClientX(clientX);
     if (handle === 'min') moveMinHandle(nextValue);
     else moveMaxHandle(nextValue);
@@ -86,17 +118,42 @@ function PriceRangeSlider({
       if (draggingRef.current === 'min') moveMinHandle(value);
       else moveMaxHandle(value);
     };
-    const onUp = () => {
-      stopDrag();
+
+    let finished = false;
+    const removeListeners = () => {
       window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
       cleanupDragRef.current = null;
     };
+
+    const onPointerUp = () => {
+      if (finished) return;
+      finished = true;
+      stopDrag();
+      isDraggingRef.current = false;
+      const { min: endMin, max: endMax } = rangeRef.current;
+      if (endMin !== urlMin || endMax !== urlMax) {
+        onChange(endMin, endMax);
+      }
+      removeListeners();
+    };
+
+    const onPointerCancel = () => {
+      if (finished) return;
+      finished = true;
+      stopDrag();
+      isDraggingRef.current = false;
+      const next = { min: urlMin, max: urlMax };
+      rangeRef.current = next;
+      setRange(next);
+      removeListeners();
+    };
+
     window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
-    cleanupDragRef.current = onUp;
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+    cleanupDragRef.current = removeListeners;
   }
 
   function stopDrag() {
@@ -112,13 +169,13 @@ function PriceRangeSlider({
       {/* Current range label */}
       <div className="flex items-baseline justify-between">
         <span className="text-[13px] font-bold tabular-nums text-accent-text">
-          {PRICE_LABELS[min]}
+          {PRICE_LABELS[range.min]}
         </span>
-        {min !== max && (
+        {range.min !== range.max && (
           <>
             <span className="mx-1 text-[11px] text-muted">—</span>
             <span className="text-[13px] font-bold tabular-nums text-accent-text">
-              {PRICE_LABELS[max]}
+              {PRICE_LABELS[range.max]}
             </span>
           </>
         )}
@@ -135,7 +192,7 @@ function PriceRangeSlider({
         {/* Active fill between min and max */}
         <div
           className="absolute h-1.5 rounded-full bg-accent-border/80 transition-all"
-          style={{ left: `${pct(min)}%`, right: `${100 - pct(max)}%` }}
+          style={{ left: `${pct(range.min)}%`, right: `${100 - pct(range.max)}%` }}
         />
 
         {/* Draggable handles */}
@@ -143,7 +200,7 @@ function PriceRangeSlider({
           type="button"
           aria-label="Минимальная цена"
           className="absolute z-30 h-[18px] w-[18px] -translate-x-1/2 rounded-full border-2 border-accent-border bg-surface shadow-md transition-transform hover:scale-110 active:scale-95"
-          style={{ left: `${pct(min)}%` }}
+          style={{ left: `${pct(range.min)}%` }}
           onPointerDown={(e) => {
             e.preventDefault();
             startDrag('min', e.clientX);
@@ -153,7 +210,7 @@ function PriceRangeSlider({
           type="button"
           aria-label="Максимальная цена"
           className="absolute z-30 h-[18px] w-[18px] -translate-x-1/2 rounded-full border-2 border-accent-border bg-surface shadow-md transition-transform hover:scale-110 active:scale-95"
-          style={{ left: `${pct(max)}%` }}
+          style={{ left: `${pct(range.max)}%` }}
           onPointerDown={(e) => {
             e.preventDefault();
             startDrag('max', e.clientX);
@@ -162,8 +219,8 @@ function PriceRangeSlider({
 
         {/* Clickable hit areas + visual dots for each of the 4 positions */}
         {PRICE_POSITIONS.map((v) => {
-          const isHandle = v === min || v === max;
-          const isInRange = v > min && v < max;
+          const isHandle = v === range.min || v === range.max;
+          const isInRange = v > range.min && v < range.max;
           return (
             <button
               key={v}
@@ -190,7 +247,7 @@ function PriceRangeSlider({
           <span
             key={v}
             className={`text-[11px] font-semibold tabular-nums transition-colors ${
-              v >= min && v <= max ? 'text-accent-text' : 'text-muted'
+              v >= range.min && v <= range.max ? 'text-accent-text' : 'text-muted'
             }`}
           >
             {PRICE_LABELS[v]}
@@ -218,6 +275,7 @@ export function RestaurantFiltersBar({
   const priceMax = Math.max(1, Math.min(4, parseInt(searchParams.get('pmax') ?? '4') || 4));
   const activeFeatures = parseList(searchParams.get('feat'));
   const openNow = searchParams.get('open') === '1';
+  const pageFromURL = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
 
   function setSort(value: SortOption) {
     router.replace(
@@ -263,7 +321,8 @@ export function RestaurantFiltersBar({
     priceMin > 1 ||
     priceMax < 4 ||
     activeFeatures.length > 0 ||
-    openNow;
+    openNow ||
+    pageFromURL > 1;
 
   const sortOptions: { value: SortOption; label: string }[] = [
     { value: 'rating', label: t.sort.rating },

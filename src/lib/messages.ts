@@ -62,6 +62,13 @@ export const messages = {
           FAMILY_FRIENDLY: 'С детьми',
           PET_FRIENDLY: 'С питомцем',
         } as Record<string, string>,
+        pagination: {
+          ariaLabel: 'Страницы списка ресторанов',
+          prev: 'Назад',
+          next: 'Вперёд',
+          showing: (from: number, to: number, total: number) =>
+            `Показано ${from}–${to} из ${total.toLocaleString('ru-RU')}`,
+        },
       },
     },
     restaurants: {
@@ -270,6 +277,13 @@ export const messages = {
           FAMILY_FRIENDLY: 'Cu copii',
           PET_FRIENDLY: 'Animale acceptate',
         } as Record<string, string>,
+        pagination: {
+          ariaLabel: 'Pagini listă restaurante',
+          prev: 'Înapoi',
+          next: 'Înainte',
+          showing: (from: number, to: number, total: number) =>
+            `Se afișează ${from}–${to} din ${total.toLocaleString('ro-RO')}`,
+        },
       },
     },
     restaurants: {

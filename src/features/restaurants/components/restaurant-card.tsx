@@ -94,11 +94,11 @@ export function RestaurantCard({
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Button asChild variant="outline" className="w-full text-sm font-medium">
-            <Link href={detailHref}>{detailsLabel}</Link>
-          </Button>
           <Button asChild variant="primary" className="w-full text-sm font-medium shadow-none hover:shadow-none">
             <Link href={reserveHref}>{reserveLabel}</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full text-sm font-medium">
+            <Link href={detailHref}>{detailsLabel}</Link>
           </Button>
         </div>
       </div>

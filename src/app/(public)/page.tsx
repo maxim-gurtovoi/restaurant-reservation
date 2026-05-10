@@ -3,9 +3,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { RegisterModalTrigger } from '@/components/auth/register-modal-trigger';
 import { RestaurantList } from '@/features/restaurants/components/restaurant-list';
+import { RestaurantListPagination } from '@/features/restaurants/components/restaurant-list-pagination';
 import { RestaurantFiltersBar } from '@/features/restaurants/components/restaurant-filters-bar';
 import { listRestaurants } from '@/features/restaurants/server/restaurants.service';
-import type { SortOption } from '@/features/restaurants/constants';
+import { RESTAURANTS_LIST_PAGE_SIZE, type SortOption } from '@/features/restaurants/constants';
 import type { RestaurantFeature } from '@prisma/client';
 import { getCurrentUser } from '@/server/auth';
 import { getServerLocale } from '@/lib/i18n';
@@ -152,15 +153,40 @@ export default async function HomePage({
   const q = getString(params.q);
   const rawSort = getString(params.sort);
   const sort: SortOption = VALID_SORT_OPTIONS.has(rawSort) ? (rawSort as SortOption) : 'rating';
-  const priceMin = Math.max(1, Math.min(4, parseInt(getString(params.pmin)) || 1));
-  const priceMax = Math.max(1, Math.min(4, parseInt(getString(params.pmax)) || 4));
+  let priceMin = Math.max(1, Math.min(4, parseInt(getString(params.pmin)) || 1));
+  let priceMax = Math.max(1, Math.min(4, parseInt(getString(params.pmax)) || 4));
+  if (priceMin > priceMax) {
+    const swap = priceMin;
+    priceMin = priceMax;
+    priceMax = swap;
+  }
   const features = getString(params.feat)
     .split(',')
     .filter(Boolean) as RestaurantFeature[];
   const openNow = params.open === '1';
+  const pageRaw = parseInt(getString(params.page), 10);
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
 
-  const result = await listRestaurants({ q, sort, priceMin, priceMax, features, openNow });
-  const restaurants = 'error' in result.body ? [] : result.body;
+  const result = await listRestaurants({
+    q,
+    sort,
+    priceMin,
+    priceMax,
+    features,
+    openNow,
+    page,
+    pageSize: RESTAURANTS_LIST_PAGE_SIZE,
+  });
+  const list = 'error' in result.body ? null : result.body;
+  const restaurants = list?.items ?? [];
+  const listingBase = {
+    q,
+    sort,
+    priceMin,
+    priceMax,
+    features,
+    openNow,
+  };
 
   const howItWorks = locale === 'ro' ? HOW_IT_WORKS_RO : HOW_IT_WORKS_RU;
   const highlights = locale === 'ro' ? PLATFORM_HIGHLIGHTS_RO : PLATFORM_HIGHLIGHTS_RU;
@@ -217,14 +243,24 @@ export default async function HomePage({
           <RestaurantFiltersBar locale={locale}>
             {'error' in result.body ? (
               <p className="text-sm text-error">{result.body.error}</p>
-            ) : restaurants.length === 0 ? (
+            ) : list && list.total === 0 ? (
               <div className="flex flex-col items-center gap-2 py-16 text-center">
                 <p className="text-base font-semibold text-foreground">{t.home.filters.noResults}</p>
                 <p className="text-sm text-muted">{t.home.filters.noResultsHint}</p>
               </div>
-            ) : (
-              <RestaurantList restaurants={restaurants} locale={locale} />
-            )}
+            ) : list ? (
+              <>
+                <RestaurantList restaurants={restaurants} locale={locale} />
+                <RestaurantListPagination
+                  locale={locale}
+                  base={listingBase}
+                  page={list.page}
+                  totalPages={list.totalPages}
+                  total={list.total}
+                  pageSize={list.pageSize}
+                />
+              </>
+            ) : null}
           </RestaurantFiltersBar>
         </Suspense>
       </section>

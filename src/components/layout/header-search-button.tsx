@@ -33,6 +33,7 @@ export function HeaderSearchButton({
     const next = new URLSearchParams(searchParams.toString());
     if (nextValue) next.set('q', nextValue);
     else next.delete('q');
+    next.delete('page');
     router.replace(next.toString() ? `/?${next.toString()}` : '/', { scroll: false });
   }
 

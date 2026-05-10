@@ -1,4 +1,6 @@
 import type { Locale } from '@/lib/i18n';
+import { EXTRA_RESTAURANT_SEED_ROWS } from './extra-restaurants.demo';
+import { planExtraRestaurantSlugAssignments } from './extra-restaurant-slug-plan';
 
 type CardTranslation = {
   name: string;
@@ -6,6 +8,31 @@ type CardTranslation = {
 };
 
 type LocaleDictionary = Record<string, CardTranslation>;
+
+/** Slugs of the six hand-seeded demo restaurants (must match `prisma/seed.ts`). */
+const BASE_RESTAURANT_SLUGS = [
+  'gastrobar',
+  'pegas-terrace-restaurant',
+  'smokehouse',
+  'attico-terrace-restaurant',
+  'garden-restaurant-terrace',
+  'la-placinte',
+] as const;
+
+const EXTRA_CARD_BY_SLUG: Map<string, { ru: CardTranslation; ro: CardTranslation }> =
+  (() => {
+    const map = new Map<string, { ru: CardTranslation; ro: CardTranslation }>();
+    for (const { slug, row } of planExtraRestaurantSlugAssignments(
+      EXTRA_RESTAURANT_SEED_ROWS,
+      BASE_RESTAURANT_SLUGS,
+    )) {
+      map.set(slug, {
+        ru: { name: row.name, description: row.description },
+        ro: { name: row.nameRo ?? row.name, description: row.descriptionRo },
+      });
+    }
+    return map;
+  })();
 
 const RO_TRANSLATIONS: LocaleDictionary = {
   'attico-terrace-restaurant': {
@@ -70,6 +97,10 @@ const RU_TRANSLATIONS: LocaleDictionary = {
 };
 
 export function getRestaurantCardTranslation(slug: string, locale: Locale): CardTranslation | null {
+  const extra = EXTRA_CARD_BY_SLUG.get(slug);
+  if (extra) {
+    return locale === 'ro' ? extra.ro : extra.ru;
+  }
   const dictionary = locale === 'ro' ? RO_TRANSLATIONS : RU_TRANSLATIONS;
   return dictionary[slug] ?? null;
 }

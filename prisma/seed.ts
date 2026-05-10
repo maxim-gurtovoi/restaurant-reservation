@@ -7,6 +7,8 @@ import {
   RestaurantFeature,
 } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { EXTRA_RESTAURANT_SEED_ROWS } from '../src/features/restaurants/data/extra-restaurants.demo';
+import { planExtraRestaurantSlugAssignments } from '../src/features/restaurants/data/extra-restaurant-slug-plan';
 
 const prisma = new PrismaClient();
 
@@ -365,6 +367,147 @@ async function main() {
     return { floor, tables };
   };
 
+  // --- Bulk demo restaurants (names partly from public Chișinău guides; contacts fictional) --
+  const dailyHours = (open: string, close: string) =>
+    Array.from({ length: 7 }, () => [open, close] as [string, string]);
+
+  const EXTRA_IMAGE_ROTATION = [
+    {
+      imageUrl: '/images/restaurants/gastrobar.png',
+      coverImageUrl: '/images/restaurants/gastrobar/cover.png',
+    },
+    {
+      imageUrl: '/images/restaurants/pegas.png',
+      coverImageUrl: '/images/restaurants/pegas-terrace-restaurant/1.png',
+    },
+    {
+      imageUrl: '/images/restaurants/smokehouse.png',
+      coverImageUrl: '/images/restaurants/smokehouse/1.png',
+    },
+    {
+      imageUrl: '/images/restaurants/attico.png',
+      coverImageUrl: '/images/restaurants/attico-terrace-restaurant/1.png',
+    },
+    {
+      imageUrl: '/images/restaurants/garden.png',
+      coverImageUrl: '/images/restaurants/garden-restaurant-terrace/1.png',
+    },
+    {
+      imageUrl: '/images/restaurants/la-placinte.png',
+      coverImageUrl: '/images/restaurants/la-placinte-stefan-cel-mare/1.png',
+    },
+  ] as const;
+
+  const EXTRA_FEATURE_ROTATION: RestaurantFeature[][] = [
+    [
+      RestaurantFeature.CARD_PAYMENT,
+      RestaurantFeature.WIFI,
+      RestaurantFeature.RESERVATIONS,
+      RestaurantFeature.TAKEAWAY,
+    ],
+    [
+      RestaurantFeature.CARD_PAYMENT,
+      RestaurantFeature.TERRACE,
+      RestaurantFeature.WIFI,
+      RestaurantFeature.RESERVATIONS,
+      RestaurantFeature.FAMILY_FRIENDLY,
+    ],
+    [
+      RestaurantFeature.CARD_PAYMENT,
+      RestaurantFeature.WIFI,
+      RestaurantFeature.PARKING,
+      RestaurantFeature.RESERVATIONS,
+    ],
+    [
+      RestaurantFeature.CARD_PAYMENT,
+      RestaurantFeature.DELIVERY,
+      RestaurantFeature.TAKEAWAY,
+      RestaurantFeature.WIFI,
+      RestaurantFeature.RESERVATIONS,
+    ],
+    [
+      RestaurantFeature.CARD_PAYMENT,
+      RestaurantFeature.TERRACE,
+      RestaurantFeature.LIVE_MUSIC,
+      RestaurantFeature.WIFI,
+      RestaurantFeature.RESERVATIONS,
+    ],
+    [
+      RestaurantFeature.CARD_PAYMENT,
+      RestaurantFeature.WIFI,
+      RestaurantFeature.PET_FRIENDLY,
+      RestaurantFeature.FAMILY_FRIENDLY,
+      RestaurantFeature.RESERVATIONS,
+    ],
+  ];
+
+  const extraRestaurantSlugPlan = planExtraRestaurantSlugAssignments(EXTRA_RESTAURANT_SEED_ROWS, [
+    gastrobar.slug,
+    pegasTerrace.slug,
+    smokehouse.slug,
+    atticoTerrace.slug,
+    gardenTerrace.slug,
+    laPlacinte.slug,
+  ]);
+
+  /** Shared compact floor for all bulk-seeded venues (labels unique per floorPlan). */
+  const EXTRA_RESTAURANT_FLOOR_TEMPLATE = {
+    name: 'Основной зал',
+    width: 720,
+    height: 520,
+    tables: [
+      { label: 'T1', capacity: 2, shape: TableShape.SQUARE, x: 56, y: 56, width: 64, height: 64 },
+      { label: 'T2', capacity: 4, shape: TableShape.ROUND, x: 160, y: 52, width: 80, height: 80 },
+      { label: 'T3', capacity: 4, shape: TableShape.ROUND, x: 290, y: 52, width: 80, height: 80 },
+      { label: 'T4', capacity: 6, shape: TableShape.RECTANGLE, x: 420, y: 46, width: 200, height: 92 },
+      { label: 'T5', capacity: 4, shape: TableShape.SQUARE, x: 56, y: 210, width: 88, height: 88 },
+      { label: 'T6', capacity: 4, shape: TableShape.SQUARE, x: 176, y: 210, width: 88, height: 88 },
+      { label: 'T7', capacity: 8, shape: TableShape.RECTANGLE, x: 90, y: 360, width: 480, height: 96 },
+    ],
+    elements: [
+      { type: FloorPlanElementType.DOOR, x: 28, y: 472, width: 48, height: 40, label: null },
+      { type: FloorPlanElementType.HOST_STAND, x: 86, y: 472, width: 64, height: 40 },
+      { type: FloorPlanElementType.WINDOW, x: 48, y: 14, width: 560, height: 10, label: null },
+      { type: FloorPlanElementType.RESTROOM, x: 640, y: 468, width: 72, height: 44, label: 'WC' },
+    ],
+  };
+
+  const extraRestaurants = [];
+
+  for (let i = 0; i < extraRestaurantSlugPlan.length; i++) {
+    const { slug, row } = extraRestaurantSlugPlan[i];
+
+    const images = EXTRA_IMAGE_ROTATION[i % EXTRA_IMAGE_ROTATION.length];
+    const features = EXTRA_FEATURE_ROTATION[i % EXTRA_FEATURE_ROTATION.length];
+    const phoneDigits = String(700000 + i).padStart(6, '0');
+    const phone = `+373 60 ${phoneDigits.slice(0, 3)} ${phoneDigits.slice(3)}`;
+
+    const created = await prisma.restaurant.create({
+      data: {
+        name: row.name,
+        slug,
+        description: row.description,
+        address: row.address,
+        phone,
+        email: `hello.${slug}@demo-tableflow.local`,
+        imageUrl: images.imageUrl,
+        coverImageUrl: images.coverImageUrl,
+        cuisine: row.cuisine,
+        priceLevel: row.priceLevel,
+        websiteUrl: null,
+        instagramUrl: null,
+        facebookUrl: null,
+        googleMapsUrl: null,
+        rating: row.rating,
+        reviewsCount: row.reviewsCount,
+        features,
+        isActive: true,
+      },
+    });
+    extraRestaurants.push(created);
+    await createFloor(created.id, EXTRA_RESTAURANT_FLOOR_TEMPLATE);
+  }
+
   // --- Gastrobar: single floor — long bar counter along the right wall,
   //     high tables along the window, tight intimate tables in the center. --
 
@@ -612,6 +755,7 @@ async function main() {
     atticoTerrace,
     gardenTerrace,
     laPlacinte,
+    ...extraRestaurants,
   ];
 
   // Overnight shifts are stored with `close <= open` — validator/slot-generator
@@ -619,11 +763,11 @@ async function main() {
   // Near-24h shifts (>= 22h long) switch the reservation UI to manual time entry.
   const workingHoursPlan: Record<string, Array<[string, string]>> = {
     // Gastrobar: daily 12:00–23:00
-    [gastrobar.slug]: Array.from({ length: 7 }, () => ['12:00', '23:00'] as [string, string]),
+    [gastrobar.slug]: dailyHours('12:00', '23:00'),
     // Pegas: true 24/7 → open=00:00, close=00:00 treated as a 24h overnight shift.
-    [pegasTerrace.slug]: Array.from({ length: 7 }, () => ['00:00', '00:00'] as [string, string]),
+    [pegasTerrace.slug]: dailyHours('00:00', '00:00'),
     // Smokehouse: daily 11:00–23:00
-    [smokehouse.slug]: Array.from({ length: 7 }, () => ['11:00', '23:00'] as [string, string]),
+    [smokehouse.slug]: dailyHours('11:00', '23:00'),
     // Attico: late-night terrace. Sun–Thu 12:00–03:00 (next day), Fri–Sat 12:00–05:00.
     [atticoTerrace.slug]: [
       ['12:00', '03:00'], // Sun
@@ -635,10 +779,14 @@ async function main() {
       ['12:00', '05:00'], // Sat
     ],
     // Garden: daily 08:30–23:00
-    [gardenTerrace.slug]: Array.from({ length: 7 }, () => ['08:30', '23:00'] as [string, string]),
+    [gardenTerrace.slug]: dailyHours('08:30', '23:00'),
     // La Plăcinte: daily 10:00–22:00
-    [laPlacinte.slug]: Array.from({ length: 7 }, () => ['10:00', '22:00'] as [string, string]),
+    [laPlacinte.slug]: dailyHours('10:00', '22:00'),
   };
+
+  for (const r of extraRestaurants) {
+    workingHoursPlan[r.slug] = dailyHours('11:00', '23:00');
+  }
 
   await Promise.all(
     restaurantsForHours.flatMap((restaurant) => {
@@ -724,8 +872,12 @@ async function main() {
   // are used only for typed referencing.
   void pegasIndoorFloor;
   void atticoLoungeFloor;
+  void pegasTerraceFloor;
+  void smokehouseFloor;
+  void atticoTerraceFloor;
+  void gardenFloor;
+  void laPlacinteFloor;
 
-  // eslint-disable-next-line no-console -- удобно при локальном `prisma db seed`
   console.info(`
 ╔══════════════════════════════════════════════════════════╗
 ║  Демо-аккаунты (пароль для всех: ${DEMO_PASSWORD} )  ║

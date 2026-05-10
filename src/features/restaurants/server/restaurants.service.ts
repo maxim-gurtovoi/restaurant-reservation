@@ -28,6 +28,14 @@ export type RestaurantListItem = {
   timeZone: string | null;
 };
 
+export type RestaurantListPage = {
+  items: RestaurantListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+};
+
 export type RestaurantDetails = {
   id: string;
   name: string;
@@ -160,7 +168,11 @@ export async function listRestaurants(input: {
   priceMax?: number;
   features?: RestaurantFeature[];
   openNow?: boolean;
-}): Promise<ApiResult<RestaurantListItem[]>> {
+  /** Если задан вместе с ненулевым `pageSize` — постраничная выдача после фильтров. */
+  page?: number;
+  /** Не передавайте (или передайте `0`), чтобы вернуть все совпадения одним списком (например API). */
+  pageSize?: number;
+}): Promise<ApiResult<RestaurantListPage>> {
   const records = await prisma.restaurant.findMany({
     where: { isActive: true },
     orderBy: { name: 'asc' },
@@ -206,8 +218,13 @@ export async function listRestaurants(input: {
   }
 
   // ── price range ───────────────────────────────────────────────────────
-  const priceMin = input.priceMin ?? 1;
-  const priceMax = input.priceMax ?? 4;
+  let priceMin = input.priceMin ?? 1;
+  let priceMax = input.priceMax ?? 4;
+  if (priceMin > priceMax) {
+    const swap = priceMin;
+    priceMin = priceMax;
+    priceMax = swap;
+  }
   if (priceMin > 1 || priceMax < 4) {
     items = items.filter(
       (item) => item.priceLevel !== null && item.priceLevel >= priceMin && item.priceLevel <= priceMax,
@@ -257,7 +274,28 @@ export async function listRestaurants(input: {
     }
   });
 
-  return { status: 200, body: items };
+  const total = items.length;
+  const wantPaginate = input.pageSize !== undefined && input.pageSize > 0;
+  const requestedSize = input.pageSize ?? 0;
+  const pageSize = wantPaginate
+    ? Math.min(100, Math.max(1, Math.floor(requestedSize)))
+    : Math.max(1, total);
+  const totalPages = wantPaginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const pageRaw = wantPaginate ? Math.max(1, input.page ?? 1) : 1;
+  const page = Math.min(pageRaw, totalPages);
+  const offset = wantPaginate ? (page - 1) * pageSize : 0;
+  const pageItems = wantPaginate ? items.slice(offset, offset + pageSize) : items;
+
+  return {
+    status: 200,
+    body: {
+      items: pageItems,
+      total,
+      page,
+      pageSize: wantPaginate ? pageSize : total,
+      totalPages,
+    },
+  };
 }
 
 export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetails | null> {

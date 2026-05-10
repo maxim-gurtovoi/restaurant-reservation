@@ -10,3 +10,6 @@ export const FILTERABLE_FEATURES: RestaurantFeature[] = [
   'FAMILY_FRIENDLY',
   'PET_FRIENDLY',
 ];
+
+/** Карточки ресторанов на главной (URL `page`). */
+export const RESTAURANTS_LIST_PAGE_SIZE = 12;
