@@ -10,9 +10,11 @@ import { ROUTES } from '@/lib/constants';
 export function UserAvatarMenu({
   user,
   myReservationsLabel,
+  myFavoritesLabel,
 }: {
   user: JwtPayloadUser;
   myReservationsLabel: string;
+  myFavoritesLabel: string;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -86,6 +88,14 @@ export function UserAvatarMenu({
             onClick={() => setOpen(false)}
           >
             {myReservationsLabel}
+          </Link>
+          <Link
+            href={ROUTES.myFavorites}
+            role="menuitem"
+            className="block w-full px-3 py-2 text-left text-sm font-medium text-foreground transition-colors duration-150 ease-in-out hover:bg-surface-soft"
+            onClick={() => setOpen(false)}
+          >
+            {myFavoritesLabel}
           </Link>
           <button
             type="button"

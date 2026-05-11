@@ -3,6 +3,13 @@ import { Prisma } from '@prisma/client';
 import { randomInt, randomUUID } from 'node:crypto';
 import { prisma } from '@/lib/prisma';
 import { getRestaurantIanaZone } from '@/lib/restaurant-time';
+import {
+  assertBookingLeadAllowed,
+  assertNotBlockedWindow,
+  assertPhoneForLargeParty,
+  getEffectiveLeadMinutes,
+  parseBlockedRecurrenceJson,
+} from '@/features/reservations/lib/booking-rules';
 import { computeReservationWindow } from '@/features/reservations/server/reservation-time';
 import { ensureWorkingHoursAllowReservation } from '@/features/reservations/server/working-hours-validation';
 import { prismaWhereBlockingReservationOverlap } from '@/features/reservations/server/reservation-blocking';
@@ -58,17 +65,34 @@ export async function createReservation(input: {
   // passed into ensureWorkingHoursAllowReservation to skip a second SELECT.
   const restaurantRow = await prisma.restaurant.findUnique({
     where: { id: restaurantId },
-    select: { timeZone: true },
+    select: {
+      timeZone: true,
+      minBookingLeadMinutes: true,
+      maxGuestsWithoutPhone: true,
+      blockedRecurrenceJson: true,
+    },
   });
   const timeZone = getRestaurantIanaZone(restaurantRow ?? { timeZone: null });
 
   const { startAt, endAt } = computeReservationWindow({ date, time, timeZone });
+
+  const leadMinutes = getEffectiveLeadMinutes(restaurantRow?.minBookingLeadMinutes ?? null);
+  assertBookingLeadAllowed({ startAt, timeZone, leadMinutes });
+
+  const blockedRows = parseBlockedRecurrenceJson(restaurantRow?.blockedRecurrenceJson ?? null);
+  assertNotBlockedWindow({ startAt, endAt, timeZone, blocks: blockedRows });
 
   await ensureWorkingHoursAllowReservation({
     restaurantId,
     startAt,
     endAt,
     timeZone,
+  });
+
+  assertPhoneForLargeParty({
+    guestCount,
+    contactPhone: input.contactPhone,
+    maxGuestsWithoutPhone: restaurantRow?.maxGuestsWithoutPhone ?? null,
   });
 
   const table = await prisma.restaurantTable.findFirst({

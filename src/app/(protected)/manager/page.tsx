@@ -11,6 +11,7 @@ import {
   createRestaurantBasic,
   getManagerOverviewData,
   removeAdminAssignment,
+  updateBookingRules,
 } from '@/features/manager/server/manager.service';
 import { formInputClass } from '@/lib/form-field-classes';
 import { cn } from '@/lib/utils';
@@ -97,6 +98,32 @@ export default async function ManagerPage({ searchParams }: ManagerPageProps) {
     redirect('/manager?ok=admin-unassigned');
   }
 
+  async function updateBookingRulesAction(formData: FormData) {
+    'use server';
+    const actor = await requireManager();
+
+    const leadStr = String(formData.get('minBookingLeadMinutes') ?? '').trim();
+    const maxStr = String(formData.get('maxGuestsWithoutPhone') ?? '').trim();
+    const blockedStr = String(formData.get('blockedRecurrenceJson') ?? '');
+
+    const minBookingLeadMinutes = leadStr === '' ? null : Number(leadStr);
+    const maxGuestsWithoutPhone = maxStr === '' ? null : Number(maxStr);
+
+    const result = await updateBookingRules(
+      {
+        minBookingLeadMinutes,
+        maxGuestsWithoutPhone,
+        blockedRecurrenceJson: blockedStr,
+      },
+      { userId: actor.id, role: actor.role },
+    );
+
+    if (!result.ok) {
+      redirect(`/manager?error=${encodeURIComponent(result.error)}`);
+    }
+    redirect('/manager?ok=booking-rules');
+  }
+
   const headerTitle = isOwner ? 'Панель владельца платформы' : 'Панель управляющего';
   const headerSubtitle = isOwner
     ? 'Создание ресторанов и обзор назначений по всей платформе.'
@@ -118,7 +145,9 @@ export default async function ManagerPage({ searchParams }: ManagerPageProps) {
               ? 'Ресторан успешно создан.'
               : flashOk === 'admin-unassigned'
                 ? 'Назначение администратора снято.'
-                : 'Назначение администратора сохранено.'}
+                : flashOk === 'booking-rules'
+                  ? 'Правила бронирования сохранены.'
+                  : 'Назначение администратора сохранено.'}
           </p>
         </Card>
       ) : null}
@@ -165,55 +194,127 @@ export default async function ManagerPage({ searchParams }: ManagerPageProps) {
       ) : null}
 
       {isManager && managedId ? (
-        <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
-          <Card className="h-full space-y-3">
-            <h2 className="text-base font-semibold text-foreground">Администраторы залов</h2>
-            {overview.adminsOverview.length ? (
-              <div className="space-y-2">
-                {overview.adminsOverview.map((admin) => (
-                  <div
-                    key={admin.id}
-                    className="rounded-xl border border-border/60 bg-surface-soft p-3"
-                  >
-                    <p className="text-sm font-semibold text-foreground">{admin.name}</p>
-                    <p className="text-xs text-muted">{admin.email}</p>
-                    <p className="mt-1 text-xs text-foreground/85">
-                      {admin.restaurants.length
-                        ? `Назначен: ${admin.restaurants.join(', ')}`
-                        : 'Ресторан не назначен'}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted">Аккаунты администраторов не найдены.</p>
-            )}
-          </Card>
-          <Card className="h-full space-y-3">
-            <h2 className="text-base font-semibold text-foreground">Назначить администратора зала</h2>
-            <form action={assignAdminAction} className="space-y-3">
-              <select name="adminUserId" className={formInputClass} required>
-                <option value="">Выберите администратора</option>
-                {overview.adminUsers.map((admin) => (
-                  <option key={admin.id} value={admin.id}>
-                    {admin.name} ({admin.email})
-                  </option>
-                ))}
-              </select>
-              <input type="hidden" name="restaurantId" value={managedId} />
+        <>
+          <div className="grid gap-6 lg:grid-cols-2 lg:items-stretch">
+            <Card className="h-full space-y-3">
+              <h2 className="text-base font-semibold text-foreground">Администраторы залов</h2>
+              {overview.adminsOverview.length ? (
+                <div className="space-y-2">
+                  {overview.adminsOverview.map((admin) => (
+                    <div
+                      key={admin.id}
+                      className="rounded-xl border border-border/60 bg-surface-soft p-3"
+                    >
+                      <p className="text-sm font-semibold text-foreground">{admin.name}</p>
+                      <p className="text-xs text-muted">{admin.email}</p>
+                      <p className="mt-1 text-xs text-foreground/85">
+                        {admin.restaurants.length
+                          ? `Назначен: ${admin.restaurants.join(', ')}`
+                          : 'Ресторан не назначен'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted">Аккаунты администраторов не найдены.</p>
+              )}
+            </Card>
+            <Card className="h-full space-y-3">
+              <h2 className="text-base font-semibold text-foreground">Назначить администратора зала</h2>
+              <form action={assignAdminAction} className="space-y-3">
+                <select name="adminUserId" className={formInputClass} required>
+                  <option value="">Выберите администратора</option>
+                  {overview.adminUsers.map((admin) => (
+                    <option key={admin.id} value={admin.id}>
+                      {admin.name} ({admin.email})
+                    </option>
+                  ))}
+                </select>
+                <input type="hidden" name="restaurantId" value={managedId} />
+                <p className="text-xs text-muted">
+                  Ресторан:{' '}
+                  <span className="font-medium text-foreground">{overview.restaurants[0]?.name}</span>
+                </p>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary-hover"
+                >
+                  Назначить
+                </button>
+              </form>
+            </Card>
+          </div>
+
+          {overview.managedRestaurant ? (
+            <Card className="space-y-3">
+              <h2 className="text-base font-semibold text-foreground">Правила бронирования</h2>
               <p className="text-xs text-muted">
-                Ресторан:{' '}
-                <span className="font-medium text-foreground">{overview.restaurants[0]?.name}</span>
+                Пустое поле минимального запаса — использовать общий дефолт платформы. JSON окон:
+                массив объектов{' '}
+                <code className="rounded bg-surface-soft px-1">
+                  dayOfWeek (0–6), startHHmm, endHHmm
+                </code>{' '}
+                — как в графике работы.
               </p>
-              <button
-                type="submit"
-                className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary-hover"
-              >
-                Назначить
-              </button>
-            </form>
-          </Card>
-        </div>
+              <form action={updateBookingRulesAction} className="space-y-3">
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-foreground">Мин. запас до визита (минуты)</span>
+                  <input
+                    name="minBookingLeadMinutes"
+                    type="number"
+                    min={0}
+                    max={1440}
+                    step={1}
+                    placeholder="По умолчанию платформы"
+                    className={formInputClass}
+                    defaultValue={
+                      overview.managedRestaurant.minBookingLeadMinutes ?? ''
+                    }
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-foreground">
+                    Без телефона — максимум гостей
+                  </span>
+                  <input
+                    name="maxGuestsWithoutPhone"
+                    type="number"
+                    min={1}
+                    max={99}
+                    step={1}
+                    placeholder="Напр. 6; пусто — как на платформе"
+                    className={formInputClass}
+                    defaultValue={
+                      overview.managedRestaurant.maxGuestsWithoutPhone ?? ''
+                    }
+                  />
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-medium text-foreground">
+                    Заблокированные повторяющиеся окна (JSON)
+                  </span>
+                  <textarea
+                    name="blockedRecurrenceJson"
+                    rows={6}
+                    className={cn(formInputClass, 'min-h-32 resize-y font-mono text-xs')}
+                    placeholder='[{"dayOfWeek":5,"startHHmm":"18:00","endHHmm":"21:00"}]'
+                    defaultValue={
+                      overview.managedRestaurant.blockedRecurrenceJson != null
+                        ? JSON.stringify(overview.managedRestaurant.blockedRecurrenceJson, null, 2)
+                        : ''
+                    }
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white shadow-sm shadow-primary/15 transition-colors hover:bg-primary-hover"
+                >
+                  Сохранить правила
+                </button>
+              </form>
+            </Card>
+          ) : null}
+        </>
       ) : (
         <Card className="space-y-3">
           <h2 className="text-base font-semibold text-foreground">Администраторы залов</h2>

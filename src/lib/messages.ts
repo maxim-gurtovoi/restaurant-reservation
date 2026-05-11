@@ -15,6 +15,7 @@ export const messages = {
     appShell: {
       restaurants: 'Рестораны',
       myReservations: 'Мои брони',
+      myFavorites: 'Избранное',
       admin: 'Администратор',
       manager: 'Управляющий',
       search: 'Поиск',
@@ -90,6 +91,8 @@ export const messages = {
         '🌿 Терраса / сад',
         '🎶 Живая музыка',
       ],
+      favoriteAdd: 'В избранное',
+      favoriteRemove: 'Убрать из избранного',
     },
     restaurantDetail: {
       hero: {
@@ -234,6 +237,7 @@ export const messages = {
     appShell: {
       restaurants: 'Restaurante',
       myReservations: 'Rezervările mele',
+      myFavorites: 'Favorite',
       admin: 'Administrator',
       manager: 'Director',
       search: 'Căutare',
@@ -309,6 +313,8 @@ export const messages = {
         '🌿 Terasă / grădină',
         '🎶 Muzică live',
       ],
+      favoriteAdd: 'Salvează',
+      favoriteRemove: 'Elimină din favorite',
     },
     restaurantDetail: {
       hero: {

@@ -4,17 +4,12 @@ import { MapPinIcon, StarIcon } from 'lucide-react';
 import type { Locale } from '@/lib/i18n';
 import { getMessages } from '@/lib/messages';
 import type { RestaurantListItem } from '@/features/restaurants/server/restaurants.service';
+import { restaurantPriceGlyphs } from '@/features/restaurants/lib/price-glyphs';
 
 type RestaurantSimilarProps = {
   restaurants: RestaurantListItem[];
   locale: Locale;
 };
-
-function priceGlyphs(level: number | null): string | null {
-  if (!level) return null;
-  const clamped = Math.min(4, Math.max(1, level));
-  return '\u20B4'.repeat(clamped);
-}
 
 export function RestaurantSimilar({ restaurants, locale }: RestaurantSimilarProps) {
   if (!restaurants.length) return null;
@@ -36,7 +31,7 @@ export function RestaurantSimilar({ restaurants, locale }: RestaurantSimilarProp
       </header>
       <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {restaurants.map((r) => {
-          const glyphs = priceGlyphs(r.priceLevel);
+          const glyphs = restaurantPriceGlyphs(r.priceLevel);
           return (
             <li key={r.id}>
               <Link

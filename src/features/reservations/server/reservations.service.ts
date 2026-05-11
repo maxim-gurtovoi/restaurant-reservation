@@ -3,6 +3,7 @@ import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 import { checkTableAvailability } from './check-table-availability';
 import { createReservation as createReservationInDb } from './create-reservation';
+import { BookingRulesDomainError } from '@/features/reservations/lib/booking-rules';
 import { WorkingHoursDomainError } from './working-hours-validation';
 
 export type UserReservationListItem = {
@@ -49,7 +50,7 @@ export async function listUserReservations(input: {
     console.error('Error loading user reservations:', error);
     return {
       status: 500,
-      body: { error: 'Не удалось загрузить бронирования' } as any,
+      body: { error: 'Не удалось загрузить бронирования' },
     };
   }
 }
@@ -80,12 +81,15 @@ export async function createReservation(input: {
   } catch (error) {
     console.error('Error creating reservation:', error);
     if (error instanceof WorkingHoursDomainError) {
-      return { status: 422, body: { error: error.message, code: error.code } as any };
+      return { status: 422, body: { error: error.message, code: error.code } };
+    }
+    if (error instanceof BookingRulesDomainError) {
+      return { status: 422, body: { error: error.message, code: error.code } };
     }
     if (error instanceof Error) {
-      return { status: 400, body: { error: error.message } as any };
+      return { status: 400, body: { error: error.message } };
     }
-    return { status: 500, body: { error: 'Failed to create reservation' } as any };
+    return { status: 500, body: { error: 'Failed to create reservation' } };
   }
 }
 
@@ -107,9 +111,21 @@ export async function getAvailability(input: {
     return { status: 200, body: result };
   } catch (error) {
     console.error('Error checking availability:', error);
+    if (error instanceof WorkingHoursDomainError) {
+      return {
+        status: 422,
+        body: { error: error.message, code: error.code },
+      };
+    }
+    if (error instanceof BookingRulesDomainError) {
+      return {
+        status: 422,
+        body: { error: error.message, code: error.code },
+      };
+    }
     return {
       status: 500,
-      body: { error: 'Failed to check availability' } as any,
+      body: { error: 'Failed to check availability' },
     };
   }
 }

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPinIcon, StarIcon } from 'lucide-react';
@@ -17,6 +18,8 @@ type RestaurantHeroProps = {
   phone: string | null;
   locale: Locale;
   openBadge: { tone: 'open' | 'closed' | 'unknown'; label: string };
+  /** Favorite control (e.g. heart); positioned top-right on the cover. */
+  favorite?: ReactNode;
 };
 
 function renderPriceTier(priceLevel: number | null): string {
@@ -43,6 +46,7 @@ export function RestaurantHero({
   phone,
   locale,
   openBadge,
+  favorite,
 }: RestaurantHeroProps) {
   const t = getMessages(locale).restaurantDetail;
   const ratingText = rating !== null ? rating.toFixed(1) : t.hero.ratingNotYet;
@@ -54,6 +58,11 @@ export function RestaurantHero({
       className="relative overflow-hidden rounded-3xl border border-border/40 bg-[#111318] shadow-card-strong"
     >
       <div className="relative h-[320px] w-full sm:h-[400px] lg:h-[460px]">
+        {favorite ? (
+          <div className="absolute right-4 top-4 z-20 sm:right-6 sm:top-6 lg:right-10 lg:top-10">
+            {favorite}
+          </div>
+        ) : null}
         {coverImageUrl ? (
           <Image
             src={coverImageUrl}

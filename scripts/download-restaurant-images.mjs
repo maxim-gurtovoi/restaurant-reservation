@@ -2,6 +2,8 @@
  * Скачивает по одному JPEG на каждый bulk-ресторан в `public/images/restaurants/<slug>.jpg`.
  * Источник — Unsplash (CC0 / Unsplash License). Photo ID-ы подобраны вручную под кухню/тему.
  *
+ * Рестораны `saperavi`, `fuior` — свои фото (`*.png`) в репозитории; из карты ниже исключены.
+ *
  * Запуск:  node scripts/download-restaurant-images.mjs
  */
 import { mkdir, stat, writeFile } from 'node:fs/promises';
@@ -17,12 +19,10 @@ const SLUG_TO_PHOTO = {
   'black-rabbit-gastro-burrow': '1647272196366-67e31b7ffbdc', // dim modern interior
   'taifas': '1551632436-cbf8dd35adfa',                        // cosy dining
   'popasul-dacilor': '1565650834520-0b48a5c83f43',            // traditional wood
-  'fuior': '1538333581680-29dd4752ddf2',                      // calm empty hall
   'mi-piace': '1558138838-76294be30005',                      // italian / pizza
   'il-forno': '1632657606412-089f735aa87c',                   // pizza oven
   'creme-de-la-creme-chisinau': '1543745503-c03673999b29',    // patisserie / café
   'asian-street': '1696449241254-11cf7f18ce32',               // pan-asian counter
-  'saperavi': '1538334421852-687c439c92f4',                   // wooden tables
   'gok-oguz': '1494346480775-936a9f0d0877',                   // people at table
   'andys-pizza-chisinau': '1600628421066-f6bda6a7b976',       // pizza on plate
   'caravan-actuell': '1517248135467-4c7edcad34c4',            // elegant pub

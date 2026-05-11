@@ -58,10 +58,10 @@ export const EXTRA_RESTAURANT_SEED_ROWS: ExtraRestaurantSeedRow[] = [
   {
     name: 'Fuior',
     description:
-      'Румынская кухня с акцентом на фермерские продукты и сезонные меню. Спокойная атмосфера для ужина.',
+      'Румынская кухня с акцентом на фермерские продукты и сезонные меню. Уютный зал в бордово-золотых тонах — спокойный ужин при приглушённом свете.',
     descriptionRo:
-      'Bucătărie românească cu accent pe produse fermiere și meniuri sezoniere. Atmosferă liniștită pentru cină.',
-    address: 'Str. București 67/1, Chișinău',
+      'Bucătărie românească cu accent pe produse fermiere și meniuri sezoniere. Salon cozy în tonuri burgund și aurii — cină liniștită la lumină ambientală.',
+    address: 'Str. Pușkin 30, Chișinău',
     cuisine: 'Румынская',
     priceLevel: 3,
     rating: 4.7,

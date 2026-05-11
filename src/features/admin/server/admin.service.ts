@@ -43,6 +43,20 @@ export type AdminDashboardStats = {
   upcomingReservations: number;
   checkedInToday: number;
   adminRestaurants: number;
+  /** Active tables across scoped restaurants. */
+  activeTables: number;
+  /** Sum of guestCount for today's reservations (excluding cancelled). */
+  todayGuestsBooked: number;
+  /** Sum of capacities of active tables (rough seat maximum). */
+  seatCapacity: number;
+  /** Heuristic: todayGuestsBooked / seatCapacity, capped at 100. Null if no seats. */
+  fillPercentToday: number | null;
+  /** NO_SHOW with startAt today. */
+  noShowToday: number;
+  /** Reservations with start time today, by status (same «today» window as counters). */
+  todayByStatus: { status: ReservationStatus; count: number }[];
+  /** Last 7 calendar days in app TZ (oldest → newest): starts that day, any status. */
+  weekBookingTrend: { isoDate: string; labelShort: string; count: number }[];
 };
 
 export type AdminReservationListItem = {
@@ -305,48 +319,148 @@ export async function getAdminDashboardStats(input: {
 
   const reservationScope = adminReservationScope(input.adminUserId);
 
-  const [todayReservations, upcomingReservations, checkedInToday, adminRestaurants] =
-    await prisma.$transaction([
+  const restaurantScope = restaurantWhereStaffOrManager(input.adminUserId);
+
+  const [
+    todayReservations,
+    upcomingReservations,
+    checkedInToday,
+    adminRestaurants,
+    noShowToday,
+    activeTables,
+    seatAgg,
+    guestAgg,
+  ] = await prisma.$transaction([
+    prisma.reservation.count({
+      where: {
+        ...reservationScope,
+        startAt: {
+          gte: startOfDay,
+          lt: startOfTomorrow,
+        },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...reservationScope,
+        status: {
+          in: ['CONFIRMED', 'CHECKED_IN'],
+        },
+        startAt: {
+          gte: now,
+        },
+      },
+    }),
+    prisma.reservation.count({
+      where: {
+        ...reservationScope,
+        status: 'CHECKED_IN',
+        checkedInAt: {
+          gte: startOfDay,
+          lt: startOfTomorrow,
+        },
+      },
+    }),
+    prisma.restaurant.count({
+      where: restaurantScope,
+    }),
+    prisma.reservation.count({
+      where: {
+        ...reservationScope,
+        status: 'NO_SHOW',
+        startAt: {
+          gte: startOfDay,
+          lt: startOfTomorrow,
+        },
+      },
+    }),
+    prisma.restaurantTable.count({
+      where: {
+        isActive: true,
+        restaurant: restaurantScope,
+      },
+    }),
+    prisma.restaurantTable.aggregate({
+      where: {
+        isActive: true,
+        restaurant: restaurantScope,
+      },
+      _sum: { capacity: true },
+    }),
+    prisma.reservation.aggregate({
+      where: {
+        ...reservationScope,
+        status: { not: 'CANCELLED' },
+        startAt: {
+          gte: startOfDay,
+          lt: startOfTomorrow,
+        },
+      },
+      _sum: { guestCount: true },
+    }),
+  ]);
+
+  const seatCapacity = seatAgg._sum.capacity ?? 0;
+  const todayGuestsBooked = guestAgg._sum.guestCount ?? 0;
+  const fillPercentToday =
+    seatCapacity > 0 ? Math.min(100, Math.round((todayGuestsBooked / seatCapacity) * 100)) : null;
+
+  const weekRanges = Array.from({ length: 7 }, (_, i) => {
+    const dayWall = wall.minus({ days: 6 - i }).startOf('day');
+    const nextWall = dayWall.plus({ days: 1 });
+    return {
+      isoDate: dayWall.toISODate()!,
+      labelShort: dayWall.setLocale('ru').toFormat('ccc d'),
+      start: dayWall.toUTC().toJSDate(),
+      end: nextWall.toUTC().toJSDate(),
+    };
+  });
+
+  const [statusGroups, ...weekCounts] = await Promise.all([
+    prisma.reservation.groupBy({
+      by: ['status'],
+      where: {
+        ...reservationScope,
+        startAt: {
+          gte: startOfDay,
+          lt: startOfTomorrow,
+        },
+      },
+      _count: { _all: true },
+    }),
+    ...weekRanges.map(({ start, end }) =>
       prisma.reservation.count({
         where: {
           ...reservationScope,
-          startAt: {
-            gte: startOfDay,
-            lt: startOfTomorrow,
-          },
+          startAt: { gte: start, lt: end },
         },
       }),
-      prisma.reservation.count({
-        where: {
-          ...reservationScope,
-          status: {
-            in: ['CONFIRMED', 'CHECKED_IN'],
-          },
-          startAt: {
-            gte: now,
-          },
-        },
-      }),
-      prisma.reservation.count({
-        where: {
-          ...reservationScope,
-          status: 'CHECKED_IN',
-          checkedInAt: {
-            gte: startOfDay,
-            lt: startOfTomorrow,
-          },
-        },
-      }),
-      prisma.restaurant.count({
-        where: restaurantWhereStaffOrManager(input.adminUserId),
-      }),
-    ]);
+    ),
+  ]);
+
+  const todayByStatus: { status: ReservationStatus; count: number }[] = statusGroups.map((r) => ({
+    status: r.status,
+    count: r._count._all,
+  }));
+
+  const weekBookingTrend = weekRanges.map((r, i) => ({
+    isoDate: r.isoDate,
+    labelShort: r.labelShort,
+    count: weekCounts[i] ?? 0,
+  }));
 
   return {
     todayReservations,
     upcomingReservations,
     checkedInToday,
     adminRestaurants,
+    activeTables,
+    todayGuestsBooked,
+    seatCapacity,
+    fillPercentToday,
+    noShowToday,
+    todayByStatus,
+    weekBookingTrend,
   };
 }
 
@@ -532,4 +646,63 @@ export async function getManagerFloorPlanContext(input: {
       })),
     ),
   };
+}
+
+function csvEscapeField(value: string): string {
+  if (/[",\n\r]/.test(value)) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+export async function buildAdminReservationsExportCsv(input: {
+  adminUserId: string;
+  status: StatusFilter;
+  time: TimeFilter;
+}): Promise<string> {
+  const where = buildAdminReservationListWhere(input.adminUserId, input.status, input.time);
+  const rows = await prisma.reservation.findMany({
+    where,
+    orderBy: [{ startAt: 'desc' }, { createdAt: 'desc' }],
+    take: 5000,
+    select: {
+      referenceCode: true,
+      status: true,
+      guestCount: true,
+      startAt: true,
+      contactName: true,
+      contactPhone: true,
+      restaurant: { select: { name: true } },
+      table: { select: { label: true } },
+    },
+  });
+
+  const header = [
+    'referenceCode',
+    'restaurant',
+    'table',
+    'startAt',
+    'guestCount',
+    'status',
+    'contactName',
+    'contactPhone',
+  ];
+  const lines = [
+    header.join(','),
+    ...rows.map((r) =>
+      [
+        r.referenceCode,
+        r.restaurant.name,
+        r.table.label,
+        r.startAt.toISOString(),
+        String(r.guestCount),
+        r.status,
+        r.contactName,
+        r.contactPhone ?? '',
+      ]
+        .map((c) => csvEscapeField(String(c)))
+        .join(','),
+    ),
+  ];
+  return lines.join('\n');
 }

@@ -12,6 +12,7 @@ export const ROUTES = {
   login: '/auth/login',
   register: '/auth/register',
   myReservations: '/my-reservations',
+  myFavorites: '/my-favorites',
   adminDashboard: '/admin/dashboard',
   adminReservations: '/admin/reservations',
   manager: '/manager',

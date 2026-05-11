@@ -14,9 +14,11 @@ import {
   ymdInZone,
 } from '@/features/reservations/lib/booking-datetime-ui';
 import {
-  BOOKING_LEAD_MINUTES,
-  RESERVATION_DURATION_MINUTES,
-} from '@/features/reservations/reservation-window';
+  getEffectiveLeadMinutes,
+  isSlotStartBlocked,
+  parseBlockedRecurrenceJson,
+} from '@/features/reservations/lib/booking-rules';
+import { RESERVATION_DURATION_MINUTES } from '@/features/reservations/reservation-window';
 import { isValidBookingPhone, normalizePhoneDigits } from '@/lib/guest-contact';
 import { cn } from '@/lib/utils';
 
@@ -62,7 +64,12 @@ type ReserveRestaurant = {
     rotation: number;
     label: string | null;
   }[];
+  minBookingLeadMinutes?: number | null;
+  maxGuestsWithoutPhone?: number | null;
+  blockedRecurrenceJson?: unknown | null;
 };
+
+type SlotOccupancyTier = 'quiet' | 'moderate' | 'busy';
 
 const inputClass =
   'h-11 w-full rounded-xl border border-border-strong/55 bg-surface px-3 text-sm text-foreground shadow-card-soft transition-colors hover:border-border-strong/75 focus:border-accent-text focus:outline-none focus:ring-2 focus:ring-accent-border/40 disabled:cursor-not-allowed disabled:opacity-60';
@@ -219,6 +226,10 @@ export function RestaurantReserveFlow({
   const [guests, setGuests] = useState(2);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
+  const [occupancyByTime, setOccupancyByTime] = useState<Record<string, SlotOccupancyTier>>({});
+  const [occupancyTopQuiet, setOccupancyTopQuiet] = useState<string[]>([]);
+  const occupancyForUi = date ? occupancyByTime : {};
+  const topQuietForUi = date ? occupancyTopQuiet : [];
 
   const [contactName, setContactName] = useState(() =>
     isLoggedIn && accountProfile ? accountProfile.name.trim() : '',
@@ -337,6 +348,16 @@ export function RestaurantReserveFlow({
     return Array.from({ length: hi }, (_, i) => i + 1);
   }, [maxTableCapacity]);
 
+  const leadMinutes = useMemo(
+    () => getEffectiveLeadMinutes(restaurant.minBookingLeadMinutes ?? null),
+    [restaurant.minBookingLeadMinutes],
+  );
+
+  const blockedRows = useMemo(
+    () => parseBlockedRecurrenceJson(restaurant.blockedRecurrenceJson ?? null),
+    [restaurant.blockedRecurrenceJson],
+  );
+
   const slotPlan = useMemo(() => {
     if (!date) {
       return {
@@ -348,9 +369,9 @@ export function RestaurantReserveFlow({
     }
     const notBefore =
       date === todayYmd
-        ? minBookableDateTimeInZone(bookingTimeZone, BOOKING_LEAD_MINUTES)
+        ? minBookableDateTimeInZone(bookingTimeZone, leadMinutes)
         : null;
-    return buildReservationTimeSlots({
+    const raw = buildReservationTimeSlots({
       isoDate: date,
       timeZone: bookingTimeZone,
       workingHours: restaurant.workingHours,
@@ -358,7 +379,58 @@ export function RestaurantReserveFlow({
       reservationDurationMinutes: RESERVATION_DURATION_MINUTES,
       notBeforeInZone: notBefore,
     });
-  }, [date, bookingTimeZone, restaurant.workingHours, todayYmd]);
+    const slots = raw.slots.filter(
+      (s) =>
+        !isSlotStartBlocked({
+          isoDate: date,
+          slotTimeHHmm: s,
+          timeZone: bookingTimeZone,
+          blocks: blockedRows,
+        }),
+    );
+    return { ...raw, slots };
+  }, [
+    date,
+    bookingTimeZone,
+    restaurant.workingHours,
+    todayYmd,
+    leadMinutes,
+    blockedRows,
+  ]);
+
+  useEffect(() => {
+    if (!date) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await fetch(
+          `/api/reservations/slot-hints?restaurantId=${encodeURIComponent(restaurant.id)}&date=${encodeURIComponent(date)}`,
+        );
+        if (!r.ok || cancelled) return;
+        const data = (await r.json()) as {
+          hints: { time: string; tier: SlotOccupancyTier; loadAdjusted: number }[];
+        };
+        const map: Record<string, SlotOccupancyTier> = {};
+        for (const h of data.hints ?? []) {
+          map[h.time] = h.tier;
+        }
+        if (cancelled) return;
+        setOccupancyByTime(map);
+        const sorted = [...(data.hints ?? [])].sort(
+          (a, b) => a.loadAdjusted - b.loadAdjusted,
+        );
+        setOccupancyTopQuiet(sorted.slice(0, 3).map((h) => h.time));
+      } catch {
+        if (!cancelled) {
+          setOccupancyByTime({});
+          setOccupancyTopQuiet([]);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [date, restaurant.id]);
 
   // Invalidate `time` when the available slot list no longer contains it
   // (happens when `date` changes and the new day has a different schedule).
@@ -421,10 +493,15 @@ export function RestaurantReserveFlow({
   const effectivePhoneDigits = normalizePhoneDigits(
     contactPhone || (isLoggedIn ? profilePhoneDigits : '') || '',
   );
+  const maxGuestsPhoneRule = restaurant.maxGuestsWithoutPhone ?? null;
+  const phoneRequiredForParty =
+    maxGuestsPhoneRule == null
+      ? true
+      : guests > Math.floor(maxGuestsPhoneRule);
   const contactsReadyForSubmit =
     effectiveName.length >= 2 &&
-    effectivePhoneDigits.length >= 10 &&
-    isValidBookingPhone(effectivePhoneDigits);
+    (!phoneRequiredForParty ||
+      (effectivePhoneDigits.length >= 10 && isValidBookingPhone(effectivePhoneDigits)));
 
   const handleConfirm = async () => {
     if (!selectedTable || !canGoToConfirm || !contactsReadyForSubmit) return;
@@ -598,6 +675,29 @@ export function RestaurantReserveFlow({
                 ) : null}
               </div>
 
+              {date && topQuietForUi.length > 0 && !slotPlan.manualOnly ? (
+                <p className="text-[11px] leading-snug text-muted">
+                  Спокойнее по загрузке (оценка):{' '}
+                  <span className="font-medium text-foreground">
+                    {topQuietForUi.join(', ')}
+                  </span>
+                </p>
+              ) : null}
+
+              {date && Object.keys(occupancyForUi).length > 0 && !slotPlan.manualOnly ? (
+                <div className="flex flex-wrap gap-3 text-[10px] text-muted">
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-emerald-500/80" /> тише
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-amber-400/90" /> средне
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-rose-400/85" /> оживлённее
+                  </span>
+                </div>
+              ) : null}
+
               {!date ? (
                 <p className="text-sm text-muted">Сначала выберите дату — появятся допустимые интервалы.</p>
               ) : slotPlan.dayClosed ? (
@@ -618,7 +718,9 @@ export function RestaurantReserveFlow({
                   className="flex flex-wrap gap-2"
                   role="group"
                   aria-label="Доступное время визита">
-                  {slotPlan.slots.map((slot) => (
+                  {slotPlan.slots.map((slot) => {
+                    const tier = occupancyForUi[slot];
+                    return (
                     <button
                       key={slot}
                       type="button"
@@ -626,7 +728,11 @@ export function RestaurantReserveFlow({
                         'min-w-17 rounded-lg border px-2.5 py-2 text-sm font-medium tabular-nums transition-colors',
                         time === slot && !showCustomTime
                           ? 'border-accent-text bg-accent-bg text-accent-text shadow-sm ring-1 ring-accent-border/45'
-                          : 'border-border-strong/55 bg-surface shadow-card-soft hover:border-border-strong/80',
+                          : tier === 'quiet'
+                            ? 'border-emerald-500/45 bg-emerald-500/10 shadow-card-soft hover:border-emerald-500/70'
+                            : tier === 'busy'
+                              ? 'border-rose-400/45 bg-rose-500/10 shadow-card-soft hover:border-rose-400/70'
+                              : 'border-border-strong/55 bg-surface shadow-card-soft hover:border-border-strong/80',
                       )}
                       onClick={() => {
                         setShowCustomTime(false);
@@ -634,7 +740,8 @@ export function RestaurantReserveFlow({
                       }}>
                       {slot}
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -897,7 +1004,12 @@ export function RestaurantReserveFlow({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-xs font-medium text-foreground" htmlFor="res-contact-phone">
-                    Телефон <span className="text-error">*</span>
+                    Телефон{' '}
+                    {phoneRequiredForParty ? (
+                      <span className="text-error">*</span>
+                    ) : (
+                      <span className="text-muted">(необязательно)</span>
+                    )}
                   </label>
                   <input
                     id="res-contact-phone"

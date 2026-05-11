@@ -77,6 +77,7 @@ model User {
   adminRestaurants   RestaurantAdmin[]
   checkInLogs        CheckInLog[]
   managedRestaurant  Restaurant? @relation("RestaurantManager")
+  favoriteRestaurants FavoriteRestaurant[]
 
   @@index([role])
 }
@@ -109,6 +110,13 @@ model Restaurant {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  /// Min minutes before start; null = use app default `BOOKING_LEAD_MINUTES`.
+  minBookingLeadMinutes  Int?
+  /// Bookings with guestCount above this require `contactPhone`. Null = no extra rule.
+  maxGuestsWithoutPhone  Int?
+  /// Recurring blocked windows: [{ dayOfWeek, startHHmm, endHHmm }], day 0=Sun..6=Sat.
+  blockedRecurrenceJson  Json?
+
   /// Hall manager (one restaurant — one manager user).
   managerUserId String? @unique @db.Uuid
   manager       User?   @relation("RestaurantManager", fields: [managerUserId], references: [id])
@@ -118,8 +126,21 @@ model Restaurant {
   reservations Reservation[]
   workingHours WorkingHours[]
   admins      RestaurantAdmin[]
+  favoritedBy FavoriteRestaurant[]
 
   @@index([isActive])
+}
+
+model FavoriteRestaurant {
+  userId       String   @db.Uuid
+  restaurantId String   @db.Uuid
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@id([userId, restaurantId])
+  @@index([restaurantId])
 }
 
 model RestaurantAdmin {

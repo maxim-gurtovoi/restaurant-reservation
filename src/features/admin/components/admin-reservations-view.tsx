@@ -70,6 +70,15 @@ export function AdminReservationsView({
 
       <AdminReservationsFilterBar statusFilter={statusFilter} timeFilter={timeFilter} />
 
+      <div className="flex justify-end">
+        <a
+          href={buildExportHref(statusFilter, timeFilter)}
+          className="text-sm font-semibold text-primary underline-offset-4 hover:underline"
+        >
+          Экспорт CSV (до 5000 строк)
+        </a>
+      </div>
+
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-xs text-muted">
           {mode === 'list'
@@ -155,4 +164,12 @@ function buildReservationsPageHref(input: {
   if (input.timeFilter !== 'all') p.set('time', input.timeFilter);
   const q = p.toString();
   return q ? `/admin/reservations?${q}` : '/admin/reservations';
+}
+
+function buildExportHref(statusFilter: StatusFilter, timeFilter: TimeFilter): string {
+  const p = new URLSearchParams();
+  if (statusFilter !== 'all') p.set('status', statusFilter);
+  if (timeFilter !== 'all') p.set('time', timeFilter);
+  const q = p.toString();
+  return q ? `/api/admin/reservations/export?${q}` : '/api/admin/reservations/export';
 }

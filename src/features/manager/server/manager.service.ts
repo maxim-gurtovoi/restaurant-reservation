@@ -1,6 +1,7 @@
 import 'server-only';
-import type { UserRole } from '@prisma/client';
+import { Prisma, type UserRole } from '@prisma/client';
 import { z } from 'zod';
+import { parseBlockedRecurrenceJson } from '@/features/reservations/lib/booking-rules';
 import { prisma } from '@/lib/prisma';
 
 const createRestaurantSchema = z.object({
@@ -20,12 +21,21 @@ const removeAdminAssignmentSchema = z.object({
   linkId: z.string().uuid(),
 });
 
+const updateBookingRulesSchema = z.object({
+  minBookingLeadMinutes: z.union([z.number().int().min(0).max(24 * 60), z.null()]),
+  maxGuestsWithoutPhone: z.union([z.number().int().min(1).max(99), z.null()]),
+  blockedRecurrenceJson: z.string(),
+});
+
 function buildOverviewFromParts(params: {
   restaurants: {
     id: string;
     name: string;
     slug: string;
     isActive: boolean;
+    minBookingLeadMinutes?: number | null;
+    maxGuestsWithoutPhone?: number | null;
+    blockedRecurrenceJson?: unknown;
   }[];
   adminUsers: { id: string; name: string; email: string }[];
   adminLinks: {
@@ -129,7 +139,15 @@ export async function getManagerOverviewData(params: { userId: string; role: Use
 
   const managed = await prisma.restaurant.findFirst({
     where: { managerUserId: params.userId },
-    select: { id: true, name: true, slug: true, isActive: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isActive: true,
+      minBookingLeadMinutes: true,
+      maxGuestsWithoutPhone: true,
+      blockedRecurrenceJson: true,
+    },
   });
 
   if (!managed) {
@@ -297,6 +315,56 @@ export async function removeAdminAssignment(
 
   await prisma.restaurantAdmin.delete({
     where: { id: parsed.data.linkId },
+  });
+
+  return { ok: true as const };
+}
+
+export async function updateBookingRules(
+  input: unknown,
+  actor: { userId: string; role: UserRole },
+) {
+  if (actor.role !== 'MANAGER') {
+    return { ok: false as const, error: 'Изменение правил доступно только управляющему ресторана' };
+  }
+
+  const parsed = updateBookingRulesSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false as const, error: 'Некорректные данные правил бронирования' };
+  }
+
+  const managed = await prisma.restaurant.findFirst({
+    where: { managerUserId: actor.userId },
+    select: { id: true },
+  });
+  if (!managed) {
+    return { ok: false as const, error: 'Ресторан не найден' };
+  }
+
+  const rawBlocked = parsed.data.blockedRecurrenceJson.trim();
+  let blockedValue: Prisma.InputJsonValue | null = null;
+  if (rawBlocked.length > 0) {
+    let asJson: unknown;
+    try {
+      asJson = JSON.parse(rawBlocked) as unknown;
+    } catch {
+      return { ok: false as const, error: 'Некорректный JSON для заблокированных окон' };
+    }
+    if (!Array.isArray(asJson)) {
+      return { ok: false as const, error: 'Заблокированные окна должны быть JSON-массивом' };
+    }
+    const normalized = parseBlockedRecurrenceJson(asJson);
+    blockedValue = normalized as Prisma.InputJsonValue;
+  }
+
+  await prisma.restaurant.update({
+    where: { id: managed.id },
+    data: {
+      minBookingLeadMinutes: parsed.data.minBookingLeadMinutes,
+      maxGuestsWithoutPhone: parsed.data.maxGuestsWithoutPhone,
+      blockedRecurrenceJson:
+        blockedValue === null ? Prisma.DbNull : blockedValue,
+    },
   });
 
   return { ok: true as const };

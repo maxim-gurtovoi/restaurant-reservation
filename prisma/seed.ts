@@ -40,6 +40,7 @@ async function main() {
 
   // Re-runnable for local demo/dev.
   await prisma.checkInLog.deleteMany();
+  await prisma.favoriteRestaurant.deleteMany();
   await prisma.reservation.deleteMany();
   await prisma.restaurantTable.deleteMany();
   await prisma.floorPlanElement.deleteMany();
@@ -144,6 +145,11 @@ async function main() {
       ],
       isActive: true,
       managerUserId: managerUser.id,
+      minBookingLeadMinutes: 30,
+      maxGuestsWithoutPhone: 6,
+      blockedRecurrenceJson: [
+        { dayOfWeek: 5, startHHmm: '22:00', endHHmm: '23:30' },
+      ],
     },
   });
 
@@ -176,6 +182,14 @@ async function main() {
       ],
       isActive: true,
     },
+  });
+
+  await prisma.favoriteRestaurant.createMany({
+    data: [
+      { userId: userBob.id, restaurantId: gastrobar.id },
+      { userId: userBob.id, restaurantId: pegasTerrace.id },
+    ],
+    skipDuplicates: true,
   });
 
   const smokehouse = await prisma.restaurant.create({
@@ -374,11 +388,16 @@ async function main() {
   /**
    * Каждому bulk-ресторану — своё фото `<slug>.jpg` в `public/images/restaurants/`.
    * Файлы загружены `scripts/download-restaurant-images.mjs` (Unsplash, лицензия Unsplash).
+   * Исключения: `saperavi`, `fuior` — свои фото (`*.png`).
    */
-  const extraImageFor = (slug: string) => ({
-    imageUrl: `/images/restaurants/${slug}.jpg`,
-    coverImageUrl: `/images/restaurants/${slug}.jpg`,
-  });
+  const extraImageFor = (slug: string) => {
+    const ext = slug === 'saperavi' || slug === 'fuior' ? 'png' : 'jpg';
+    const base = `/images/restaurants/${slug}.${ext}`;
+    return {
+      imageUrl: base,
+      coverImageUrl: base,
+    };
+  };
 
   const EXTRA_FEATURE_ROTATION: RestaurantFeature[][] = [
     [

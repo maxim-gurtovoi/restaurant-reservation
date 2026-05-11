@@ -21,6 +21,9 @@ import {
   getRestaurantBySlug,
   listSimilarRestaurants,
 } from '@/features/restaurants/server/restaurants.service';
+import { RestaurantFavoriteHeart } from '@/features/restaurants/components/restaurant-favorite-heart';
+import { getFavoriteRestaurantIdSet } from '@/features/favorites/server/favorites.service';
+import { getCurrentUser } from '@/server/auth';
 import {
   buildWeeklyRows,
   getOpenStatus,
@@ -60,7 +63,8 @@ export default async function RestaurantDetailsPage({ params }: RestaurantDetail
     notFound();
   }
 
-  const t = getMessages(locale).restaurantDetail;
+  const messages = getMessages(locale);
+  const t = messages.restaurantDetail;
   const supporting = getRestaurantDetailSupportingContent(restaurant.slug);
   const reserveHref = `/restaurants/${restaurant.slug}/reserve`;
   const zone = getRestaurantIanaZone({ timeZone: restaurant.timeZone ?? null });
@@ -79,6 +83,9 @@ export default async function RestaurantDetailsPage({ params }: RestaurantDetail
     .filter((table) => table.isActive)
     .reduce((sum, t2) => sum + t2.capacity, 0);
 
+  const user = await getCurrentUser();
+  const favoriteIds = user ? await getFavoriteRestaurantIdSet(user.id) : null;
+
   return (
     <div className="space-y-10">
       <RestaurantHero
@@ -93,6 +100,16 @@ export default async function RestaurantDetailsPage({ params }: RestaurantDetail
         phone={restaurant.phone}
         locale={locale}
         openBadge={{ tone: openStatus.tone, label: openStatus.label }}
+        favorite={
+          <RestaurantFavoriteHeart
+            restaurantId={restaurant.id}
+            initialFavorite={favoriteIds ? favoriteIds.has(restaurant.id) : undefined}
+            labels={{
+              add: messages.restaurants.favoriteAdd,
+              remove: messages.restaurants.favoriteRemove,
+            }}
+          />
+        }
       />
 
       <RestaurantFeatureTags features={restaurant.features} locale={locale} />

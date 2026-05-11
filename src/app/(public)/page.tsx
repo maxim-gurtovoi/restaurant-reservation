@@ -6,6 +6,7 @@ import { RestaurantList } from '@/features/restaurants/components/restaurant-lis
 import { RestaurantListPagination } from '@/features/restaurants/components/restaurant-list-pagination';
 import { RestaurantFiltersBar } from '@/features/restaurants/components/restaurant-filters-bar';
 import { listRestaurants } from '@/features/restaurants/server/restaurants.service';
+import { getFavoriteRestaurantIdSet } from '@/features/favorites/server/favorites.service';
 import { RESTAURANTS_LIST_PAGE_SIZE, type SortOption } from '@/features/restaurants/constants';
 import type { RestaurantFeature } from '@prisma/client';
 import { getCurrentUser } from '@/server/auth';
@@ -170,16 +171,21 @@ export default async function HomePage({
   const pageRaw = parseInt(getString(params.page), 10);
   const page = Number.isFinite(pageRaw) && pageRaw > 0 ? pageRaw : 1;
 
-  const result = await listRestaurants({
-    q,
-    sort,
-    priceMin,
-    priceMax,
-    features,
-    openNow,
-    page,
-    pageSize: RESTAURANTS_LIST_PAGE_SIZE,
-  });
+  const [result, favoriteIds] = await Promise.all([
+    listRestaurants({
+      q,
+      sort,
+      priceMin,
+      priceMax,
+      features,
+      openNow,
+      page,
+      pageSize: RESTAURANTS_LIST_PAGE_SIZE,
+    }),
+    user
+      ? getFavoriteRestaurantIdSet(user.id)
+      : Promise.resolve(new Set<string>()),
+  ]);
   const list = 'error' in result.body ? null : result.body;
   const restaurants = list?.items ?? [];
   const listingBase = {
@@ -253,7 +259,11 @@ export default async function HomePage({
               </div>
             ) : list ? (
               <>
-                <RestaurantList restaurants={restaurants} locale={locale} />
+                <RestaurantList
+                  restaurants={restaurants}
+                  locale={locale}
+                  favoriteIds={favoriteIds}
+                />
                 <RestaurantListPagination
                   locale={locale}
                   base={listingBase}

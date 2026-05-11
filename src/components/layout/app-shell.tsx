@@ -96,7 +96,7 @@ export async function AppShell({
                 ) : null}
               </nav>
               {user ? (
-                <UserAvatarMenu user={user} myReservationsLabel={t.appShell.myReservations} />
+                <UserAvatarMenu user={user} myReservationsLabel={t.appShell.myReservations} myFavoritesLabel={t.appShell.myFavorites} />
               ) : (
                 <HeaderAuthEntry locale={locale} />
               )}

@@ -22,7 +22,7 @@ export function RestaurantCardImage({
       alt={alt}
       fill
       sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-      className="object-cover transition duration-500 group-hover/card:scale-[1.06]"
+      className="object-cover transition duration-300 group-hover/card:scale-105"
       onError={() => setFailed(true)}
     />
   );

@@ -11,7 +11,7 @@ export default async function AdminDashboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Обзор"
-        subtitle="Сводка по броням и посещениям за сегодня."
+        subtitle="Ключевые цифры и графики по вашим ресторанам."
       />
       <AdminDashboard stats={stats} />
     </div>

@@ -62,6 +62,11 @@ export type RestaurantDetails = {
   features: RestaurantFeature[];
   /** IANA TZ from DB, or null to use app default. */
   timeZone: string | null;
+  /** Null → app default lead minutes. */
+  minBookingLeadMinutes: number | null;
+  /** Guests above this require phone; null → no rule. */
+  maxGuestsWithoutPhone: number | null;
+  blockedRecurrenceJson: unknown | null;
   galleryImages: string[];
   floorPlans: {
     id: string;
@@ -107,7 +112,7 @@ const LEGACY_GALLERY_SLUGS: Record<string, string[]> = {
   'la-placinte': ['la-placinte-stefan-cel-mare'],
 };
 
-function deriveCity(address: string | null | undefined): string {
+export function deriveCity(address: string | null | undefined): string {
   if (!address) {
     return 'Город не указан';
   }
@@ -424,6 +429,9 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
     reviewsCount: restaurant.reviewsCount,
     features: restaurant.features,
     timeZone: restaurant.timeZone ?? null,
+    minBookingLeadMinutes: restaurant.minBookingLeadMinutes ?? null,
+    maxGuestsWithoutPhone: restaurant.maxGuestsWithoutPhone ?? null,
+    blockedRecurrenceJson: restaurant.blockedRecurrenceJson ?? null,
     galleryImages,
     floorPlans: restaurant.floorPlans.map((fp) => ({
       id: fp.id,
