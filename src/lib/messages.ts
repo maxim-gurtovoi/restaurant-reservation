@@ -20,6 +20,10 @@ export const messages = {
       search: 'Поиск',
       searchAria: 'Поиск ресторанов',
       localeToggleAria: 'Переключить язык интерфейса',
+      searchSuggestLoading: 'Подбираем варианты…',
+      searchSuggestNoHits: 'Ничего не нашли — попробуйте другую формулировку',
+      searchSuggestShowAll: 'Все результаты на главной',
+      searchSuggestOpen: 'Страница ресторана',
     },
     home: {
       badge: 'Сервис бронирования',
@@ -235,6 +239,10 @@ export const messages = {
       search: 'Căutare',
       searchAria: 'Căutare restaurante',
       localeToggleAria: 'Comută limba interfeței',
+      searchSuggestLoading: 'Se caută variante…',
+      searchSuggestNoHits: 'Niciun rezultat — încearcă alt termen',
+      searchSuggestShowAll: 'Toate rezultatele pe pagina principală',
+      searchSuggestOpen: 'Pagina restaurantului',
     },
     home: {
       badge: 'Platformă de rezervări',

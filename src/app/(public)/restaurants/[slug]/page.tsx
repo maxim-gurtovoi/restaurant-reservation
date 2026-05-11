@@ -40,8 +40,13 @@ const LEGACY_SLUG_REDIRECTS: Record<string, string> = {
 
 export default async function RestaurantDetailsPage({ params }: RestaurantDetailsPageProps) {
   const { slug } = await params;
-  const locale = await getServerLocale();
-  const restaurant = await getRestaurantBySlug(slug);
+  // Параллелим cookies/locale, основной запрос ресторана и подбор похожих.
+  // Похожие исключают `slug` (если ресторан не найдётся, мы просто отбросим результат).
+  const [locale, restaurant, similarRestaurants] = await Promise.all([
+    getServerLocale(),
+    getRestaurantBySlug(slug),
+    listSimilarRestaurants({ excludeSlug: slug, limit: 4 }),
+  ]);
 
   if (!restaurant && LEGACY_SLUG_REDIRECTS[slug]) {
     const canonicalSlug = LEGACY_SLUG_REDIRECTS[slug];
@@ -73,10 +78,6 @@ export default async function RestaurantDetailsPage({ params }: RestaurantDetail
   const seatsTotal = restaurant.tables
     .filter((table) => table.isActive)
     .reduce((sum, t2) => sum + t2.capacity, 0);
-  const similarRestaurants = await listSimilarRestaurants({
-    excludeSlug: restaurant.slug,
-    limit: 4,
-  });
 
   return (
     <div className="space-y-10">

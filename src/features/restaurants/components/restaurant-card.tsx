@@ -1,13 +1,13 @@
-'use client';
-
-import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
 import type { RestaurantListItem } from '@/features/restaurants/server/restaurants.service';
 import { Button } from '@/components/ui/button';
 import type { Locale } from '@/lib/i18n';
 import { getRestaurantCardTranslation } from '@/features/restaurants/data/restaurant-card-translations';
 import { getMessages } from '@/lib/messages';
+import {
+  RestaurantCardImage,
+  RestaurantCardImageFallback,
+} from '@/features/restaurants/components/restaurant-card-image';
 
 function addressLine(address: string | null, city: string): string | null {
   if (!address) return null;
@@ -30,12 +30,7 @@ export function RestaurantCard({
   restaurant: RestaurantListItem;
   locale?: Locale;
 }) {
-  const [imgFailed, setImgFailed] = useState(false);
-  const showImage = Boolean(restaurant.imageUrl) && !imgFailed;
-  const street = useMemo(
-    () => addressLine(restaurant.address, restaurant.city),
-    [restaurant.address, restaurant.city],
-  );
+  const street = addressLine(restaurant.address, restaurant.city);
   const translation = getRestaurantCardTranslation(restaurant.slug, locale);
   const t = getMessages(locale);
   const fallbackDescription = t.restaurants.fallbackDescription;
@@ -50,22 +45,10 @@ export function RestaurantCard({
     <div className="group/card flex h-full flex-col overflow-hidden rounded-3xl bg-surface transition-all duration-200 hover:-translate-y-1">
       <Link href={detailHref} className="block shrink-0">
         <div className="relative h-56 overflow-hidden">
-          {showImage ? (
-            <Image
-              src={restaurant.imageUrl ?? ''}
-              alt={`${displayName} cover`}
-              fill
-              sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-              className="object-cover transition duration-500 group-hover/card:scale-[1.06]"
-              onError={() => setImgFailed(true)}
-            />
+          {restaurant.imageUrl ? (
+            <RestaurantCardImage src={restaurant.imageUrl} alt={`${displayName} cover`} />
           ) : (
-            <div className="h-full w-full bg-[linear-gradient(150deg,#ede9fe_0%,#f3eaff_55%,#e8d5f5_100%)]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,rgba(123,47,155,0.09)_1px,transparent_0)] bg-size-[20px_20px]" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-3xl opacity-25">{'\uD83C\uDF7D\uFE0F'}</span>
-              </div>
-            </div>
+            <RestaurantCardImageFallback />
           )}
 
           <div className="absolute inset-0 bg-linear-to-t from-black/75 via-black/20 to-transparent" />

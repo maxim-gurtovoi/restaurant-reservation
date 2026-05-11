@@ -371,32 +371,14 @@ async function main() {
   const dailyHours = (open: string, close: string) =>
     Array.from({ length: 7 }, () => [open, close] as [string, string]);
 
-  const EXTRA_IMAGE_ROTATION = [
-    {
-      imageUrl: '/images/restaurants/gastrobar.png',
-      coverImageUrl: '/images/restaurants/gastrobar/cover.png',
-    },
-    {
-      imageUrl: '/images/restaurants/pegas.png',
-      coverImageUrl: '/images/restaurants/pegas-terrace-restaurant/1.png',
-    },
-    {
-      imageUrl: '/images/restaurants/smokehouse.png',
-      coverImageUrl: '/images/restaurants/smokehouse/1.png',
-    },
-    {
-      imageUrl: '/images/restaurants/attico.png',
-      coverImageUrl: '/images/restaurants/attico-terrace-restaurant/1.png',
-    },
-    {
-      imageUrl: '/images/restaurants/garden.png',
-      coverImageUrl: '/images/restaurants/garden-restaurant-terrace/1.png',
-    },
-    {
-      imageUrl: '/images/restaurants/la-placinte.png',
-      coverImageUrl: '/images/restaurants/la-placinte-stefan-cel-mare/1.png',
-    },
-  ] as const;
+  /**
+   * Каждому bulk-ресторану — своё фото `<slug>.jpg` в `public/images/restaurants/`.
+   * Файлы загружены `scripts/download-restaurant-images.mjs` (Unsplash, лицензия Unsplash).
+   */
+  const extraImageFor = (slug: string) => ({
+    imageUrl: `/images/restaurants/${slug}.jpg`,
+    coverImageUrl: `/images/restaurants/${slug}.jpg`,
+  });
 
   const EXTRA_FEATURE_ROTATION: RestaurantFeature[][] = [
     [
@@ -477,7 +459,7 @@ async function main() {
   for (let i = 0; i < extraRestaurantSlugPlan.length; i++) {
     const { slug, row } = extraRestaurantSlugPlan[i];
 
-    const images = EXTRA_IMAGE_ROTATION[i % EXTRA_IMAGE_ROTATION.length];
+    const images = extraImageFor(slug);
     const features = EXTRA_FEATURE_ROTATION[i % EXTRA_FEATURE_ROTATION.length];
     const phoneDigits = String(700000 + i).padStart(6, '0');
     const phone = `+373 60 ${phoneDigits.slice(0, 3)} ${phoneDigits.slice(3)}`;

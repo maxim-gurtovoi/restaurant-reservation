@@ -6,6 +6,8 @@ import type { Locale } from '@/lib/i18n';
 import { getMessages } from '@/lib/messages';
 import { FILTERABLE_FEATURES, type SortOption } from '@/features/restaurants/constants';
 
+const SEARCH_DEBOUNCE_MS = 300;
+
 const PRICE_LABELS: Record<number, string> = { 1: '$', 2: '$$', 3: '$$$', 4: '$$$$' };
 const PRICE_POSITIONS = [1, 2, 3, 4] as const;
 
@@ -270,6 +272,23 @@ export function RestaurantFiltersBar({
   const searchParams = useSearchParams();
 
   const qFromURL = searchParams.get('q') ?? '';
+  // Локальное значение инпута: даёт мгновенный отклик клавиатуре,
+  // а на URL/сервер уходит дебаунс-запись (см. handler онChange).
+  const [searchValue, setSearchValue] = useState(qFromURL);
+  // Если URL поменялся снаружи (reset, back/forward), переcинхронизируем поле
+  // через render-time-pattern (вместо useEffect, чтобы не было каскадного рендера).
+  const [prevQ, setPrevQ] = useState(qFromURL);
+  if (prevQ !== qFromURL) {
+    setPrevQ(qFromURL);
+    setSearchValue(qFromURL);
+  }
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
+
   const sort = (searchParams.get('sort') ?? 'rating') as SortOption;
   const priceMin = Math.max(1, Math.min(4, parseInt(searchParams.get('pmin') ?? '1') || 1));
   const priceMax = Math.max(1, Math.min(4, parseInt(searchParams.get('pmax') ?? '4') || 4));
@@ -312,10 +331,13 @@ export function RestaurantFiltersBar({
   }
 
   function reset() {
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    setSearchValue('');
     router.replace('/', { scroll: false });
   }
 
   const hasActiveFilters =
+    searchValue !== '' ||
     qFromURL !== '' ||
     sort !== 'rating' ||
     priceMin > 1 ||
@@ -352,23 +374,27 @@ export function RestaurantFiltersBar({
           </svg>
           <input
             type="search"
-            value={qFromURL}
-            onChange={(e) =>
-              router.replace(
-                buildURL(searchParams, { q: e.target.value }),
-                { scroll: false },
-              )
-            }
+            value={searchValue}
+            onChange={(e) => {
+              const v = e.target.value;
+              setSearchValue(v);
+              if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+              searchDebounceRef.current = setTimeout(() => {
+                router.replace(buildURL(searchParams, { q: v }), { scroll: false });
+              }, SEARCH_DEBOUNCE_MS);
+            }}
             placeholder={t.searchPlaceholder}
             aria-label={t.searchPlaceholder}
             className="h-10 w-full rounded-xl border border-border/60 bg-surface pl-10 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted focus:border-primary/60 focus:ring-2 focus:ring-primary/20"
           />
-          {qFromURL && (
+          {searchValue && (
             <button
               type="button"
-              onClick={() =>
-                router.replace(buildURL(searchParams, { q: null }), { scroll: false })
-              }
+              onClick={() => {
+                if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+                setSearchValue('');
+                router.replace(buildURL(searchParams, { q: null }), { scroll: false });
+              }}
               aria-label="Очистить поиск"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
             >

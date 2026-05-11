@@ -6,6 +6,10 @@ import type { ApiResult } from '@/types/common';
 import { prisma } from '@/lib/prisma';
 import { getRestaurantIanaZone } from '@/lib/restaurant-time';
 import { getOpenStatus } from '@/features/restaurants/lib/open-status';
+import {
+  recommendationScore,
+  restaurantEmbeddingText,
+} from '@/features/restaurants/lib/recommendation-embedding';
 import type { SortOption } from '@/features/restaurants/constants';
 
 export type { SortOption } from '@/features/restaurants/constants';
@@ -160,6 +164,64 @@ const OPEN_STATUS_LABELS_STUB = {
   dayNames: {} as Record<number, string>,
 };
 
+export type RestaurantSuggestItem = {
+  slug: string;
+  name: string;
+  cuisine: string | null;
+};
+
+/**
+ * Подсказки для поиска в шапке: быстрый поиск по имени/кухне и ранжирование
+ * через лёгкий «векторный» скор (см. `recommendation-embedding.ts`).
+ *
+ * Substring-фильтр выполняется в БД (`contains` insensitive), скоринг — в памяти
+ * по компактному окну (`take: 60`), так как обычно совпадений мало.
+ */
+export async function suggestRestaurants(input: {
+  q: string;
+  limit?: number;
+}): Promise<RestaurantSuggestItem[]> {
+  const q = input.q.trim();
+  if (!q) return [];
+  const limit = Math.min(20, Math.max(1, input.limit ?? 8));
+
+  const records = await prisma.restaurant.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { name: { contains: q, mode: 'insensitive' } },
+        { cuisine: { contains: q, mode: 'insensitive' } },
+      ],
+    },
+    select: {
+      slug: true,
+      name: true,
+      cuisine: true,
+      rating: true,
+      reviewsCount: true,
+      features: true,
+    },
+    take: 60,
+  });
+
+  const scored = records.map((r) => {
+    const text = restaurantEmbeddingText({
+      name: r.name,
+      cuisine: r.cuisine,
+      features: r.features,
+    });
+    return {
+      slug: r.slug,
+      name: r.name,
+      cuisine: r.cuisine,
+      score: recommendationScore(q, text, r.rating, r.reviewsCount),
+    };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(({ slug, name, cuisine }) => ({ slug, name, cuisine }));
+}
+
 export async function listRestaurants(input: {
   city?: string;
   q?: string;
@@ -173,13 +235,123 @@ export async function listRestaurants(input: {
   /** Не передавайте (или передайте `0`), чтобы вернуть все совпадения одним списком (например API). */
   pageSize?: number;
 }): Promise<ApiResult<RestaurantListPage>> {
-  const records = await prisma.restaurant.findMany({
-    where: { isActive: true },
-    orderBy: { name: 'asc' },
-    include: { workingHours: true },
-  });
+  // ── price range normalisation ───────────────────────────────────────
+  let priceMin = input.priceMin ?? 1;
+  let priceMax = input.priceMax ?? 4;
+  if (priceMin > priceMax) [priceMin, priceMax] = [priceMax, priceMin];
 
-  let items: RestaurantListItem[] = records.map((r) => ({
+  // ── DB-side filters (всё, что можем — фильтруем в Postgres) ─────────
+  const where: import('@prisma/client').Prisma.RestaurantWhereInput = { isActive: true };
+
+  const q = input.q?.trim();
+  if (q) {
+    where.OR = [
+      { name: { contains: q, mode: 'insensitive' } },
+      { cuisine: { contains: q, mode: 'insensitive' } },
+    ];
+  }
+
+  if (priceMin > 1 || priceMax < 4) {
+    where.priceLevel = { gte: priceMin, lte: priceMax };
+  }
+
+  if (input.features && input.features.length > 0) {
+    where.features = { hasEvery: input.features };
+  }
+
+  // ── DB-side sort ─────────────────────────────────────────────────────
+  const sort = input.sort ?? 'rating';
+  const orderBy: import('@prisma/client').Prisma.RestaurantOrderByWithRelationInput[] =
+    sort === 'name'
+      ? [{ name: 'asc' }]
+      : sort === 'price_asc'
+        ? [{ priceLevel: { sort: 'asc', nulls: 'last' } }, { name: 'asc' }]
+        : sort === 'price_desc'
+          ? [{ priceLevel: { sort: 'desc', nulls: 'last' } }, { name: 'asc' }]
+          : [
+              { rating: { sort: 'desc', nulls: 'last' } },
+              { reviewsCount: 'desc' },
+              { name: 'asc' },
+            ];
+
+  // ── pagination (если `openNow` активен — пагинируем после фильтра в памяти) ──
+  const wantPaginate = input.pageSize !== undefined && input.pageSize > 0;
+  const requestedSize = input.pageSize ?? 0;
+  const pageSize = wantPaginate
+    ? Math.min(100, Math.max(1, Math.floor(requestedSize)))
+    : 0;
+
+  // ── city filter (legacy, считается в памяти — производное поле) ─────
+  const cityNeedle = input.city?.toLowerCase();
+
+  // workingHours тащим только когда фильтр "открыто сейчас" активен.
+  const include = input.openNow ? { workingHours: true } : undefined;
+
+  if (input.openNow || cityNeedle) {
+    // Нужен пост-фильтр в памяти → тянем все совпадения, затем нарезаем страницу.
+    const records = await prisma.restaurant.findMany({ where, orderBy, include });
+    let items: RestaurantListItem[] = records.map(toListItem);
+
+    if (cityNeedle) {
+      items = items.filter((it) => it.city.toLowerCase() === cityNeedle);
+    }
+    if (input.openNow) {
+      items = items.filter((item) => {
+        const tz = getRestaurantIanaZone({ timeZone: item.timeZone });
+        return getOpenStatus(item.workingHours, tz, OPEN_STATUS_LABELS_STUB).tone === 'open';
+      });
+    }
+
+    const total = items.length;
+    const totalPages = wantPaginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+    const page = wantPaginate ? Math.min(Math.max(1, input.page ?? 1), totalPages) : 1;
+    const offset = wantPaginate ? (page - 1) * pageSize : 0;
+    const pageItems = wantPaginate ? items.slice(offset, offset + pageSize) : items;
+
+    return {
+      status: 200,
+      body: {
+        items: pageItems,
+        total,
+        page,
+        pageSize: wantPaginate ? pageSize : total,
+        totalPages,
+      },
+    };
+  }
+
+  // ── Быстрый путь: всё фильтруется в БД, пагинация — `skip/take` ─────
+  const total = await prisma.restaurant.count({ where });
+  const totalPages = wantPaginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
+  const page = wantPaginate ? Math.min(Math.max(1, input.page ?? 1), totalPages) : 1;
+  const skip = wantPaginate ? (page - 1) * pageSize : 0;
+  const records = await prisma.restaurant.findMany({
+    where,
+    orderBy,
+    ...(wantPaginate ? { skip, take: pageSize } : {}),
+  });
+  const items = records.map(toListItem);
+
+  return {
+    status: 200,
+    body: {
+      items,
+      total,
+      page,
+      pageSize: wantPaginate ? pageSize : total,
+      totalPages,
+    },
+  };
+}
+
+type RestaurantRowWithMaybeHours =
+  | import('@prisma/client').Prisma.RestaurantGetPayload<{ include: { workingHours: true } }>
+  | import('@prisma/client').Prisma.RestaurantGetPayload<object>;
+
+function toListItem(r: RestaurantRowWithMaybeHours): RestaurantListItem {
+  const workingHours =
+    'workingHours' in r && Array.isArray(r.workingHours) ? r.workingHours : [];
+  return {
     id: r.id,
     name: r.name,
     slug: r.slug,
@@ -192,109 +364,13 @@ export async function listRestaurants(input: {
     rating: r.rating ?? null,
     reviewsCount: r.reviewsCount,
     features: r.features,
-    workingHours: r.workingHours.map((wh) => ({
+    workingHours: workingHours.map((wh) => ({
       dayOfWeek: wh.dayOfWeek,
       openTime: wh.openTime,
       closeTime: wh.closeTime,
       isClosed: wh.isClosed,
     })),
     timeZone: r.timeZone ?? null,
-  }));
-
-  // ── city filter (legacy) ─────────────────────────────────────────────
-  if (input.city) {
-    const target = input.city.toLowerCase();
-    items = items.filter((item) => item.city.toLowerCase() === target);
-  }
-
-  // ── text search ──────────────────────────────────────────────────────
-  if (input.q && input.q.trim()) {
-    const needle = input.q.trim().toLowerCase();
-    items = items.filter(
-      (item) =>
-        item.name.toLowerCase().includes(needle) ||
-        (item.cuisine?.toLowerCase().includes(needle) ?? false),
-    );
-  }
-
-  // ── price range ───────────────────────────────────────────────────────
-  let priceMin = input.priceMin ?? 1;
-  let priceMax = input.priceMax ?? 4;
-  if (priceMin > priceMax) {
-    const swap = priceMin;
-    priceMin = priceMax;
-    priceMax = swap;
-  }
-  if (priceMin > 1 || priceMax < 4) {
-    items = items.filter(
-      (item) => item.priceLevel !== null && item.priceLevel >= priceMin && item.priceLevel <= priceMax,
-    );
-  }
-
-  // ── features (all selected must be present) ──────────────────────────
-  if (input.features && input.features.length > 0) {
-    items = items.filter((item) =>
-      input.features!.every((f) => item.features.includes(f)),
-    );
-  }
-
-  // ── open now ─────────────────────────────────────────────────────────
-  if (input.openNow) {
-    items = items.filter((item) => {
-      const tz = getRestaurantIanaZone({ timeZone: item.timeZone });
-      return getOpenStatus(item.workingHours, tz, OPEN_STATUS_LABELS_STUB).tone === 'open';
-    });
-  }
-
-  // ── sort ─────────────────────────────────────────────────────────────
-  const sort = input.sort ?? 'rating';
-  items.sort((a, b) => {
-    switch (sort) {
-      case 'name':
-        return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
-      case 'price_asc': {
-        if (a.priceLevel === null && b.priceLevel === null) return 0;
-        if (a.priceLevel === null) return 1;
-        if (b.priceLevel === null) return -1;
-        return a.priceLevel - b.priceLevel;
-      }
-      case 'price_desc': {
-        if (a.priceLevel === null && b.priceLevel === null) return 0;
-        if (a.priceLevel === null) return 1;
-        if (b.priceLevel === null) return -1;
-        return b.priceLevel - a.priceLevel;
-      }
-      case 'rating':
-      default: {
-        if (a.rating === null && b.rating === null) return b.reviewsCount - a.reviewsCount;
-        if (a.rating === null) return 1;
-        if (b.rating === null) return -1;
-        return b.rating - a.rating || b.reviewsCount - a.reviewsCount;
-      }
-    }
-  });
-
-  const total = items.length;
-  const wantPaginate = input.pageSize !== undefined && input.pageSize > 0;
-  const requestedSize = input.pageSize ?? 0;
-  const pageSize = wantPaginate
-    ? Math.min(100, Math.max(1, Math.floor(requestedSize)))
-    : Math.max(1, total);
-  const totalPages = wantPaginate ? Math.max(1, Math.ceil(total / pageSize)) : 1;
-  const pageRaw = wantPaginate ? Math.max(1, input.page ?? 1) : 1;
-  const page = Math.min(pageRaw, totalPages);
-  const offset = wantPaginate ? (page - 1) * pageSize : 0;
-  const pageItems = wantPaginate ? items.slice(offset, offset + pageSize) : items;
-
-  return {
-    status: 200,
-    body: {
-      items: pageItems,
-      total,
-      page,
-      pageSize: wantPaginate ? pageSize : total,
-      totalPages,
-    },
   };
 }
 
@@ -319,10 +395,13 @@ export async function getRestaurantBySlug(slug: string): Promise<RestaurantDetai
     return null;
   }
 
-  const galleryImages = await resolveRestaurantGalleryImages({
+  // Гарантированно дёшево, но всё равно файловый I/O — параллелить с дальнейшим
+  // mapping-ом не успеваем, но пинаем сразу, пока маппится остальной payload.
+  const galleryImagesPromise = resolveRestaurantGalleryImages({
     slug: restaurant.slug,
     fallbackImageUrl: restaurant.imageUrl ?? null,
   });
+  const galleryImages = await galleryImagesPromise;
 
   return {
     id: restaurant.id,

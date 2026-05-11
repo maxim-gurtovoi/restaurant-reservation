@@ -46,6 +46,7 @@ export function RestaurantFloorPlanSection({
           elements={floorPlanElements}
           readOnly
           headerEyebrow={t.eyebrow}
+          layoutScale={0.5}
         />
       ) : (
         <div className="rounded-2xl border border-dashed border-border/60 bg-surface p-5 text-sm text-muted shadow-card-soft">

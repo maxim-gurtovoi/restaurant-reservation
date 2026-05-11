@@ -1,13 +1,20 @@
 import 'server-only';
+import { cache } from 'react';
 import { redirect } from 'next/navigation';
 import { getAuthTokenFromCookies, verifyUserJwt } from '@/lib/auth';
 import type { JwtPayloadUser } from '@/types/auth';
 
-export async function getCurrentUser(): Promise<JwtPayloadUser | null> {
-  const token = await getAuthTokenFromCookies();
-  if (!token) return null;
-  return verifyUserJwt(token);
-}
+/**
+ * Per-request memo: layout + page часто оба вызывают `getCurrentUser`,
+ * без `cache` мы каждый раз читаем cookies и валидируем JWT повторно.
+ */
+export const getCurrentUser = cache(
+  async (): Promise<JwtPayloadUser | null> => {
+    const token = await getAuthTokenFromCookies();
+    if (!token) return null;
+    return verifyUserJwt(token);
+  },
+);
 
 export async function requireUser(): Promise<JwtPayloadUser> {
   const user = await getCurrentUser();

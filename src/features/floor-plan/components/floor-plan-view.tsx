@@ -51,6 +51,11 @@ type FloorPlanViewProps = {
   headerEyebrow?: string;
   /** Optional: initial active floor on first render. Falls back to first floor. */
   initialFloorPlanId?: string;
+  /**
+   * Multiplier for “fit to container” scale (1 = full width). Use values below 1 on overview pages
+   * so the canvas does not dominate the viewport height.
+   */
+  layoutScale?: number;
 };
 
 const MIN_CANVAS_HEIGHT = 280;
@@ -65,6 +70,7 @@ export function FloorPlanView({
   readOnly = false,
   headerEyebrow = 'Шаг 2 · Выберите столик',
   initialFloorPlanId,
+  layoutScale = 1,
 }: FloorPlanViewProps) {
   const [manualFloorId, setManualFloorId] = useState<string | null>(null);
   const [hoveredTableId, setHoveredTableId] = useState<string | null>(null);
@@ -178,6 +184,7 @@ export function FloorPlanView({
         hoveredTableId={hoveredTableId}
         onHover={setHoveredTableId}
         onSelectTable={onSelectTable}
+        layoutScale={layoutScale}
       />
 
       {!readOnly && (
@@ -200,6 +207,7 @@ type FloorPlanCanvasProps = {
   hoveredTableId: string | null;
   onHover: (id: string | null) => void;
   onSelectTable?: (id: string) => void;
+  layoutScale: number;
 };
 
 function FloorPlanCanvas({
@@ -212,6 +220,7 @@ function FloorPlanCanvas({
   hoveredTableId,
   onHover,
   onSelectTable,
+  layoutScale,
 }: FloorPlanCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -230,10 +239,11 @@ function FloorPlanCanvas({
     return () => ro.disconnect();
   }, []);
 
-  // Scale floor plan to the container width, but clamp so it never overflows
+  // Scale floor plan to the container width (times layoutScale), but clamp so it never overflows
   // and never collapses below readable size.
-  const scale = containerWidth > 0 ? containerWidth / floor.width : 1;
-  const renderedHeight = Math.max(MIN_CANVAS_HEIGHT, floor.height * scale);
+  const fitScale = containerWidth > 0 ? containerWidth / floor.width : 1;
+  const scale = fitScale * layoutScale;
+  const renderedHeight = Math.max(MIN_CANVAS_HEIGHT * layoutScale, floor.height * scale);
 
   if (!tables.length && !elements.length) {
     return (
@@ -246,23 +256,30 @@ function FloorPlanCanvas({
   return (
     <div
       ref={wrapperRef}
-      className="relative w-full overflow-hidden rounded-xl border border-border/55 bg-[linear-gradient(180deg,rgba(250,248,245,0.98)_0%,rgba(240,236,228,1)_100%)]"
+      className="relative flex w-full justify-center overflow-hidden rounded-xl border border-border/55 bg-[linear-gradient(180deg,rgba(250,248,245,0.98)_0%,rgba(240,236,228,1)_100%)]"
       style={{ height: renderedHeight }}
     >
       <div
-        className="absolute left-0 top-0"
+        className="relative shrink-0"
         style={{
-          width: floor.width,
-          height: floor.height,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          backgroundImage: [
-            'linear-gradient(90deg,rgba(120,100,80,0.06) 1px,transparent 1px)',
-            'linear-gradient(rgba(120,100,80,0.06) 1px,transparent 1px)',
-          ].join(','),
-          backgroundSize: '32px 32px',
+          width: floor.width * scale,
+          height: floor.height * scale,
         }}
       >
+        <div
+          className="absolute left-0 top-0"
+          style={{
+            width: floor.width,
+            height: floor.height,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            backgroundImage: [
+              'linear-gradient(90deg,rgba(120,100,80,0.06) 1px,transparent 1px)',
+              'linear-gradient(rgba(120,100,80,0.06) 1px,transparent 1px)',
+            ].join(','),
+            backgroundSize: '32px 32px',
+          }}
+        >
         {elements.map((element) => (
           <FloorPlanElementBox key={element.id} element={element} />
         ))}
@@ -361,6 +378,7 @@ function FloorPlanCanvas({
             </div>
           );
         })}
+        </div>
       </div>
     </div>
   );

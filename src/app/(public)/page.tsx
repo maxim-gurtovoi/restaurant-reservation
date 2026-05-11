@@ -145,10 +145,13 @@ export default async function HomePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const locale = await getServerLocale();
+  // Параллелим всё, что можно: cookies (locale, auth) и searchParams.
+  const [locale, user, params] = await Promise.all([
+    getServerLocale(),
+    getCurrentUser(),
+    searchParams,
+  ]);
   const t = getMessages(locale);
-  const user = await getCurrentUser();
-  const params = await searchParams;
 
   const q = getString(params.q);
   const rawSort = getString(params.sort);
